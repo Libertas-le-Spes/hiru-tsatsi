@@ -17,22 +17,25 @@ Panel {
   readonly property var s: Strings.forLocale(Qt.locale().name)
 
   readonly property string configPath: Quickshell.env("HOME") + "/.local/state/omarchy/settings/omastart.json"
-  // Last calendar date (yyyy-MM-dd) the startup prompt was shown, persisted
-  // to disk so it survives shell restarts - promptedThisSession used to be
-  // an in-memory flag, which meant "once per session" was really "every
-  // time the shell process restarts" since the process itself is short-lived.
+  // Id of the last boot the startup prompt was shown for, persisted to disk
+  // so it survives shell restarts - promptedThisSession used to be an
+  // in-memory flag, which meant "once per session" was really "every time
+  // the shell process restarts" since the process itself is short-lived.
+  // This used to track by calendar date instead of boot id, which meant a
+  // same-day reboot never re-prompted, since "today" was already recorded
+  // from before the reboot.
   readonly property string promptStatePath: Quickshell.env("HOME") + "/.local/state/omarchy/settings/omastart_last_prompt.txt"
+  readonly property string bootIdPath: "/proc/sys/kernel/random/boot_id"
+  property string currentBootId: ""
+  property bool bootIdLoaded: false
+  property bool promptStateLoaded: false
   property var config: Model.defaultConfig()
   property string newWorkspaceLabel: ""
 
-  function todayString() {
-    return Qt.formatDate(new Date(), "yyyy-MM-dd")
-  }
-
-  function maybePromptForToday(lastPromptDate) {
-    var today = root.todayString()
-    if (lastPromptDate.trim() !== today) {
-      promptStateFile.setText(today)
+  function maybePromptForBoot(lastPromptedBootId) {
+    if (!root.bootIdLoaded || !root.promptStateLoaded) return
+    if (lastPromptedBootId.trim() !== root.currentBootId.trim()) {
+      promptStateFile.setText(root.currentBootId)
       Qt.callLater(root.open)
     }
   }
@@ -87,13 +90,35 @@ Panel {
   }
 
   FileView {
+    id: bootIdFile
+    path: root.bootIdPath
+    watchChanges: false
+    printErrors: false
+    onLoaded: {
+      root.currentBootId = text()
+      root.bootIdLoaded = true
+      root.maybePromptForBoot(promptStateFile.text())
+    }
+    onLoadFailed: {
+      root.bootIdLoaded = true
+      root.maybePromptForBoot(promptStateFile.text())
+    }
+  }
+
+  FileView {
     id: promptStateFile
     path: root.promptStatePath
     watchChanges: false
     atomicWrites: true
     printErrors: false
-    onLoaded: root.maybePromptForToday(text())
-    onLoadFailed: root.maybePromptForToday("")
+    onLoaded: {
+      root.promptStateLoaded = true
+      root.maybePromptForBoot(text())
+    }
+    onLoadFailed: {
+      root.promptStateLoaded = true
+      root.maybePromptForBoot("")
+    }
   }
 
   visible: true

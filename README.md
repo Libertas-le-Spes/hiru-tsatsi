@@ -50,6 +50,30 @@ None beyond Omarchy/Hyprland itself. Launching uses `hyprctl dispatch`
 a workspace's **Command** field needs to already be installed, same as
 running it in a terminal.
 
+## Known limitation: single-instance apps
+
+Hyprland's `[workspace N silent]` exec tag only attaches to the process
+`hyprctl dispatch exec` actually spawns. For an app that reuses an already
+running instance instead of starting a new one — a browser opening a
+`--app=` webapp window in an already-open Chromium, VS Code or DBeaver
+handing the request to their existing instance over IPC, an Electron app
+that stayed alive in the tray after its window was closed — the real
+window is created by that pre-existing process, not the one Hyprland just
+tagged, so the window lands on whatever workspace you're currently on
+instead of the one you configured.
+
+Omastart can't fix this from inside the plugin: the exec tag is a
+Hyprland mechanism, and there's no signal telling the launcher an
+invocation was silently handed off to an existing instance. If you hit
+this for one of your apps, pin it with a persistent window rule keyed on
+window class instead, e.g. in `~/.config/hypr/hyprland.lua`:
+
+```lua
+o.window("code", { workspace = "3 silent" })
+```
+
+Find the class with `hyprctl clients` while the app is open.
+
 ## Language
 
 The panel's text follows the machine's configured language
