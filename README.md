@@ -47,6 +47,10 @@ Hiru Tsatsi asks with a notification whether to start your work apps.
   label) and a **Command** (a real shell command) and press **+**. If the
   app is open, its window is recognised at once; otherwise the first time
   Hiru Tsatsi starts it.
+- **Where each app's window is** — the line under each app, for example
+  "✓ Chat, open on workspace 1". **Change** lists the open windows,
+  likeliest first, to match it to a different one, or to forget it so it
+  is learned again the next time Hiru Tsatsi starts the app.
 - **Remove an app or workspace** — the ✕ next to each row.
 - **Add a workspace** — choose its number and name at the bottom of the
   panel.

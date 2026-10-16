@@ -1,3 +1,4 @@
+import json
 import io
 import tempfile
 import unittest
@@ -64,3 +65,28 @@ class EditingFromTheCommandLine(unittest.TestCase):
         with redirect_stderr(errors):
             self.assertEqual(main(["add-workspace", "1", "Again"], self.app), 1)
         self.assertEqual(errors.getvalue(), "Workspace 1 is already in use\n")
+
+
+class WhatTheBarPanelAsks(unittest.TestCase):
+    def setUp(self):
+        folder = Path(tempfile.mkdtemp())
+        self.file = folder / "apps.json"
+        AppListFile(self.file).save(AppList((Workspace(1, "Browser", (App("Boards", "some-browser --boards"),)),)))
+        desktop = FakeDesktop([window("0xg", "chrome-gitlab.com-Default", "Issue Boards", 4), window("0xt", "foot", "~", 4)])
+        self.app = open_app(desktop, self.file, [], FakeNotifier(), FakeNames(), FakeSetUp())
+
+    def said(self, argv):
+        out = io.StringIO()
+        with redirect_stdout(out):
+            main(argv, self.app)
+        return out.getvalue()
+
+    def test_overview_and_choosing_a_window_and_forgetting_it(self):
+        self.assertEqual(json.loads(self.said(["overview"]))["workspaces"][0]["apps"][0]["status"],
+                         "Will be recognised the first time Hiru Tsatsi starts it")
+        self.assertEqual([w["address"] for w in json.loads(self.said(["windows-for", "1", "0"]))], ["0xg", "0xt"])
+        self.said(["choose-window", "1", "0", "0xg"])
+        self.assertEqual(json.loads(self.said(["overview"]))["workspaces"][0]["apps"][0]["status"],
+                         "✓ Issue Boards, open on workspace 4 (moved to 1 when you start)")
+        self.said(["forget-window", "1", "0"])
+        self.assertFalse(json.loads(self.said(["overview"]))["workspaces"][0]["apps"][0]["knowsWindow"])
