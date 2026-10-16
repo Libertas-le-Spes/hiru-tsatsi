@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "kayu.hiru-tsatsi",
-  "name": "Omastart",
+  "name": "Hiru Tsatsi",
   "version": "1.0.0",
-  "author": "Diêgo Vieira",
+  "author": "Diêgo Vieira, Kabelo Mosiane",
   "license": "MIT",
   "description": "Configurable per-workspace app launcher, run by Hiru Tsatsi",
   "kinds": ["bar-widget"],
@@ -11,7 +11,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Omastart",
+    "displayName": "Hiru Tsatsi",
     "description": "Start your work apps on their workspaces and edit them, through Hiru Tsatsi",
     "category": "Productivity",
     "allowMultiple": false
