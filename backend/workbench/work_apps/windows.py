@@ -52,13 +52,21 @@ def _clues(name: str, command: str) -> list[str]:
     return list(dict.fromkeys(telltale_words(command) + _words(name)))
 
 
-def guess_window(name: str, command: str, windows: list[Window]) -> Window | None:
+def _ranked(name: str, command: str, windows: list[Window]) -> list[tuple[int, Window]]:
     words = _clues(name, command)
-    ranked = sorted(((_strongest(w, words), w) for w in windows), key=lambda pair: pair[0], reverse=True)
+    return sorted(((_strongest(w, words), w) for w in windows), key=lambda pair: pair[0], reverse=True)
+
+
+def guess_window(name: str, command: str, windows: list[Window]) -> Window | None:
+    ranked = _ranked(name, command, windows)
     if not ranked or ranked[0][0] == 0:
         return None
     tied = len(ranked) > 1 and ranked[1][0] == ranked[0][0]
     return None if tied else ranked[0][1]
+
+
+def likeliest_first(name: str, command: str, windows: list[Window]) -> list[Window]:
+    return [window for _, window in _ranked(name, command, windows)]
 
 
 def _title_start(title: str) -> str:
