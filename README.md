@@ -15,8 +15,8 @@ omarchy plugin add https://github.com/diegovrocha/omarchy-omastart.git --enable
 ## Usage
 
 Click the lightning bolt icon in the bar (⚡ filled once you have apps
-configured, outline while empty) to open the panel any time. It also opens
-itself automatically once per shell session, right after Omarchy starts.
+configured, outline while empty) to open the panel any time. At login,
+Workbench asks with a notification whether to start your work apps.
 
 - **Start work apps** — launches every configured app that isn't already
   open, all at once, and moves each window to its workspace as it appears.
@@ -49,8 +49,8 @@ open the app. A few examples:
 
 ## Dependencies
 
-None beyond Omarchy/Hyprland itself. Launching uses `hyprctl dispatch`
-(built into Hyprland) — no extra packages to install. Whatever you put in
+Workbench, installed with `./install.sh` (Python 3.10 or newer, nothing
+else). Whatever you put in
 a workspace's **Command** field needs to already be installed, same as
 running it in a terminal.
 

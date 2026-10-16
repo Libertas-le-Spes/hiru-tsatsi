@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "Diêgo Vieira",
   "license": "MIT",
-  "description": "Configurable per-workspace app launcher with a startup prompt",
+  "description": "Configurable per-workspace app launcher, run by Workbench",
   "kinds": ["bar-widget"],
   "entryPoints": {
     "barWidget": "Panel.qml"
