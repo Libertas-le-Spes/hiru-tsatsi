@@ -18,14 +18,21 @@ Click the lightning bolt icon in the bar (⚡ filled once you have apps
 configured, outline while empty) to open the panel any time. It also opens
 itself automatically once per shell session, right after Omarchy starts.
 
-- **Start work apps** — launches every configured app into its workspace.
+- **Start work apps** — launches every configured app that isn't already
+  open, all at once, and moves each window to its workspace as it appears.
+  Apps that are already open are moved instead of opened a second time.
 - **Add an app** — inside a workspace block, fill in a **Name** (just a
-  label) and a **Command** (a real shell command) and press **+**.
+  label) and a **Command** (a real shell command) and press **+**. The
+  **Window** list is filled in from the open window that best matches the
+  command; pick a different one from the list if the guess is wrong. If the
+  app isn't open yet, leave it empty: the window is learned the first time
+  the app is started.
 
   ![Adding an app to a workspace](docs/add-app.png)
 
 - **Remove an app or workspace** — the ✕ next to each row.
-- **Add a workspace** — the field and button at the bottom of the panel.
+- **Add a workspace** — choose its number and name at the bottom of the
+  panel.
 
 State is saved to `~/.local/state/omarchy/settings/omastart.json` and
 survives plugin updates.
@@ -50,29 +57,16 @@ None beyond Omarchy/Hyprland itself. Launching uses `hyprctl dispatch`
 a workspace's **Command** field needs to already be installed, same as
 running it in a terminal.
 
-## Known limitation: single-instance apps
+## How windows are matched
 
-Hyprland's `[workspace N silent]` exec tag only attaches to the process
-`hyprctl dispatch exec` actually spawns. For an app that reuses an already
-running instance instead of starting a new one — a browser opening a
-`--app=` webapp window in an already-open Chromium, VS Code or DBeaver
-handing the request to their existing instance over IPC, an Electron app
-that stayed alive in the tray after its window was closed — the real
-window is created by that pre-existing process, not the one Hyprland just
-tagged, so the window lands on whatever workspace you're currently on
-instead of the one you configured.
-
-Omastart can't fix this from inside the plugin: the exec tag is a
-Hyprland mechanism, and there's no signal telling the launcher an
-invocation was silently handed off to an existing instance. If you hit
-this for one of your apps, pin it with a persistent window rule keyed on
-window class instead, e.g. in `~/.config/hypr/hyprland.lua`:
-
-```lua
-o.window("code", { workspace = "3 silent" })
-```
-
-Find the class with `hyprctl clients` while the app is open.
+Hyprland's `[workspace N silent]` exec tag only reaches the process
+`hyprctl dispatch exec` spawns. An app that hands the request to a copy
+already running — a `--app=` webapp in an open Chromium, a second Rider
+project, Steam sitting in the tray — opens its window wherever you are.
+So each app remembers its window: the start of its class, or of its title
+where several windows share a class (two Rider projects, for example).
+After launching, Omastart watches for a minute and moves each matching
+window to its workspace.
 
 ## Language
 
