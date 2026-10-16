@@ -117,6 +117,7 @@ function workspaceCard(space) {
 }
 
 function render() {
+  document.getElementById("window-titles").checked = state.windowTitles;
   workspacesBox.replaceChildren(...state.workspaces.map(workspaceCard));
   document.getElementById("new-number").value = state.nextNumber;
 }
@@ -126,6 +127,10 @@ document.getElementById("new-workspace").addEventListener("submit", (event) => {
   const label = document.getElementById("new-label");
   change("/api/workspace/add", { number: Number(document.getElementById("new-number").value), label: label.value })
     .then((changed) => { if (changed) label.value = ""; });
+});
+
+document.getElementById("window-titles").addEventListener("change", (event) => {
+  change("/api/window-titles", { on: event.currentTarget.checked });
 });
 
 document.getElementById("start").addEventListener("click", async (event) => {

@@ -6,9 +6,10 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from tests.fakes import FakeDesktop, FakeNames, FakeNotifier, FakeSetUp, window
+from tests.fakes import FakeSettings, FakeDesktop, FakeNames, FakeNotifier, FakeSetUp, window
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.entrypoints.web import server
+from hiru_tsatsi.use_cases.window_titles import WindowTitles
 from hiru_tsatsi.wiring import open_app
 from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
@@ -23,7 +24,7 @@ class ThePageServer(unittest.TestCase):
         AppListFile(self.list_file).save(
             AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chrome-chat"),)),)))
         self.desktop = FakeDesktop([window("c", "chrome-chat-Default", "Chat", 1), window("t", "foot", "~", 4)])
-        app = open_app(self.desktop, self.list_file, [], FakeNotifier(), FakeNames(), FakeSetUp())
+        app = open_app(self.desktop, self.list_file, [], FakeNotifier(), FakeNames(), FakeSetUp(), WindowTitles(FakeSettings(), lambda: True))
         self.page = server.PageServer(app, folder / "page", port=0)
         self.assertTrue(self.page.bind())
         threading.Thread(target=self.page.server.serve_forever, daemon=True).start()
@@ -74,6 +75,12 @@ class ThePageServer(unittest.TestCase):
         self.assertEqual([w["address"] for w in json.loads(body)["windows"]], ["c", "t"])
         status, body = self.call("/api/start", {})
         self.assertEqual((status, json.loads(body)["summary"]), (200, "Started 0, 1 already open"))
+
+    def test_window_titles_are_shown_and_switched_from_the_page(self):
+        self.assertTrue(json.loads(self.call("/api/list")[1])["windowTitles"])
+        status, body = self.call("/api/window-titles", {"on": False})
+        self.assertEqual((status, json.loads(body)["windowTitles"]), (200, False))
+        self.assertEqual(self.call("/api/window-titles", {"on": "no"})[0], 400)
 
     def test_a_second_edit_opens_the_page_already_running(self):
         opened = []

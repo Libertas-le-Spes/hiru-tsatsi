@@ -26,6 +26,10 @@ def window_names_folder() -> Path:
     return _home("XDG_STATE_HOME", ".local/state") / "window-names"
 
 
+def settings_file() -> Path:
+    return config_home() / "hiru-tsatsi" / "settings.json"
+
+
 def workbench_list_file() -> Path:
     return config_home() / "workbench" / "apps.json"
 

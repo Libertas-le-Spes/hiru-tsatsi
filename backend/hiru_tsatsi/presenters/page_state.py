@@ -5,8 +5,9 @@ from hiru_tsatsi.use_cases.starting import Outcome
 from hiru_tsatsi.work_apps.windows import Window
 
 
-def page_state(workspaces: list[WorkspaceView]) -> dict:
+def page_state(workspaces: list[WorkspaceView], window_titles: bool) -> dict:
     return {
+        "windowTitles": window_titles,
         "nextNumber": max((space.number for space in workspaces), default=0) + 1,
         "workspaces": [{
             "number": space.number,
