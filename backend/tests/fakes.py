@@ -11,8 +11,6 @@ def app_list(*spaces: tuple[int, list[App]]) -> AppList:
 
 
 class FakeDesktop:
-    sees_windows = True
-
     def __init__(self, open_now: list[Window], appearing: dict[str, list[Window]] | None = None):
         self.open = list(open_now)
         self.appearing = appearing or {}
@@ -28,10 +26,6 @@ class FakeDesktop:
 
     def move(self, window: Window, workspace: int) -> None:
         self.moves.append((window.address, workspace))
-
-
-class BlindDesktop(FakeDesktop):
-    sees_windows = False
 
 
 class FakeStore:

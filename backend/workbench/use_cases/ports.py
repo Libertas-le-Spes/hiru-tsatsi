@@ -4,9 +4,13 @@ from workbench.work_apps.app_list import AppList
 from workbench.work_apps.windows import Window
 
 
-class Desktop(Protocol):
-    sees_windows: bool
+class DesktopNotSupported(Exception):
+    def __init__(self, desktop: str):
+        super().__init__(desktop)
+        self.desktop = desktop
 
+
+class Desktop(Protocol):
     def windows(self) -> list[Window]: ...
 
     def launch(self, command: str, workspace: int) -> None: ...
