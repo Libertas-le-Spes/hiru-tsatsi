@@ -20,44 +20,15 @@ Panel {
   readonly property string workbenchCommand: Qt.resolvedUrl("backend/bin/workbench").toString().replace("file://", "")
   readonly property bool starting: workbenchStart.running
   property var config: Model.defaultConfig()
-  property string newWorkspaceLabel: ""
-  property int newWorkspaceId: Model.nextWorkspaceId(root.config)
-  readonly property bool newWorkspaceIdTaken: Model.hasWorkspace(root.config, root.newWorkspaceId)
-
-  function saveConfig() {
-    configFile.setText(Model.serializeConfig(root.config))
-  }
 
   function launchAll() {
     if (!workbenchStart.running) workbenchStart.running = true
     root.close()
   }
 
-  function addWorkspace() {
-    var label = root.newWorkspaceLabel.trim()
-    if (label.length === 0 || root.newWorkspaceIdTaken) return false
-    root.config = Model.addWorkspace(root.config, root.newWorkspaceId, label)
-    root.newWorkspaceLabel = ""
-    root.newWorkspaceId = Model.nextWorkspaceId(root.config)
-    root.saveConfig()
-    return true
-  }
-
-  function removeWorkspace(workspaceId) {
-    root.config = Model.removeWorkspace(root.config, workspaceId)
-    root.saveConfig()
-  }
-
-  function addApp(workspaceId, name, cmd) {
-    if (name.trim().length === 0 || cmd.trim().length === 0) return false
-    root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim())
-    root.saveConfig()
-    return true
-  }
-
-  function removeApp(workspaceId, appIndex) {
-    root.config = Model.removeApp(root.config, workspaceId, appIndex)
-    root.saveConfig()
+  function editApps() {
+    Quickshell.execDetached([root.workbenchCommand, "edit"])
+    root.close()
   }
 
   Process {
@@ -65,12 +36,10 @@ Panel {
     command: [root.workbenchCommand, "start"]
   }
 
-
   FileView {
     id: configFile
     path: root.configPath
     watchChanges: true
-    atomicWrites: true
     printErrors: false
     onLoaded: root.config = Model.parseConfig(text())
     onLoadFailed: root.config = Model.defaultConfig()
@@ -103,8 +72,8 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(400))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(560))
+    contentWidth: panel.fittedContentWidth(Style.space(360))
+    contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(480))
 
     PanelKeyCatcher {
       id: keyCatcher
@@ -114,204 +83,62 @@ Panel {
       Column {
         id: column
         anchors.fill: parent
-        spacing: Style.space(14)
+        spacing: Style.space(12)
 
-        Column {
+        Text {
+          text: root.s.title
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.title
+          font.bold: true
+        }
+
+        Text {
+          text: root.hasAnyApps ? root.s.subtitle : root.s.empty
+          color: Qt.darker(root.bar.foreground, 1.5)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          wrapMode: Text.WordWrap
           width: parent.width
+        }
+
+        Row {
           spacing: Style.space(8)
-
-          Text {
-            text: root.s.title
-            color: root.bar.foreground
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.title
-            font.bold: true
-          }
-
-          Text {
-            text: root.s.subtitle
-            color: Qt.darker(root.bar.foreground, 1.5)
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.bodySmall
-            wrapMode: Text.WordWrap
-            width: parent.width
-          }
 
           Button {
             text: root.starting ? root.s.startingButton : root.s.startButton
-            enabled: !root.starting
+            enabled: !root.starting && root.hasAnyApps
             foreground: root.bar.foreground
             bordered: true
             onClicked: root.launchAll()
           }
-        }
-
-        PanelSeparator {
-          foreground: root.bar.foreground
-        }
-
-        PanelSectionHeader {
-          text: root.s.workspacesHeader
-          foreground: root.bar.foreground
-          fontFamily: root.bar.fontFamily
-        }
-
-        ListView {
-          id: wsList
-          width: parent.width
-          height: Math.min(contentHeight, Style.space(320))
-          spacing: Style.space(14)
-          clip: true
-          interactive: contentHeight > height
-          model: root.config.workspaces
-
-          delegate: Column {
-            id: wsBlock
-            required property var modelData
-            width: wsList.width
-            spacing: Style.space(6)
-
-            function addApp() {
-              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text)) return
-              appNameField.text = ""
-              appCmdField.text = ""
-            }
-
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.s.workspaceLabel + " " + wsBlock.modelData.id + " — " + wsBlock.modelData.label
-                color: root.bar.foreground
-                font.family: root.bar.fontFamily
-                font.pixelSize: Style.font.body
-                font.bold: true
-              }
-
-              PanelActionButton {
-                anchors.verticalCenter: parent.verticalCenter
-                iconText: "✕"
-                tooltipText: root.s.removeWorkspaceTip
-                foreground: root.bar.foreground
-                hoverColor: root.bar.foreground
-                fontFamily: root.bar.fontFamily
-                onClicked: root.removeWorkspace(wsBlock.modelData.id)
-              }
-            }
-
-            Repeater {
-              model: wsBlock.modelData.apps
-              delegate: Row {
-                required property var modelData
-                required property int index
-                spacing: Style.space(8)
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: "• " + modelData.name + "  (" + modelData.cmd + ")"
-                  color: Qt.darker(root.bar.foreground, 1.3)
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.bodySmall
-                  elide: Text.ElideRight
-                  width: Style.space(280)
-                }
-
-                PanelActionButton {
-                  anchors.verticalCenter: parent.verticalCenter
-                  iconText: "✕"
-                  tooltipText: root.s.removeAppTip
-                  foreground: root.bar.foreground
-                  hoverColor: root.bar.foreground
-                  fontFamily: root.bar.fontFamily
-                  size: Style.space(16)
-                  onClicked: root.removeApp(wsBlock.modelData.id, index)
-                }
-              }
-            }
-
-            Row {
-              width: parent.width
-              spacing: Style.space(6)
-
-              TextField {
-                id: appNameField
-                width: Style.space(100)
-                placeholderText: root.s.namePlaceholder
-                foreground: root.bar.foreground
-                verticalPadding: Style.space(4)
-              }
-
-              TextField {
-                id: appCmdField
-                width: Style.space(160)
-                placeholderText: root.s.commandPlaceholder
-                foreground: root.bar.foreground
-                verticalPadding: Style.space(4)
-                onAccepted: wsBlock.addApp()
-              }
-
-              PanelActionButton {
-                iconText: "+"
-                tooltipText: root.s.addAppTip
-                foreground: root.bar.foreground
-                hoverColor: root.bar.foreground
-                fontFamily: root.bar.fontFamily
-                onClicked: wsBlock.addApp()
-              }
-            }
-          }
-        }
-
-        PanelSeparator {
-          foreground: root.bar.foreground
-        }
-
-        Row {
-          width: parent.width
-          spacing: Style.space(6)
-
-          NumberField {
-            anchors.verticalCenter: parent.verticalCenter
-            value: root.newWorkspaceId
-            from: 1
-            to: 99
-            fieldWidth: Style.space(70)
-            foreground: root.bar.foreground
-            fontFamily: root.bar.fontFamily
-            onModified: function(value) { root.newWorkspaceId = value }
-          }
-
-          TextField {
-            id: wsLabelField
-            width: Style.space(170)
-            placeholderText: root.s.newWorkspacePlaceholder
-            foreground: root.bar.foreground
-            onAccepted: {
-              root.newWorkspaceLabel = text
-              if (root.addWorkspace()) text = ""
-            }
-          }
 
           Button {
-            text: root.s.addWorkspaceButton
-            enabled: !root.newWorkspaceIdTaken
+            text: root.s.editButton
             foreground: root.bar.foreground
             bordered: true
-            onClicked: {
-              root.newWorkspaceLabel = wsLabelField.text
-              if (root.addWorkspace()) wsLabelField.text = ""
-            }
+            onClicked: root.editApps()
           }
         }
 
-        Text {
-          visible: root.newWorkspaceIdTaken
-          text: root.s.workspaceTaken.arg(root.newWorkspaceId)
-          color: Qt.darker(root.bar.foreground, 1.3)
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.bodySmall
+        PanelSeparator {
+          visible: root.hasAnyApps
+          foreground: root.bar.foreground
+        }
+
+        Repeater {
+          model: root.config.workspaces
+
+          delegate: Text {
+            required property var modelData
+            width: column.width
+            text: root.s.workspaceLabel + " " + modelData.id + " — " + modelData.label + ": "
+                  + modelData.apps.map(function(app) { return app.name }).join(", ")
+            color: Qt.darker(root.bar.foreground, 1.2)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            elide: Text.ElideRight
+          }
         }
       }
     }
