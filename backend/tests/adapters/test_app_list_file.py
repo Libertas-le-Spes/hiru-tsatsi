@@ -19,9 +19,12 @@ class KeepingTheAppList(unittest.TestCase):
     def test_nothing_saved_anywhere_is_an_empty_list(self):
         self.assertEqual(self.file.load(), AppList())
 
-    def test_the_omastart_list_is_imported_when_nothing_is_saved(self):
+    def test_the_omastart_list_is_imported_once_and_kept(self):
         self.omastart.write_text(json.dumps(OMASTART))
-        self.assertEqual(self.file.load(), AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/RiderProjects/harbour"),)),)))
+        imported = AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/RiderProjects/harbour"),)),))
+        self.assertEqual(self.file.load(), imported)
+        self.omastart.write_text(json.dumps({"workspaces": []}))
+        self.assertEqual(self.file.load(), imported)
 
     def test_what_is_saved_comes_back_and_wins_over_omastart(self):
         self.omastart.write_text(json.dumps(OMASTART))
