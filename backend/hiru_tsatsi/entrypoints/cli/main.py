@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import webbrowser
 from dataclasses import dataclass, field
@@ -6,6 +7,7 @@ from typing import Callable
 
 from hiru_tsatsi.entrypoints.web import server
 from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary, window_titles_text
+from hiru_tsatsi.presenters.page_state import page_state, window_choices
 from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
 from hiru_tsatsi.use_cases.starting import Outcome
 from hiru_tsatsi.wiring import App, open_app
@@ -66,6 +68,20 @@ def window_titles(app: App, chosen: argparse.Namespace) -> int:
     return 0
 
 
+def overview(app: App, chosen: argparse.Namespace) -> int:
+    print(json.dumps(page_state(app.overview.run(), app.window_titles.wanted())))
+    return 0
+
+
+def windows_for(app: App, chosen: argparse.Namespace) -> int:
+    try:
+        print(json.dumps(window_choices(app.overview.candidates(chosen.workspace, chosen.index))))
+    except Refused as refused:
+        print(refused, file=sys.stderr)
+        return 1
+    return 0
+
+
 def editing(change: Callable[[App, argparse.Namespace], object]) -> Callable[[App, argparse.Namespace], int]:
     def run(app: App, chosen: argparse.Namespace) -> int:
         try:
@@ -96,6 +112,14 @@ COMMANDS = {
                           "remove an app from its workspace", [WORKSPACE, INDEX]),
     "window-titles": Command(window_titles, "say whether windows are named for title bars, or turn that on or off",
                              [Argument("state", str, "on or off; leave out to see which it is", ("on", "off"), True)]),
+    "choose-window": Command(editing(lambda app, c: app.edit.choose_window(c.workspace, c.index, c.address)),
+                             "match an app to one of the open windows",
+                             [WORKSPACE, INDEX, Argument("address", str, "the window's address, from windows-for")]),
+    "forget-window": Command(editing(lambda app, c: app.edit.forget_window(c.workspace, c.index)),
+                             "forget an app's window, so it is learned again next time it starts", [WORKSPACE, INDEX]),
+    "overview": Command(overview, "print each workspace, its apps and where each app's window is, as JSON for a bar"),
+    "windows-for": Command(windows_for, "print the open windows an app could be matched to, likeliest first, as JSON",
+                           [WORKSPACE, INDEX]),
     "set-up": Command(set_up, "add a shortcut that starts your work apps, and the question at login"),
 }
 

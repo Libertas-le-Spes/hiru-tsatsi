@@ -16,7 +16,6 @@ Panel {
   // language the user happens to be typing in - those can differ.
   readonly property var s: Strings.forLocale(Qt.locale().name)
 
-  readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/hiru-tsatsi/apps.json"
   readonly property string hiruTsatsiCommand: Qt.resolvedUrl("backend/bin/hiru-tsatsi").toString().replace("file://", "")
   readonly property bool starting: hiruTsatsiStart.running
   property var config: Model.defaultConfig()
@@ -26,9 +25,35 @@ Panel {
 
   property var pendingEdits: []
   property string editProblem: ""
+  property string choosingFor: ""
+  property var windowChoices: []
 
   onConfigChanged: if (root.newWorkspaceIdTaken) root.newWorkspaceId = Model.nextWorkspaceId(root.config)
-  onOpenedChanged: if (root.opened) configFile.reload()
+  onOpenedChanged: if (root.opened) root.refresh()
+  Component.onCompleted: root.refresh()
+
+  function refresh() {
+    if (!overviewProc.running) overviewProc.running = true
+  }
+
+  function chooseWindowFor(workspaceId, appIndex) {
+    var key = workspaceId + "/" + appIndex
+    root.windowChoices = []
+    root.choosingFor = root.choosingFor === key ? "" : key
+    if (root.choosingFor === "") return
+    windowsProc.command = [root.hiruTsatsiCommand, "windows-for", String(workspaceId), String(appIndex)]
+    windowsProc.running = true
+  }
+
+  function pickWindow(workspaceId, appIndex, address) {
+    root.choosingFor = ""
+    root.change(["choose-window", String(workspaceId), String(appIndex), address])
+  }
+
+  function forgetWindow(workspaceId, appIndex) {
+    root.choosingFor = ""
+    root.change(["forget-window", String(workspaceId), String(appIndex)])
+  }
 
   function launchAll() {
     if (!hiruTsatsiStart.running) hiruTsatsiStart.running = true
@@ -77,7 +102,7 @@ Panel {
       onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
     }
     onExited: {
-      configFile.reload()
+      root.refresh()
       root.runNextEdit()
     }
   }
@@ -85,16 +110,30 @@ Panel {
   Process {
     id: hiruTsatsiStart
     command: [root.hiruTsatsiCommand, "start"]
+    onExited: root.refresh()
   }
 
+  Process {
+    id: overviewProc
+    command: [root.hiruTsatsiCommand, "overview"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.config = Model.parseConfig(text)
+    }
+  }
 
-  FileView {
-    id: configFile
-    path: root.configPath
-    watchChanges: true
-    printErrors: false
-    onLoaded: root.config = Model.parseConfig(text())
-    onLoadFailed: root.config = Model.defaultConfig()
+  Process {
+    id: windowsProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          root.windowChoices = JSON.parse(text)
+        } catch (e) {
+          root.windowChoices = []
+        }
+      }
+    }
   }
 
   visible: true
@@ -225,31 +264,87 @@ Panel {
 
             Repeater {
               model: wsBlock.modelData.apps
-              delegate: Row {
+              delegate: Column {
+                id: appBlock
                 required property var modelData
                 required property int index
-                spacing: Style.space(8)
+                readonly property bool choosing: root.choosingFor === wsBlock.modelData.id + "/" + appBlock.index
+                spacing: Style.space(2)
 
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: "• " + modelData.name + "  (" + modelData.cmd + ")"
-                  color: Qt.darker(root.bar.foreground, 1.3)
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.bodySmall
-                  elide: Text.ElideRight
-                  width: Style.space(280)
+                Row {
+                  spacing: Style.space(8)
+
+                  Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "• " + appBlock.modelData.name + "  (" + appBlock.modelData.cmd + ")"
+                    color: Qt.darker(root.bar.foreground, 1.3)
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    elide: Text.ElideRight
+                    width: Style.space(280)
+                  }
+
+                  PanelActionButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    iconText: "✕"
+                    tooltipText: root.s.removeAppTip
+                    foreground: root.bar.foreground
+                    hoverColor: root.bar.foreground
+                    fontFamily: root.bar.fontFamily
+                    size: Style.space(16)
+                    enabled: !hiruTsatsiEdit.running
+                    onClicked: root.removeApp(wsBlock.modelData.id, appBlock.index)
+                  }
                 }
 
-                PanelActionButton {
-                  anchors.verticalCenter: parent.verticalCenter
-                  iconText: "✕"
-                  tooltipText: root.s.removeAppTip
+                Row {
+                  spacing: Style.space(8)
+                  leftPadding: Style.space(12)
+
+                  Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: appBlock.modelData.status
+                    color: Qt.darker(root.bar.foreground, 1.6)
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.caption
+                    elide: Text.ElideRight
+                    width: Style.space(250)
+                  }
+
+                  Button {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: appBlock.choosing ? root.s.cancelButton : root.s.changeButton
+                    foreground: root.bar.foreground
+                    fontSize: Style.font.caption
+                    verticalPadding: Style.space(1)
+                    onClicked: root.chooseWindowFor(wsBlock.modelData.id, appBlock.index)
+                  }
+                }
+
+                Repeater {
+                  model: appBlock.choosing ? root.windowChoices : []
+
+                  delegate: Button {
+                    required property var modelData
+                    leftAlign: true
+                    width: Style.space(320)
+                    text: "→ " + modelData.title + "  (" + root.s.workspaceLabel + " " + modelData.workspace + ")"
+                    foreground: root.bar.foreground
+                    fontSize: Style.font.caption
+                    verticalPadding: Style.space(1)
+                    onClicked: root.pickWindow(wsBlock.modelData.id, appBlock.index, modelData.address)
+                  }
+                }
+
+                Button {
+                  visible: appBlock.choosing
+                  leftAlign: true
+                  width: Style.space(320)
+                  text: root.s.forgetButton
                   foreground: root.bar.foreground
-                  hoverColor: root.bar.foreground
-                  fontFamily: root.bar.fontFamily
-                  size: Style.space(16)
-                  enabled: !hiruTsatsiEdit.running
-                  onClicked: root.removeApp(wsBlock.modelData.id, index)
+                  fontSize: Style.font.caption
+                  verticalPadding: Style.space(1)
+                  onClicked: root.forgetWindow(wsBlock.modelData.id, appBlock.index)
                 }
               }
             }

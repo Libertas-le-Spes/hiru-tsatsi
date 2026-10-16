@@ -17,7 +17,10 @@ var TABLE = {
     addAppTip: "Adicionar app",
     newWorkspacePlaceholder: "Nome do novo workspace",
     addWorkspaceButton: "Adicionar workspace",
-    workspaceTaken: "O workspace %1 já existe"
+    workspaceTaken: "O workspace %1 já existe",
+    changeButton: "Mudar",
+    cancelButton: "Cancelar",
+    forgetButton: "Esquecer e reconhecer na próxima vez"
   },
   "en_US": {
     title: "Start your work day?",
@@ -33,7 +36,10 @@ var TABLE = {
     addAppTip: "Add app",
     newWorkspacePlaceholder: "New workspace name",
     addWorkspaceButton: "Add workspace",
-    workspaceTaken: "Workspace %1 already exists"
+    workspaceTaken: "Workspace %1 already exists",
+    changeButton: "Change",
+    cancelButton: "Cancel",
+    forgetButton: "Forget, and learn it next time it starts"
   }
 }
 
