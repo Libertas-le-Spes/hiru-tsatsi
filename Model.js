@@ -57,11 +57,22 @@ function removeWorkspace(config, workspaceId) {
   return next
 }
 
-function addApp(config, workspaceId, name, cmd) {
+function addApp(config, workspaceId, name, cmd, window) {
   var next = cloneConfig(config)
   for (var i = 0; i < next.workspaces.length; i++) {
     if (next.workspaces[i].id === workspaceId) {
-      next.workspaces[i].apps.push({ name: name, cmd: cmd })
+      next.workspaces[i].apps.push({ name: name, cmd: cmd, window: window })
+      break
+    }
+  }
+  return next
+}
+
+function setAppWindow(config, workspaceId, appIndex, window) {
+  var next = cloneConfig(config)
+  for (var i = 0; i < next.workspaces.length; i++) {
+    if (next.workspaces[i].id === workspaceId) {
+      next.workspaces[i].apps[appIndex].window = window
       break
     }
   }
@@ -89,6 +100,10 @@ function dispatchArg(cmd, workspaceId) {
   return 'hl.dsp.exec_cmd("' + luaQuote(cmd) + '", { workspace = "' + workspaceId + ' silent" })'
 }
 
+function moveArg(address, workspaceId) {
+  return 'hl.dsp.window.move({ workspace = "' + workspaceId + '", follow = false, window = "address:' + luaQuote(address) + '" })'
+}
+
 // Flat list of {workspaceId, cmd} launch jobs for every app in every
 // workspace, in workspace order - what the "start work apps" action fires.
 function hasAnyApps(config) {
@@ -103,7 +118,7 @@ function launchPlan(config) {
   for (var i = 0; i < config.workspaces.length; i++) {
     var ws = config.workspaces[i]
     for (var j = 0; j < ws.apps.length; j++) {
-      plan.push({ workspaceId: ws.id, cmd: ws.apps[j].cmd })
+      plan.push({ workspaceId: ws.id, cmd: ws.apps[j].cmd, window: ws.apps[j].window || "" })
     }
   }
   return plan
@@ -119,10 +134,12 @@ if (typeof module !== "undefined") {
     addWorkspace: addWorkspace,
     removeWorkspace: removeWorkspace,
     addApp: addApp,
+    setAppWindow: setAppWindow,
     removeApp: removeApp,
     hasAnyApps: hasAnyApps,
     luaQuote: luaQuote,
     dispatchArg: dispatchArg,
+    moveArg: moveArg,
     launchPlan: launchPlan
   }
 }

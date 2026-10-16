@@ -45,10 +45,7 @@ Panel {
   }
 
   function launchAll() {
-    var plan = Model.launchPlan(root.config)
-    for (var i = 0; i < plan.length; i++) {
-      Quickshell.execDetached(["hyprctl", "dispatch", Model.dispatchArg(plan[i].cmd, plan[i].workspaceId)])
-    }
+    launcher.start(Model.launchPlan(root.config))
     root.close()
   }
 
@@ -65,15 +62,25 @@ Panel {
     root.saveConfig()
   }
 
-  function addApp(workspaceId, name, cmd) {
-    if (name.trim().length === 0 || cmd.trim().length === 0) return
-    root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim())
+  function addApp(workspaceId, name, cmd, window) {
+    if (name.trim().length === 0 || cmd.trim().length === 0 || window.trim().length === 0) return false
+    root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim(), window.trim())
+    root.saveConfig()
+    return true
+  }
+
+  function setAppWindow(workspaceId, appIndex, window) {
+    root.config = Model.setAppWindow(root.config, workspaceId, appIndex, window.trim())
     root.saveConfig()
   }
 
   function removeApp(workspaceId, appIndex) {
     root.config = Model.removeApp(root.config, workspaceId, appIndex)
     root.saveConfig()
+  }
+
+  Launcher {
+    id: launcher
   }
 
   FileView {
@@ -214,6 +221,13 @@ Panel {
             width: wsList.width
             spacing: Style.space(6)
 
+            function addApp() {
+              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, appWindowField.text)) return
+              appNameField.text = ""
+              appCmdField.text = ""
+              appWindowField.text = ""
+            }
+
             Row {
               width: parent.width
               spacing: Style.space(8)
@@ -252,7 +266,17 @@ Panel {
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.bodySmall
                   elide: Text.ElideRight
-                  width: Style.space(280)
+                  width: Style.space(170)
+                }
+
+                TextField {
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: Style.space(110)
+                  text: modelData.window || ""
+                  placeholderText: root.s.windowPlaceholder
+                  foreground: root.bar.foreground
+                  verticalPadding: Style.space(2)
+                  onEditingFinished: if (text.trim() !== (modelData.window || "")) root.setAppWindow(wsBlock.modelData.id, index, text)
                 }
 
                 PanelActionButton {
@@ -274,7 +298,7 @@ Panel {
 
               TextField {
                 id: appNameField
-                width: Style.space(100)
+                width: Style.space(80)
                 placeholderText: root.s.namePlaceholder
                 foreground: root.bar.foreground
                 verticalPadding: Style.space(4)
@@ -282,15 +306,20 @@ Panel {
 
               TextField {
                 id: appCmdField
-                width: Style.space(160)
+                width: Style.space(110)
                 placeholderText: root.s.commandPlaceholder
                 foreground: root.bar.foreground
                 verticalPadding: Style.space(4)
-                onAccepted: {
-                  root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text)
-                  appNameField.text = ""
-                  appCmdField.text = ""
-                }
+                onAccepted: appWindowField.forceActiveFocus()
+              }
+
+              TextField {
+                id: appWindowField
+                width: Style.space(110)
+                placeholderText: root.s.windowPlaceholder
+                foreground: root.bar.foreground
+                verticalPadding: Style.space(4)
+                onAccepted: wsBlock.addApp()
               }
 
               PanelActionButton {
@@ -299,11 +328,7 @@ Panel {
                 foreground: root.bar.foreground
                 hoverColor: root.bar.foreground
                 fontFamily: root.bar.fontFamily
-                onClicked: {
-                  root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text)
-                  appNameField.text = ""
-                  appCmdField.text = ""
-                }
+                onClicked: wsBlock.addApp()
               }
             }
           }
