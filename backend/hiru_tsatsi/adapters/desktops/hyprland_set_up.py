@@ -3,9 +3,9 @@ import re
 from pathlib import Path
 from typing import Mapping
 
-from workbench.adapters.desktops.hyprland import Run, lua_string, run_hyprctl
-from workbench.use_cases.ports import SetUpFailed
-from workbench.work_apps.shortcut import Keys
+from hiru_tsatsi.adapters.desktops.hyprland import Run, lua_string, run_hyprctl
+from hiru_tsatsi.use_cases.ports import SetUpFailed
+from hiru_tsatsi.work_apps.shortcut import Keys
 
 MODIFIER_BITS = {"SHIFT": 1, "CTRL": 4, "ALT": 8, "SUPER": 64}
 BOUND_KEYS = re.compile(r'hl\.bind\("([^"]+)"')
@@ -18,7 +18,7 @@ def keys_from_bind(bind: dict) -> Keys:
 
 class HyprlandSetUp:
     def __init__(self, config_folder: Path, run: Run = run_hyprctl):
-        self.own_file = config_folder / "workbench.lua"
+        self.own_file = config_folder / "hiru-tsatsi.lua"
         self.main_file = config_folder / "hyprland.lua"
         self.run = run
 

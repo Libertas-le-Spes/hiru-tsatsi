@@ -2,7 +2,7 @@ import shutil
 import subprocess
 import time
 
-APP_NAME = "Workbench"
+APP_NAME = "Hiru Tsatsi"
 ANSWERS = {"default", "start"}
 WAIT_FOR_SERVICE_SECONDS = 60
 RETRY_SECONDS = 2

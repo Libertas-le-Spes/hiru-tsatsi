@@ -1,5 +1,5 @@
-from workbench.use_cases.ports import Notifier
-from workbench.use_cases.starting import Outcome, StartApps
+from hiru_tsatsi.use_cases.ports import Notifier
+from hiru_tsatsi.use_cases.starting import Outcome, StartApps
 
 QUESTION = "Start your work apps?"
 EXPLANATION = "Opens each of them on its own workspace. Click to start."

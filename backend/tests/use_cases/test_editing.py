@@ -1,10 +1,10 @@
 import unittest
 
 from tests.fakes import FakeDesktop, FakeStore, app_list, window
-from workbench.use_cases.editing import EditAppList
-from workbench.use_cases.overview import Overview
-from workbench.presenters.status_lines import status_line
-from workbench.work_apps.app_list import App
+from hiru_tsatsi.use_cases.editing import EditAppList
+from hiru_tsatsi.use_cases.overview import Overview
+from hiru_tsatsi.presenters.status_lines import status_line
+from hiru_tsatsi.work_apps.app_list import App
 
 GITLAB_COMMAND = 'omarchy-launch-webapp "https://gitlab.com/examplecorp/harbour/-/boards/1234567"'
 RIDER_MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
@@ -47,7 +47,7 @@ class TheOverview(unittest.TestCase):
         self.assertEqual(lines, ["✓ Issue Boards, open on workspace 1",
                                  "Recognised when it opens",
                                  "✓ harbour – x, open on workspace 4 (moved to 2 when you start)",
-                                 "Will be recognised the first time Workbench starts it"])
+                                 "Will be recognised the first time Hiru Tsatsi starts it"])
 
     def test_the_windows_to_choose_from_put_the_likeliest_first_and_leave_out_owned_ones(self):
         terminal = window("t", "foot", "~")

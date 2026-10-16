@@ -9,16 +9,16 @@ import "Strings.js" as Strings
 
 Panel {
   id: root
-  moduleName: "kayu.workbench"
-  ipcTarget: "kayu.workbench"
+  moduleName: "kayu.hiru-tsatsi"
+  ipcTarget: "kayu.hiru-tsatsi"
 
   // Follows the machine's configured language (Qt.locale()), not whatever
   // language the user happens to be typing in - those can differ.
   readonly property var s: Strings.forLocale(Qt.locale().name)
 
-  readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/workbench/apps.json"
-  readonly property string workbenchCommand: Qt.resolvedUrl("backend/bin/workbench").toString().replace("file://", "")
-  readonly property bool starting: workbenchStart.running
+  readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/hiru-tsatsi/apps.json"
+  readonly property string hiruTsatsiCommand: Qt.resolvedUrl("backend/bin/hiru-tsatsi").toString().replace("file://", "")
+  readonly property bool starting: hiruTsatsiStart.running
   property var config: Model.defaultConfig()
   property string newWorkspaceLabel: ""
   property int newWorkspaceId: Model.nextWorkspaceId(root.config)
@@ -31,7 +31,7 @@ Panel {
   onOpenedChanged: if (root.opened) configFile.reload()
 
   function launchAll() {
-    if (!workbenchStart.running) workbenchStart.running = true
+    if (!hiruTsatsiStart.running) hiruTsatsiStart.running = true
     root.close()
   }
 
@@ -41,11 +41,11 @@ Panel {
   }
 
   function runNextEdit() {
-    if (workbenchEdit.running || root.pendingEdits.length === 0) return
-    workbenchEdit.command = [root.workbenchCommand].concat(root.pendingEdits[0])
+    if (hiruTsatsiEdit.running || root.pendingEdits.length === 0) return
+    hiruTsatsiEdit.command = [root.hiruTsatsiCommand].concat(root.pendingEdits[0])
     root.pendingEdits = root.pendingEdits.slice(1)
     root.editProblem = ""
-    workbenchEdit.running = true
+    hiruTsatsiEdit.running = true
   }
 
   function addWorkspace() {
@@ -71,7 +71,7 @@ Panel {
   }
 
   Process {
-    id: workbenchEdit
+    id: hiruTsatsiEdit
     stderr: StdioCollector {
       waitForEnd: true
       onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
@@ -83,8 +83,8 @@ Panel {
   }
 
   Process {
-    id: workbenchStart
-    command: [root.workbenchCommand, "start"]
+    id: hiruTsatsiStart
+    command: [root.hiruTsatsiCommand, "start"]
   }
 
 
@@ -218,7 +218,7 @@ Panel {
                 foreground: root.bar.foreground
                 hoverColor: root.bar.foreground
                 fontFamily: root.bar.fontFamily
-                enabled: !workbenchEdit.running
+                enabled: !hiruTsatsiEdit.running
                 onClicked: root.removeWorkspace(wsBlock.modelData.id)
               }
             }
@@ -248,7 +248,7 @@ Panel {
                   hoverColor: root.bar.foreground
                   fontFamily: root.bar.fontFamily
                   size: Style.space(16)
-                  enabled: !workbenchEdit.running
+                  enabled: !hiruTsatsiEdit.running
                   onClicked: root.removeApp(wsBlock.modelData.id, index)
                 }
               }

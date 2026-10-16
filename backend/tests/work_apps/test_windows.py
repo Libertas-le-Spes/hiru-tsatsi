@@ -1,7 +1,7 @@
 import unittest
 
 from tests.fakes import window
-from workbench.work_apps.windows import belongs_to, guess_window, name_for
+from hiru_tsatsi.work_apps.windows import belongs_to, guess_window, name_for
 
 GITLAB = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_1234567-Default", "Issue Boards · Lantern - Tide · GitLab")
 CHAT = window("c", "chrome-chat.google.com__u_2_app_home-Default", "Chat")

@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from workbench.adapters.desktops.hyprland import Hyprland
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.work_apps.windows import Window
 
 CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}}]
 

@@ -4,7 +4,7 @@ let state = { workspaces: [], nextNumber: 1 };
 let openChoices = null;
 
 async function call(path, body) {
-  const options = { headers: { "X-Workbench-Token": token } };
+  const options = { headers: { "X-Hiru-Tsatsi-Token": token } };
   if (body !== undefined) {
     options.method = "POST";
     options.headers["Content-Type"] = "application/json";
@@ -59,7 +59,7 @@ function choicesFor(space, index) {
     const forget = element("button", {
       type: "button",
       onclick: () => { openChoices = null; change("/api/app/forget", { workspace: space.number, index }); },
-    }, [element("span", { textContent: "Forget, and learn it next time Workbench starts it" }), element("span")]);
+    }, [element("span", { textContent: "Forget, and learn it next time Hiru Tsatsi starts it" }), element("span")]);
     list.append(...windows.map((window) => element("li", {}, [pick(window)])), element("li", {}, [forget]));
   }).catch(showError);
   return list;

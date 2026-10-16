@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
-from workbench.use_cases.ports import AppListStore, Desktop, WindowNames
-from workbench.work_apps.app_list import AppList, Placement
-from workbench.work_apps.windows import Window, guess_window, name_for, window_named
+from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, WindowNames
+from hiru_tsatsi.work_apps.app_list import AppList, Placement
+from hiru_tsatsi.work_apps.windows import Window, guess_window, name_for, window_named
 
 WATCH_SECONDS = 60.0
 POLL_SECONDS = 0.5

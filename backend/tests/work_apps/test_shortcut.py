@@ -1,6 +1,6 @@
 import unittest
 
-from workbench.work_apps.shortcut import PREFERRED, Keys, first_free
+from hiru_tsatsi.work_apps.shortcut import PREFERRED, Keys, first_free
 
 
 class ChoosingAShortcut(unittest.TestCase):

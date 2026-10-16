@@ -1,4 +1,4 @@
-from workbench.use_cases.overview import AppView
+from hiru_tsatsi.use_cases.overview import AppView
 
 
 class OpenInPlace:
@@ -39,7 +39,7 @@ class NotYetKnown:
 
     @staticmethod
     def text(view: AppView) -> str:
-        return "Will be recognised the first time Workbench starts it"
+        return "Will be recognised the first time Hiru Tsatsi starts it"
 
 
 STATUS_LINES = [OpenInPlace, OpenElsewhere, KnownButClosed, NotYetKnown]

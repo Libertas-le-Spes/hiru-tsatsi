@@ -2,7 +2,7 @@ import ast
 import unittest
 from pathlib import Path
 
-PACKAGE = Path(__file__).parent.parent / "workbench"
+PACKAGE = Path(__file__).parent.parent / "hiru_tsatsi"
 
 MAY_IMPORT = {
     "work_apps": {"work_apps"},
@@ -34,10 +34,10 @@ class DependenciesPointInward(unittest.TestCase):
         breaches = []
         for path in sorted(PACKAGE.rglob("*.py")):
             module = ".".join(path.relative_to(PACKAGE.parent).with_suffix("").parts)
-            if module in ("workbench.__main__", "workbench.__init__"):
+            if module in ("hiru_tsatsi.__main__", "hiru_tsatsi.__init__"):
                 continue
             for line, imported in imported_names(path):
-                if imported.startswith("workbench.") and ring_of(imported) not in MAY_IMPORT[ring_of(module)]:
+                if imported.startswith("hiru_tsatsi.") and ring_of(imported) not in MAY_IMPORT[ring_of(module)]:
                     breaches.append(f"{path.relative_to(PACKAGE.parent)}:{line} imports {imported}")
         self.assertEqual(breaches, [])
 

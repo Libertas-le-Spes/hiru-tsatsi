@@ -1,6 +1,6 @@
 from typing import Callable
 
-from workbench.presenters.page_state import page_state, start_report, window_choices
+from hiru_tsatsi.presenters.page_state import page_state, start_report, window_choices
 
 Request = Callable[[dict], dict]
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from workbench.use_cases.ports import DesktopSetUp
-from workbench.work_apps.shortcut import PREFERRED, Keys, first_free
+from hiru_tsatsi.use_cases.ports import DesktopSetUp
+from hiru_tsatsi.work_apps.shortcut import PREFERRED, Keys, first_free
 
 
 @dataclass(frozen=True)
