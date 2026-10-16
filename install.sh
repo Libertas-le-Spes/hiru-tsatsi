@@ -4,6 +4,7 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
 command_path="$bin_dir/hiru-tsatsi"
+short_path="$bin_dir/hiru"
 
 say() {
     printf '%s\n' "$1"
@@ -22,10 +23,11 @@ require_python() {
 link_command() {
     mkdir -p "$bin_dir"
     ln -sfn "$here/backend/bin/hiru-tsatsi" "$command_path"
-    say "command:  $command_path"
+    ln -sfn "$here/backend/bin/hiru-tsatsi" "$short_path"
+    say "command:  $command_path, and $short_path for short"
     case ":$PATH:" in
         *":$bin_dir:"*) ;;
-        *) say "          $bin_dir is not on your PATH; add it to type 'hiru-tsatsi' anywhere" ;;
+        *) say "          $bin_dir is not on your PATH; add it to type 'hiru' anywhere" ;;
     esac
 }
 

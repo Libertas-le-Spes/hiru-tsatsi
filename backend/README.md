@@ -14,7 +14,7 @@ Only listing windows, moving them and launching differ between desktops, so each
 ./install.sh
 ```
 
-It links the `hiru-tsatsi` command into `~/.local/bin` and runs `hiru-tsatsi set-up`, which gives Hiru Tsatsi the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. `hiru-tsatsi start` starts them straight away.
+It links the `hiru-tsatsi` command, and `hiru` for short, into `~/.local/bin` and runs `hiru-tsatsi set-up`, which gives Hiru Tsatsi the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. `hiru-tsatsi start` starts them straight away.
 
 Every window Hiru Tsatsi gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars and other tools can say "Rider Main" rather than "jetbrains-rider".
 
