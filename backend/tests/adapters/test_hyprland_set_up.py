@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from workbench.adapters.desktops.hyprland_set_up import HyprlandSetUp
-from workbench.use_cases.ports import SetUpFailed
-from workbench.work_apps.shortcut import Keys
+from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
+from hiru_tsatsi.use_cases.ports import SetUpFailed
+from hiru_tsatsi.work_apps.shortcut import Keys
 
 BINDS = [{"modmask": 68, "key": "U", "submap": ""}, {"modmask": 64, "key": "return", "submap": ""},
          {"modmask": 72, "key": "U", "submap": "resize"}]
@@ -33,13 +33,13 @@ class SettingUpHyprland(unittest.TestCase):
 
     def test_writes_its_own_file_and_loads_it_once_from_the_main_config(self):
         keys = Keys.parse("SUPER + ALT + U")
-        self.set_up.install(keys, "/bin/workbench start", "/bin/workbench ask")
-        self.set_up.install(keys, "/bin/workbench start", "/bin/workbench ask")
-        own = (self.folder / "workbench.lua").read_text()
-        self.assertIn('hl.bind("SUPER + ALT + U", hl.dsp.exec_cmd("/bin/workbench start"), { description = "Start work apps" })', own)
-        self.assertIn('hl.on("hyprland.start", function()\n  hl.exec_cmd("/bin/workbench ask")\nend)', own)
+        self.set_up.install(keys, "/bin/hiru-tsatsi start", "/bin/hiru-tsatsi ask")
+        self.set_up.install(keys, "/bin/hiru-tsatsi start", "/bin/hiru-tsatsi ask")
+        own = (self.folder / "hiru-tsatsi.lua").read_text()
+        self.assertIn('hl.bind("SUPER + ALT + U", hl.dsp.exec_cmd("/bin/hiru-tsatsi start"), { description = "Start work apps" })', own)
+        self.assertIn('hl.on("hyprland.start", function()\n  hl.exec_cmd("/bin/hiru-tsatsi ask")\nend)', own)
         main = (self.folder / "hyprland.lua").read_text()
-        self.assertEqual(main.count(f'dofile("{self.folder / "workbench.lua"}")'), 1)
+        self.assertEqual(main.count(f'dofile("{self.folder / "hiru-tsatsi.lua"}")'), 1)
         self.assertTrue(main.startswith('require("hypr.bindings")\n'))
         self.assertIn(["reload"], self.hyprctl.calls)
 
@@ -49,12 +49,12 @@ class SettingUpHyprland(unittest.TestCase):
 
     def test_no_shortcut_still_adds_the_login_question(self):
         self.set_up.install(None, "w start", "w ask")
-        own = (self.folder / "workbench.lua").read_text()
+        own = (self.folder / "hiru-tsatsi.lua").read_text()
         self.assertNotIn("hl.bind", own)
         self.assertIsNone(self.set_up.installed_keys())
 
     def test_config_errors_after_reloading_are_reported(self):
-        failing = HyprlandSetUp(self.folder, FakeHyprctl(errors="workbench.lua:1: bad"))
+        failing = HyprlandSetUp(self.folder, FakeHyprctl(errors="hiru-tsatsi.lua:1: bad"))
         with self.assertRaises(SetUpFailed):
             failing.install(None, "w start", "w ask")
 

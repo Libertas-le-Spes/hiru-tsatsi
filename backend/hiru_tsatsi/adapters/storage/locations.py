@@ -11,7 +11,7 @@ def config_home() -> Path:
 
 
 def app_list_file() -> Path:
-    return config_home() / "workbench" / "apps.json"
+    return config_home() / "hiru-tsatsi" / "apps.json"
 
 
 def page_folder() -> Path:
@@ -19,11 +19,15 @@ def page_folder() -> Path:
 
 
 def installed_command() -> Path:
-    return Path.home() / ".local" / "bin" / "workbench"
+    return Path.home() / ".local" / "bin" / "hiru-tsatsi"
 
 
 def window_names_folder() -> Path:
     return _home("XDG_STATE_HOME", ".local/state") / "window-names"
+
+
+def workbench_list_file() -> Path:
+    return config_home() / "workbench" / "apps.json"
 
 
 def omastart_file() -> Path:

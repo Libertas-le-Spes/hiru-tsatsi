@@ -1,8 +1,8 @@
 import unittest
 
-from workbench.adapters import this_machine
-from workbench.adapters.desktops.hyprland import Hyprland
-from workbench.use_cases.ports import DesktopNotSupported
+from hiru_tsatsi.adapters import this_machine
+from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.use_cases.ports import DesktopNotSupported
 
 
 class PickingTheDesktop(unittest.TestCase):

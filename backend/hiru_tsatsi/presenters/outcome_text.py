@@ -1,5 +1,5 @@
-from workbench.use_cases.setting_up import SetUp
-from workbench.use_cases.starting import Outcome
+from hiru_tsatsi.use_cases.setting_up import SetUp
+from hiru_tsatsi.use_cases.starting import Outcome
 
 
 def _line(label: str, names: list[str]) -> list[str]:
@@ -13,7 +13,7 @@ def summary(outcome: Outcome) -> str:
 
 
 def not_supported(desktop: str) -> str:
-    return (f"Workbench can't place windows on {desktop} yet, so it started nothing. "
+    return (f"Hiru Tsatsi can't place windows on {desktop} yet, so it started nothing. "
             "Apps opened without being put on their workspaces would only need sorting by hand.")
 
 
@@ -27,6 +27,6 @@ def details(outcome: Outcome) -> str:
 def set_up_text(set_up: SetUp) -> str:
     asked = "At login, a notification asks whether to start your work apps."
     if set_up.keys is None:
-        return f"Every shortcut Workbench would pick is taken, so none was added; bind `workbench start` yourself. {asked}"
+        return f"Every shortcut Hiru Tsatsi would pick is taken, so none was added; bind `hiru-tsatsi start` yourself. {asked}"
     verb = "still starts" if set_up.kept else "now starts"
     return f"{set_up.keys.text()} {verb} your work apps. {asked}"

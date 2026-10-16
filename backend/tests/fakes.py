@@ -1,6 +1,6 @@
-from workbench.work_apps.app_list import App, AppList, Workspace
-from workbench.work_apps.shortcut import Keys
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
+from hiru_tsatsi.work_apps.shortcut import Keys
+from hiru_tsatsi.work_apps.windows import Window
 
 
 def window(address: str, window_class: str, title: str = "", workspace: int = 1) -> Window:

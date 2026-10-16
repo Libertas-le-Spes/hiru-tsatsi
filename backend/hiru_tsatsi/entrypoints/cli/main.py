@@ -4,12 +4,12 @@ import webbrowser
 from dataclasses import dataclass, field
 from typing import Callable
 
-from workbench.entrypoints.web import server
-from workbench.presenters.outcome_text import details, not_supported, set_up_text, summary
-from workbench.use_cases.ports import DesktopNotSupported, SetUpFailed
-from workbench.use_cases.starting import Outcome
-from workbench.wiring import App, open_app
-from workbench.work_apps.app_list import Refused
+from hiru_tsatsi.entrypoints.web import server
+from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary
+from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
+from hiru_tsatsi.use_cases.starting import Outcome
+from hiru_tsatsi.wiring import App, open_app
+from hiru_tsatsi.work_apps.app_list import Refused
 
 
 @dataclass(frozen=True)
@@ -90,7 +90,7 @@ COMMANDS = {
 
 
 def main(argv: list[str] | None = None, app: App | None = None, opening: Callable[[], App] = open_app) -> int:
-    parser = argparse.ArgumentParser(prog="workbench", description="Open your work apps, each on its own workspace.")
+    parser = argparse.ArgumentParser(prog="hiru-tsatsi", description="Open your work apps, each on its own workspace.")
     commands = parser.add_subparsers(dest="subcommand", required=True)
     for name, command in COMMANDS.items():
         sub = commands.add_parser(name, help=command.help)

@@ -3,7 +3,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.work_apps.windows import Window
 
 SAFE_ADDRESS = re.compile(r"[\w.-]+")
 

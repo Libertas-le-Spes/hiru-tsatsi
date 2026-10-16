@@ -1,9 +1,9 @@
 from typing import Callable
 
-from workbench.use_cases.overview import unclaimed
-from workbench.use_cases.ports import AppListStore, Desktop
-from workbench.work_apps.app_list import App, AppList, NothingThere
-from workbench.work_apps.windows import guess_window, name_for
+from hiru_tsatsi.use_cases.overview import unclaimed
+from hiru_tsatsi.use_cases.ports import AppListStore, Desktop
+from hiru_tsatsi.work_apps.app_list import App, AppList, NothingThere
+from hiru_tsatsi.work_apps.windows import guess_window, name_for
 
 
 class EditAppList:

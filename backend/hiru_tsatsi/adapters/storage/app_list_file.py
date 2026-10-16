@@ -2,8 +2,9 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Callable, Sequence
 
-from workbench.work_apps.app_list import App, AppList, Workspace
+from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
 
 def _read(path: Path) -> dict:
@@ -35,15 +36,22 @@ def to_saved(apps: AppList) -> dict:
         for space in apps.workspaces]}
 
 
+EarlierList = tuple[Path, Callable[[dict], AppList]]
+
+
 class AppListFile:
-    def __init__(self, path: Path, omastart: Path):
+    def __init__(self, path: Path, earlier: Sequence[EarlierList] = ()):
         self.path = path
-        self.omastart = omastart
+        self.earlier = earlier
 
     def load(self) -> AppList:
         if self.path.exists():
             return from_saved(_read(self.path))
-        imported = from_omastart(_read(self.omastart))
+        found = next(((place, reader) for place, reader in self.earlier if place.exists()), None)
+        if found is None:
+            return AppList()
+        place, reader = found
+        imported = reader(_read(place))
         self.save(imported)
         return imported
 

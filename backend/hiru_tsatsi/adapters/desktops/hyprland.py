@@ -2,7 +2,7 @@ import json
 import subprocess
 from typing import Callable, Mapping
 
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.work_apps.windows import Window
 
 Run = Callable[[list[str]], str]
 

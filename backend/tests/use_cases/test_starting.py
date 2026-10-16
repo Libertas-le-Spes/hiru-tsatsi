@@ -1,8 +1,8 @@
 import unittest
 
 from tests.fakes import FakeClock, FakeDesktop, FakeNames, FakeStore, app_list, window
-from workbench.use_cases.starting import StartApps
-from workbench.work_apps.app_list import App
+from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.work_apps.app_list import App
 
 CHAT = App("Chat", "omarchy-launch-webapp https://chat.google.com/", "chrome-chat.google.com")
 MAIN = App("Rider Main", "rider ~/RiderProjects/onplia", "onplia")

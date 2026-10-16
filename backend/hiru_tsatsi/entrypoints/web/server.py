@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qsl, urlparse
 
-from workbench.entrypoints.web import requests
-from workbench.presenters.page_state import page_state
-from workbench.work_apps.app_list import Refused
+from hiru_tsatsi.entrypoints.web import requests
+from hiru_tsatsi.presenters.page_state import page_state
+from hiru_tsatsi.work_apps.app_list import Refused
 
 PORT = 47640
 CLOSED_PAGE_SECONDS = 120
@@ -82,7 +82,7 @@ def _handler(page: PageServer) -> type[BaseHTTPRequestHandler]:
             return self.headers.get("Host") in {f"127.0.0.1:{page.port}", f"localhost:{page.port}"}
 
         def _trusted(self) -> bool:
-            return self._local() and secrets.compare_digest(self.headers.get("X-Workbench-Token", ""), page.token)
+            return self._local() and secrets.compare_digest(self.headers.get("X-Hiru-Tsatsi-Token", ""), page.token)
 
         def do_GET(self):
             if not self._local():
@@ -120,7 +120,7 @@ def _handler(page: PageServer) -> type[BaseHTTPRequestHandler]:
             except Refused as refused:
                 return self._json(409, {"error": str(refused)})
             except (KeyError, ValueError):
-                return self._json(400, {"error": "The page sent something Workbench did not understand"})
+                return self._json(400, {"error": "The page sent something Hiru Tsatsi did not understand"})
             return self._json(200, result)
 
         def _body(self) -> dict:

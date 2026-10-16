@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from tests.fakes import window
-from workbench.adapters.storage.window_name_files import WindowNameFiles
+from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
 
 
 class NamingWindowsForTitleBars(unittest.TestCase):

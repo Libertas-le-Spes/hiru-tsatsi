@@ -7,10 +7,10 @@ import urllib.request
 from pathlib import Path
 
 from tests.fakes import FakeDesktop, FakeNames, FakeNotifier, FakeSetUp, window
-from workbench.adapters.storage.app_list_file import AppListFile
-from workbench.entrypoints.web import server
-from workbench.wiring import open_app
-from workbench.work_apps.app_list import App, AppList, Workspace
+from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
+from hiru_tsatsi.entrypoints.web import server
+from hiru_tsatsi.wiring import open_app
+from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
 
 class ThePageServer(unittest.TestCase):
@@ -20,10 +20,10 @@ class ThePageServer(unittest.TestCase):
         (folder / "page" / "index.html").write_text('<meta name="token" content="{{token}}">')
         (folder / "page" / "page.js").write_text("start()")
         self.list_file = folder / "apps.json"
-        AppListFile(self.list_file, folder / "none.json").save(
+        AppListFile(self.list_file).save(
             AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chrome-chat"),)),)))
         self.desktop = FakeDesktop([window("c", "chrome-chat-Default", "Chat", 1), window("t", "foot", "~", 4)])
-        app = open_app(self.desktop, self.list_file, folder / "none.json", FakeNotifier(), FakeNames(), FakeSetUp())
+        app = open_app(self.desktop, self.list_file, [], FakeNotifier(), FakeNames(), FakeSetUp())
         self.page = server.PageServer(app, folder / "page", port=0)
         self.assertTrue(self.page.bind())
         threading.Thread(target=self.page.server.serve_forever, daemon=True).start()
@@ -35,7 +35,7 @@ class ThePageServer(unittest.TestCase):
                                          data=json.dumps(body).encode() if body is not None else None)
         request.add_header("Host", host or f"127.0.0.1:{self.page.port}")
         if token:
-            request.add_header("X-Workbench-Token", self.page.token)
+            request.add_header("X-Hiru-Tsatsi-Token", self.page.token)
         try:
             with urllib.request.urlopen(request) as answer:
                 return answer.status, answer.read().decode()

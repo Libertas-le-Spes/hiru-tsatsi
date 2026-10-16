@@ -1,8 +1,8 @@
 from typing import Protocol
 
-from workbench.work_apps.app_list import AppList
-from workbench.work_apps.shortcut import Keys
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.work_apps.app_list import AppList
+from hiru_tsatsi.work_apps.shortcut import Keys
+from hiru_tsatsi.work_apps.windows import Window
 
 
 class DesktopNotSupported(Exception):

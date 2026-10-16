@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "id": "kayu.workbench",
+  "id": "kayu.hiru-tsatsi",
   "name": "Omastart",
   "version": "1.0.0",
   "author": "Diêgo Vieira",
   "license": "MIT",
-  "description": "Configurable per-workspace app launcher, run by Workbench",
+  "description": "Configurable per-workspace app launcher, run by Hiru Tsatsi",
   "kinds": ["bar-widget"],
   "entryPoints": {
     "barWidget": "Panel.qml"
   },
   "barWidget": {
     "displayName": "Omastart",
-    "description": "Start your work apps on their workspaces and edit them, through Workbench",
+    "description": "Start your work apps on their workspaces and edit them, through Hiru Tsatsi",
     "category": "Productivity",
     "allowMultiple": false
   }

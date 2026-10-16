@@ -1,10 +1,10 @@
 import os
 from typing import Callable, Mapping, TypeVar
 
-from workbench.adapters.desktops.hyprland import Hyprland
-from workbench.adapters.desktops.hyprland_set_up import HyprlandSetUp
-from workbench.adapters.storage import locations
-from workbench.use_cases.ports import Desktop, DesktopNotSupported, DesktopSetUp
+from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
+from hiru_tsatsi.adapters.storage import locations
+from hiru_tsatsi.use_cases.ports import Desktop, DesktopNotSupported, DesktopSetUp
 
 Found = TypeVar("Found")
 

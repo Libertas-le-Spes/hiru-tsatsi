@@ -1,8 +1,8 @@
-from workbench.presenters.outcome_text import details, summary
-from workbench.presenters.status_lines import status_line
-from workbench.use_cases.overview import WorkspaceView
-from workbench.use_cases.starting import Outcome
-from workbench.work_apps.windows import Window
+from hiru_tsatsi.presenters.outcome_text import details, summary
+from hiru_tsatsi.presenters.status_lines import status_line
+from hiru_tsatsi.use_cases.overview import WorkspaceView
+from hiru_tsatsi.use_cases.starting import Outcome
+from hiru_tsatsi.work_apps.windows import Window
 
 
 def page_state(workspaces: list[WorkspaceView]) -> dict:

@@ -1,9 +1,9 @@
 import unittest
 
 from tests.fakes import FakeClock, FakeDesktop, FakeNames, FakeNotifier, FakeStore, app_list
-from workbench.use_cases.asking import AskToStart
-from workbench.use_cases.starting import StartApps
-from workbench.work_apps.app_list import App
+from hiru_tsatsi.use_cases.asking import AskToStart
+from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.work_apps.app_list import App
 
 STEAM = App("Steam", "steam")
 
