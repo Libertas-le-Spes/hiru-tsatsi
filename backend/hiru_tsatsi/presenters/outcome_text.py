@@ -24,6 +24,15 @@ def details(outcome: Outcome) -> str:
     return "\n".join(lines)
 
 
+UNCHOSEN_REASON = {True: "because window-names is installed", False: "because window-names isn't installed"}
+
+
+def window_titles_text(on: bool, chosen: bool) -> str:
+    reason = "as you chose" if chosen else UNCHOSEN_REASON[on]
+    return (f"Window titles are {'on' if on else 'off'}, {reason}. "
+            "Turn them on or off with `hiru-tsatsi window-titles on` or `off`.")
+
+
 def set_up_text(set_up: SetUp) -> str:
     asked = "At login, a notification asks whether to start your work apps."
     if set_up.keys is None:

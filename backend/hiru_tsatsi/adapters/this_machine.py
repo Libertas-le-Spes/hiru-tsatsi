@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Callable, Mapping, TypeVar
 
 from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
@@ -17,6 +18,10 @@ def _first(finders: list[Callable[[Mapping[str, str]], Found | None]], env: Mapp
     if found is None:
         raise DesktopNotSupported(env.get("XDG_CURRENT_DESKTOP") or env.get("XDG_SESSION_DESKTOP") or "this desktop")
     return found
+
+
+def window_namer_installed() -> bool:
+    return shutil.which("window-names") is not None
 
 
 def desktop(env: Mapping[str, str] = os.environ) -> Desktop:

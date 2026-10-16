@@ -4,10 +4,11 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
-from tests.fakes import FakeDesktop, FakeNames, FakeNotifier, FakeSetUp, window
+from tests.fakes import FakeSettings, FakeDesktop, FakeNames, FakeNotifier, FakeSetUp, window
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.entrypoints.cli.main import main
 from hiru_tsatsi.use_cases.ports import DesktopNotSupported
+from hiru_tsatsi.use_cases.window_titles import WindowTitles
 from hiru_tsatsi.wiring import open_app
 from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
@@ -19,7 +20,7 @@ class TheStartCommand(unittest.TestCase):
             AppList((Workspace(2, "Rider", (App("Rider Main", "rider onplia", "onplia"),)),)))
         notifier = FakeNotifier()
         desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 5)])
-        app = open_app(desktop, folder / "apps.json", [], notifier, FakeNames(), FakeSetUp())
+        app = open_app(desktop, folder / "apps.json", [], notifier, FakeNames(), FakeSetUp(), WindowTitles(FakeSettings(), lambda: True))
         printed = io.StringIO()
         with redirect_stdout(printed):
             self.assertEqual(main(["start"], app), 0)
@@ -35,6 +36,21 @@ class TheStartCommand(unittest.TestCase):
         self.assertIn("can't place windows on GNOME yet, so it started nothing", printed.getvalue())
 
 
+class TheWindowTitlesCommand(unittest.TestCase):
+    def test_says_why_and_turns_off(self):
+        folder = Path(tempfile.mkdtemp())
+        AppListFile(folder / "apps.json").save(AppList())
+        app = open_app(FakeDesktop([]), folder / "apps.json", [], FakeNotifier(), FakeNames(), FakeSetUp(),
+                       WindowTitles(FakeSettings(), lambda: True))
+        said = io.StringIO()
+        with redirect_stdout(said):
+            main(["window-titles"], app)
+            main(["window-titles", "off"], app)
+        self.assertEqual(said.getvalue().splitlines(), [
+            "Window titles are on, because window-names is installed. Turn them on or off with `hiru-tsatsi window-titles on` or `off`.",
+            "Window titles are off, as you chose. Turn them on or off with `hiru-tsatsi window-titles on` or `off`."])
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -45,7 +61,7 @@ class EditingFromTheCommandLine(unittest.TestCase):
         self.file = folder / "apps.json"
         AppListFile(self.file).save(AppList((Workspace(1, "Browser", ()),)))
         self.app = open_app(FakeDesktop([window("c", "chrome-chat.google.com-Default", "Chat", 1)]), self.file,
-                            [], FakeNotifier(), FakeNames(), FakeSetUp())
+                            [], FakeNotifier(), FakeNames(), FakeSetUp(), WindowTitles(FakeSettings(), lambda: True))
 
     def saved(self):
         return AppListFile(self.file).load()
