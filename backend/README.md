@@ -14,6 +14,8 @@ Only listing windows, moving them and launching differ between desktops, so each
 backend/bin/workbench start
 ```
 
+Every window Workbench gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars and other tools can say "Rider Main" rather than "jetbrains-rider".
+
 The app list is kept in `~/.config/workbench/apps.json`. Until it exists, the list from the Omarchy Omastart plugin is used.
 
 Desktops so far: Hyprland.

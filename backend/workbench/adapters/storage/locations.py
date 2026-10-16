@@ -10,5 +10,9 @@ def app_list_file() -> Path:
     return _home("XDG_CONFIG_HOME", ".config") / "workbench" / "apps.json"
 
 
+def window_names_folder() -> Path:
+    return _home("XDG_STATE_HOME", ".local/state") / "window-names"
+
+
 def omastart_file() -> Path:
     return _home("XDG_STATE_HOME", ".local/state") / "omarchy" / "settings" / "omastart.json"

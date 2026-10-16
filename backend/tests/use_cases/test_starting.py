@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes import FakeClock, FakeDesktop, FakeStore, app_list, window
+from tests.fakes import FakeClock, FakeDesktop, FakeNames, FakeStore, app_list, window
 from workbench.use_cases.starting import StartApps
 from workbench.work_apps.app_list import App
 
@@ -9,10 +9,10 @@ MAIN = App("Rider Main", "rider ~/RiderProjects/onplia", "onplia")
 STEAM = App("Steam", "steam")
 
 
-def start(desktop, apps):
+def start(desktop, apps, names=None):
     store = FakeStore(apps)
     clock = FakeClock()
-    outcome = StartApps(desktop, store, clock, clock.wait).run()
+    outcome = StartApps(desktop, store, names or FakeNames(), clock, clock.wait).run()
     return outcome, store, clock
 
 
@@ -58,6 +58,18 @@ class StartingWorkApps(unittest.TestCase):
         outcome, _, clock = start(desktop, app_list((2, [MAIN])))
         self.assertEqual(outcome.unseen, ["Rider Main"])
         self.assertGreaterEqual(clock.now, 60)
+
+    def test_every_window_given_to_an_app_is_named_after_it(self):
+        names = FakeNames()
+        desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 2), window("c", "chrome-chat.google.com_x", "Chat", 4)],
+                              {STEAM.command: [window("s", "steam", "Steam", 6)]})
+        start(desktop, app_list((1, [CHAT]), (2, [MAIN]), (6, [STEAM])), names)
+        self.assertEqual(names.recorded, {"m": "Rider Main", "c": "Chat", "s": "Steam"})
+
+    def test_windows_that_belong_to_no_app_get_no_name(self):
+        names = FakeNames()
+        start(FakeDesktop([window("t", "foot", "~", 4)]), app_list((2, [MAIN])), names)
+        self.assertEqual(names.recorded, {})
 
 
 if __name__ == "__main__":

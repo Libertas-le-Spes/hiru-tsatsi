@@ -4,7 +4,7 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
-from tests.fakes import FakeDesktop, FakeNotifier, window
+from tests.fakes import FakeDesktop, FakeNames, FakeNotifier, window
 from workbench.adapters.storage.app_list_file import AppListFile
 from workbench.entrypoints.cli.main import main
 from workbench.use_cases.ports import DesktopNotSupported
@@ -19,7 +19,7 @@ class TheStartCommand(unittest.TestCase):
             AppList((Workspace(2, "Rider", (App("Rider Main", "rider onplia", "onplia"),)),)))
         notifier = FakeNotifier()
         desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 5)])
-        app = open_app(desktop, folder / "apps.json", folder / "none.json", notifier)
+        app = open_app(desktop, folder / "apps.json", folder / "none.json", notifier, FakeNames())
         printed = io.StringIO()
         with redirect_stdout(printed):
             self.assertEqual(main(["start"], app), 0)
