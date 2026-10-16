@@ -9,9 +9,15 @@ def _number(body: dict, key: str) -> int:
     return int(body[key])
 
 
+def _switch(body: dict, key: str) -> bool:
+    if not isinstance(body[key], bool):
+        raise ValueError(key)
+    return body[key]
+
+
 def reads(app) -> dict[str, Request]:
     return {
-        "/api/list": lambda query: page_state(app.overview.run()),
+        "/api/list": lambda query: page_state(app.overview.run(), app.window_titles.wanted()),
         "/api/windows": lambda query: {"windows": window_choices(
             app.overview.candidates(_number(query, "workspace"), _number(query, "index")))},
     }
@@ -28,6 +34,7 @@ def changes(app) -> dict[str, Callable[[dict], object]]:
         "/api/app/remove": lambda b: edit.remove_app(_number(b, "workspace"), _number(b, "index")),
         "/api/app/window": lambda b: edit.choose_window(_number(b, "workspace"), _number(b, "index"), str(b.get("address", ""))),
         "/api/app/forget": lambda b: edit.forget_window(_number(b, "workspace"), _number(b, "index")),
+        "/api/window-titles": lambda b: app.window_titles.turn(_switch(b, "on")),
     }
 
 
