@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.diegovrocha.omastart",
+  "id": "kayu.workbench",
   "name": "Omastart",
   "version": "1.0.0",
   "author": "Diêgo Vieira",
@@ -12,7 +12,7 @@
   },
   "barWidget": {
     "displayName": "Omastart",
-    "description": "Launch your configured apps into their workspaces, with a prompt on shell start",
+    "description": "Start your work apps on their workspaces and edit them, through Workbench",
     "category": "Productivity",
     "allowMultiple": false
   }
