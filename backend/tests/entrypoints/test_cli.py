@@ -1,0 +1,30 @@
+import io
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+
+from tests.fakes import FakeDesktop, FakeNotifier, window
+from workbench.adapters.storage.app_list_file import AppListFile
+from workbench.entrypoints.cli.main import main
+from workbench.wiring import open_app
+from workbench.work_apps.app_list import App, AppList, Workspace
+
+
+class TheStartCommand(unittest.TestCase):
+    def test_reports_what_it_did_on_screen_and_as_a_notification(self):
+        folder = Path(tempfile.mkdtemp())
+        AppListFile(folder / "apps.json", folder / "none.json").save(
+            AppList((Workspace(2, "Rider", (App("Rider Main", "rider onplia", "onplia"),)),)))
+        notifier = FakeNotifier()
+        desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 5)])
+        app = open_app(desktop, folder / "apps.json", folder / "none.json", notifier)
+        printed = io.StringIO()
+        with redirect_stdout(printed):
+            self.assertEqual(main(["start"], app), 0)
+        self.assertEqual(notifier.sent, [("Started 0, 1 already open", "Already open: Rider Main\nMoved to their workspace: Rider Main")])
+        self.assertIn("Started 0, 1 already open", printed.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()
