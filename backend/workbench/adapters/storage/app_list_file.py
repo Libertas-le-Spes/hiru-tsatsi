@@ -43,7 +43,9 @@ class AppListFile:
     def load(self) -> AppList:
         if self.path.exists():
             return from_saved(_read(self.path))
-        return from_omastart(_read(self.omastart))
+        imported = from_omastart(_read(self.omastart))
+        self.save(imported)
+        return imported
 
     def save(self, apps: AppList) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

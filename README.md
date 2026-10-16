@@ -23,7 +23,7 @@ itself automatically once per shell session, right after Omarchy starts.
   Apps that are already open are moved instead of opened a second time.
 - **Add an app** — inside a workspace block, fill in a **Name** (just a
   label) and a **Command** (a real shell command) and press **+**. Its
-  window is learned the first time Omastart starts it.
+  window is learned the first time Workbench starts it.
 
   ![Adding an app to a workspace](docs/add-app.png)
 
@@ -31,8 +31,8 @@ itself automatically once per shell session, right after Omarchy starts.
 - **Add a workspace** — choose its number and name at the bottom of the
   panel.
 
-State is saved to `~/.local/state/omarchy/settings/omastart.json` and
-survives plugin updates.
+The panel edits Workbench's app list, `~/.config/workbench/apps.json`,
+and **Start work apps** runs `workbench start` (see `backend/README.md`).
 
 ### Command examples
 
@@ -62,7 +62,7 @@ already running — a `--app=` webapp in an open Chromium, a second Rider
 project, Steam sitting in the tray — opens its window wherever you are.
 So each app remembers its window: the start of its class, or of its title
 where several windows share a class (two Rider projects, for example).
-After launching, Omastart watches for a minute and moves each matching
+After launching, Workbench watches for a minute and moves each matching
 window to its workspace.
 
 ## Language
@@ -79,7 +79,7 @@ omarchy plugin remove io.github.diegovrocha.omastart
 ```
 
 Your saved workspaces/apps stay at
-`~/.local/state/omarchy/settings/omastart.json` — delete that file too if
+`~/.config/workbench/apps.json` — delete that file too if
 you want a clean slate.
 
 ## Development

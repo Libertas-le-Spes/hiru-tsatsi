@@ -16,7 +16,9 @@ Panel {
   // language the user happens to be typing in - those can differ.
   readonly property var s: Strings.forLocale(Qt.locale().name)
 
-  readonly property string configPath: Quickshell.env("HOME") + "/.local/state/omarchy/settings/omastart.json"
+  readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/workbench/apps.json"
+  readonly property string workbenchCommand: Qt.resolvedUrl("backend/bin/workbench").toString().replace("file://", "")
+  readonly property bool starting: workbenchStart.running
   // Id of the last boot the startup prompt was shown for, persisted to disk
   // so it survives shell restarts - promptedThisSession used to be an
   // in-memory flag, which meant "once per session" was really "every time
@@ -47,7 +49,7 @@ Panel {
   }
 
   function launchAll() {
-    launcher.start(Model.launchPlan(root.config))
+    if (!workbenchStart.running) workbenchStart.running = true
     root.close()
   }
 
@@ -66,16 +68,11 @@ Panel {
     root.saveConfig()
   }
 
-  function addApp(workspaceId, name, cmd, window) {
+  function addApp(workspaceId, name, cmd) {
     if (name.trim().length === 0 || cmd.trim().length === 0) return false
-    root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim(), window.trim())
+    root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim())
     root.saveConfig()
     return true
-  }
-
-  function setAppWindow(workspaceId, appIndex, window) {
-    root.config = Model.setAppWindow(root.config, workspaceId, appIndex, window.trim())
-    root.saveConfig()
   }
 
   function removeApp(workspaceId, appIndex) {
@@ -83,9 +80,9 @@ Panel {
     root.saveConfig()
   }
 
-  Launcher {
-    id: launcher
-    onWindowLearned: function(job, name) { root.setAppWindow(job.workspaceId, job.appIndex, name) }
+  Process {
+    id: workbenchStart
+    command: [root.workbenchCommand, "start"]
   }
 
 
@@ -96,10 +93,7 @@ Panel {
     atomicWrites: true
     printErrors: false
     onLoaded: root.config = Model.parseConfig(text())
-    onLoadFailed: {
-      root.config = Model.defaultConfig()
-      root.saveConfig()
-    }
+    onLoadFailed: root.config = Model.defaultConfig()
   }
 
   FileView {
@@ -150,7 +144,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: root.hasAnyApps ? "󱐋" : "󱐌"
-    active: launcher.busy
+    active: root.starting
     onPressed: root.toggle()
   }
 
@@ -196,8 +190,8 @@ Panel {
           }
 
           Button {
-            text: launcher.busy ? root.s.startingButton : root.s.startButton
-            enabled: !launcher.busy
+            text: root.starting ? root.s.startingButton : root.s.startButton
+            enabled: !root.starting
             foreground: root.bar.foreground
             bordered: true
             onClicked: root.launchAll()
@@ -230,7 +224,7 @@ Panel {
             spacing: Style.space(6)
 
             function addApp() {
-              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, "")) return
+              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text)) return
               appNameField.text = ""
               appCmdField.text = ""
             }
