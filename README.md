@@ -1,15 +1,21 @@
 # Omastart
 
-An Omarchy bar widget that asks, right when the shell starts, whether you
-want to launch your daily work apps — each one landing on its own
-configured workspace, no clicking through window after window.
+An Omarchy bar widget for Workbench: one click starts your daily work
+apps, each one landing on its own configured workspace, and the panel next
+to the icon is where you edit them.
+
+Omastart was created by Diêgo Vieira
+([diegovrocha/omarchy-omastart](https://github.com/diegovrocha/omarchy-omastart))
+and is MIT licensed; see `LICENSE`. This copy has grown into Workbench and
+is maintained by Kabelo Mosiane.
 
 ![Omastart panel](preview.png)
 
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/diegovrocha/omarchy-omastart.git --enable
+omarchy plugin add https://github.com/Libertas-le-Spes/workbench.git --enable
+~/.config/omarchy/plugins/kayu.workbench/install.sh
 ```
 
 ## Usage
@@ -75,7 +81,7 @@ other locale. See `Strings.js` to add more.
 ## Remove
 
 ```sh
-omarchy plugin remove io.github.diegovrocha.omastart
+omarchy plugin remove kayu.workbench
 ```
 
 Your saved workspaces/apps stay at

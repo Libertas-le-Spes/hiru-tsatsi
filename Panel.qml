@@ -9,8 +9,8 @@ import "Strings.js" as Strings
 
 Panel {
   id: root
-  moduleName: "io.github.diegovrocha.omastart"
-  ipcTarget: "io.github.diegovrocha.omastart"
+  moduleName: "kayu.workbench"
+  ipcTarget: "kayu.workbench"
 
   // Follows the machine's configured language (Qt.locale()), not whatever
   // language the user happens to be typing in - those can differ.
