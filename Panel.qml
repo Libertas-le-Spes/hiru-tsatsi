@@ -88,11 +88,6 @@ Panel {
     onWindowLearned: function(job, name) { root.setAppWindow(job.workspaceId, job.appIndex, name) }
   }
 
-  OpenWindows {
-    id: openWindows
-  }
-
-  onOpenedChanged: if (root.opened) openWindows.refresh()
 
   FileView {
     id: configFile
@@ -235,11 +230,9 @@ Panel {
             spacing: Style.space(6)
 
             function addApp() {
-              var window = appWindowPicker.value || openWindows.guessName(appCmdField.text)
-              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, window)) return
+              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, "")) return
               appNameField.text = ""
               appCmdField.text = ""
-              appWindowPicker.value = ""
             }
 
             Row {
@@ -280,19 +273,7 @@ Panel {
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.bodySmall
                   elide: Text.ElideRight
-                  width: Style.space(170)
-                }
-
-                SearchableDropdown {
-                  anchors.verticalCenter: parent.verticalCenter
-                  width: Style.space(110)
-                  showLabel: false
-                  value: modelData.window || ""
-                  options: openWindows.choices
-                  placeholderText: root.s.windowPlaceholder
-                  emptyText: root.s.noWindowsText
-                  fontFamily: root.bar.fontFamily
-                  onChanged: function(window) { root.setAppWindow(wsBlock.modelData.id, index, window) }
+                  width: Style.space(280)
                 }
 
                 PanelActionButton {
@@ -314,7 +295,7 @@ Panel {
 
               TextField {
                 id: appNameField
-                width: Style.space(80)
+                width: Style.space(100)
                 placeholderText: root.s.namePlaceholder
                 foreground: root.bar.foreground
                 verticalPadding: Style.space(4)
@@ -322,22 +303,11 @@ Panel {
 
               TextField {
                 id: appCmdField
-                width: Style.space(110)
+                width: Style.space(160)
                 placeholderText: root.s.commandPlaceholder
                 foreground: root.bar.foreground
                 verticalPadding: Style.space(4)
-                onEditingFinished: if (appWindowPicker.value === "") appWindowPicker.value = openWindows.guessName(text)
                 onAccepted: wsBlock.addApp()
-              }
-
-              SearchableDropdown {
-                id: appWindowPicker
-                width: Style.space(110)
-                showLabel: false
-                options: openWindows.choices
-                placeholderText: root.s.windowPlaceholder
-                emptyText: root.s.noWindowsText
-                fontFamily: root.bar.fontFamily
               }
 
               PanelActionButton {

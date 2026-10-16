@@ -93,12 +93,6 @@ function nameFor(window, windows, cmd) {
   return classTells(window, windows, cmd) || title === "" ? String(window.class || "") : title
 }
 
-function choicesFor(windows) {
-  return windows.map(function(window) {
-    return { value: nameFor(window, windows), label: String(window.title || window.class), description: String(window.class || "") }
-  })
-}
-
 if (typeof module !== "undefined") {
   module.exports = {
     parse: parse,
@@ -106,7 +100,6 @@ if (typeof module !== "undefined") {
     belongsTo: belongsTo,
     windowOf: windowOf,
     guessWindow: guessWindow,
-    nameFor: nameFor,
-    choicesFor: choicesFor
+    nameFor: nameFor
   }
 }

@@ -22,11 +22,8 @@ itself automatically once per shell session, right after Omarchy starts.
   open, all at once, and moves each window to its workspace as it appears.
   Apps that are already open are moved instead of opened a second time.
 - **Add an app** — inside a workspace block, fill in a **Name** (just a
-  label) and a **Command** (a real shell command) and press **+**. The
-  **Window** list is filled in from the open window that best matches the
-  command; pick a different one from the list if the guess is wrong. If the
-  app isn't open yet, leave it empty: the window is learned the first time
-  the app is started.
+  label) and a **Command** (a real shell command) and press **+**. Its
+  window is learned the first time Omastart starts it.
 
   ![Adding an app to a workspace](docs/add-app.png)
 
