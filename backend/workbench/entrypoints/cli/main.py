@@ -1,6 +1,8 @@
 import argparse
+import webbrowser
 from typing import Callable
 
+from workbench.entrypoints.web import server
 from workbench.presenters.outcome_text import details, not_supported, set_up_text, summary
 from workbench.use_cases.ports import DesktopNotSupported, SetUpFailed
 from workbench.use_cases.starting import Outcome
@@ -32,9 +34,16 @@ def set_up(app: App) -> int:
     return 0
 
 
+def edit(app: App) -> int:
+    print(f"Editing your work apps at {server.page_url(server.PORT)}; it stops a few minutes after you close the page.")
+    server.serve(app, app.page, webbrowser.open)
+    return 0
+
+
 COMMANDS = {
     "start": (start, "start every work app that isn't open and put each window on its workspace"),
     "ask": (ask, "ask with a notification whether to start your work apps, and start them if you click it"),
+    "edit": (edit, "open a page in your browser to edit your work apps and workspaces"),
     "set-up": (set_up, "add a shortcut that starts your work apps, and the question at login"),
 }
 
