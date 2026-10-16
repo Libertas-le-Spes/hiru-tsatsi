@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from hiru_tsatsi.entrypoints.web import server
-from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary
+from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary, window_titles_text
 from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
 from hiru_tsatsi.use_cases.starting import Outcome
 from hiru_tsatsi.wiring import App, open_app
@@ -17,6 +17,8 @@ class Argument:
     name: str
     kind: type
     help: str
+    choices: tuple[str, ...] | None = None
+    optional: bool = False
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,13 @@ def edit(app: App, chosen: argparse.Namespace) -> int:
     return 0
 
 
+def window_titles(app: App, chosen: argparse.Namespace) -> int:
+    if chosen.state:
+        app.window_titles.turn(chosen.state == "on")
+    print(window_titles_text(app.window_titles.wanted(), app.window_titles.chosen()))
+    return 0
+
+
 def editing(change: Callable[[App, argparse.Namespace], object]) -> Callable[[App, argparse.Namespace], int]:
     def run(app: App, chosen: argparse.Namespace) -> int:
         try:
@@ -85,6 +94,8 @@ COMMANDS = {
                        [WORKSPACE, Argument("name", str, "what you call it"), Argument("command", str, "how to open it")]),
     "remove-app": Command(editing(lambda app, c: app.edit.remove_app(c.workspace, c.index)),
                           "remove an app from its workspace", [WORKSPACE, INDEX]),
+    "window-titles": Command(window_titles, "say whether windows are named for title bars, or turn that on or off",
+                             [Argument("state", str, "on or off; leave out to see which it is", ("on", "off"), True)]),
     "set-up": Command(set_up, "add a shortcut that starts your work apps, and the question at login"),
 }
 
@@ -95,7 +106,8 @@ def main(argv: list[str] | None = None, app: App | None = None, opening: Callabl
     for name, command in COMMANDS.items():
         sub = commands.add_parser(name, help=command.help)
         for argument in command.arguments:
-            sub.add_argument(argument.name, type=argument.kind, help=argument.help)
+            sub.add_argument(argument.name, type=argument.kind, help=argument.help, choices=argument.choices,
+                             nargs="?" if argument.optional else None)
     chosen = parser.parse_args(argv)
     try:
         return COMMANDS[chosen.subcommand].run(app or opening(), chosen)

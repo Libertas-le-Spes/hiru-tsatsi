@@ -111,7 +111,7 @@ def _handler(page: PageServer) -> type[BaseHTTPRequestHandler]:
 
         def _changed(self, change, body: dict) -> dict:
             change(body)
-            return page_state(page.app.overview.run())
+            return page_state(page.app.overview.run(), page.app.window_titles.wanted())
 
         def _answer(self, work) -> None:
             try:

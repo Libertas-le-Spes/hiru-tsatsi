@@ -54,6 +54,17 @@ h2 { margin: 0; font-size: 15px; }
 .hint, .status { color: var(--quiet); margin: 2px 0 0; font-size: 13px; }
 .status.matched { color: var(--good); }
 
+.setting {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 16px;
+  color: var(--quiet);
+  font-size: 13px;
+}
+
+.setting input { flex: none; margin: 0; }
+
 .report {
   white-space: pre-line;
   background: var(--card);
