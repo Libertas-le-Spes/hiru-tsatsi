@@ -118,7 +118,7 @@ function launchPlan(config) {
   for (var i = 0; i < config.workspaces.length; i++) {
     var ws = config.workspaces[i]
     for (var j = 0; j < ws.apps.length; j++) {
-      plan.push({ workspaceId: ws.id, cmd: ws.apps[j].cmd, window: ws.apps[j].window || "" })
+      plan.push({ workspaceId: ws.id, appIndex: j, cmd: ws.apps[j].cmd, window: ws.apps[j].window || "" })
     }
   }
   return plan

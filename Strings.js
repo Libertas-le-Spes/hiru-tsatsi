@@ -14,7 +14,8 @@ var TABLE = {
     removeAppTip: "Remover app",
     namePlaceholder: "Nome",
     commandPlaceholder: "Comando",
-    windowPlaceholder: "Classe ou título da janela",
+    windowPlaceholder: "Janela",
+    noWindowsText: "Nenhuma janela aberta",
     addAppTip: "Adicionar app",
     newWorkspacePlaceholder: "Nome do novo workspace",
     addWorkspaceButton: "Adicionar workspace"
@@ -30,7 +31,8 @@ var TABLE = {
     removeAppTip: "Remove app",
     namePlaceholder: "Name",
     commandPlaceholder: "Command",
-    windowPlaceholder: "Window class or title",
+    windowPlaceholder: "Window",
+    noWindowsText: "No open windows",
     addAppTip: "Add app",
     newWorkspacePlaceholder: "New workspace name",
     addWorkspaceButton: "Add workspace"

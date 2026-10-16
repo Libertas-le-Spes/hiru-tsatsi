@@ -63,7 +63,7 @@ Panel {
   }
 
   function addApp(workspaceId, name, cmd, window) {
-    if (name.trim().length === 0 || cmd.trim().length === 0 || window.trim().length === 0) return false
+    if (name.trim().length === 0 || cmd.trim().length === 0) return false
     root.config = Model.addApp(root.config, workspaceId, name.trim(), cmd.trim(), window.trim())
     root.saveConfig()
     return true
@@ -81,7 +81,14 @@ Panel {
 
   Launcher {
     id: launcher
+    onWindowLearned: function(job, name) { root.setAppWindow(job.workspaceId, job.appIndex, name) }
   }
+
+  OpenWindows {
+    id: openWindows
+  }
+
+  onOpenedChanged: if (root.opened) openWindows.refresh()
 
   FileView {
     id: configFile
@@ -224,10 +231,11 @@ Panel {
             spacing: Style.space(6)
 
             function addApp() {
-              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, appWindowField.text)) return
+              var window = appWindowPicker.value || openWindows.guessName(appCmdField.text)
+              if (!root.addApp(wsBlock.modelData.id, appNameField.text, appCmdField.text, window)) return
               appNameField.text = ""
               appCmdField.text = ""
-              appWindowField.text = ""
+              appWindowPicker.value = ""
             }
 
             Row {
@@ -271,14 +279,16 @@ Panel {
                   width: Style.space(170)
                 }
 
-                TextField {
+                SearchableDropdown {
                   anchors.verticalCenter: parent.verticalCenter
                   width: Style.space(110)
-                  text: modelData.window || ""
+                  showLabel: false
+                  value: modelData.window || ""
+                  options: openWindows.choices
                   placeholderText: root.s.windowPlaceholder
-                  foreground: root.bar.foreground
-                  verticalPadding: Style.space(2)
-                  onEditingFinished: if (text.trim() !== (modelData.window || "")) root.setAppWindow(wsBlock.modelData.id, index, text)
+                  emptyText: root.s.noWindowsText
+                  fontFamily: root.bar.fontFamily
+                  onChanged: function(window) { root.setAppWindow(wsBlock.modelData.id, index, window) }
                 }
 
                 PanelActionButton {
@@ -312,16 +322,18 @@ Panel {
                 placeholderText: root.s.commandPlaceholder
                 foreground: root.bar.foreground
                 verticalPadding: Style.space(4)
-                onAccepted: appWindowField.forceActiveFocus()
+                onEditingFinished: if (appWindowPicker.value === "") appWindowPicker.value = openWindows.guessName(text)
+                onAccepted: wsBlock.addApp()
               }
 
-              TextField {
-                id: appWindowField
+              SearchableDropdown {
+                id: appWindowPicker
                 width: Style.space(110)
+                showLabel: false
+                options: openWindows.choices
                 placeholderText: root.s.windowPlaceholder
-                foreground: root.bar.foreground
-                verticalPadding: Style.space(4)
-                onAccepted: wsBlock.addApp()
+                emptyText: root.s.noWindowsText
+                fontFamily: root.bar.fontFamily
               }
 
               PanelActionButton {
