@@ -48,8 +48,12 @@ def _strongest(window: Window, words: list[str]) -> int:
     return max((_strength(window, word) for word in words), default=0)
 
 
-def guess_window(command: str, windows: list[Window]) -> Window | None:
-    words = telltale_words(command)
+def _clues(name: str, command: str) -> list[str]:
+    return list(dict.fromkeys(telltale_words(command) + _words(name)))
+
+
+def guess_window(name: str, command: str, windows: list[Window]) -> Window | None:
+    words = _clues(name, command)
     ranked = sorted(((_strongest(w, words), w) for w in windows), key=lambda pair: pair[0], reverse=True)
     if not ranked or ranked[0][0] == 0:
         return None

@@ -12,24 +12,24 @@ GITHUB = window("h", "chrome-github.com__-Default", "Trending repositories on Gi
 TERMINAL = window("t", "foot", "~", 4)
 SESSION = [MAIN, GITLAB, MUSIC, CHAT, REVIEW, TERMINAL, GITHUB]
 
-COMMANDS = {
-    'omarchy-launch-webapp "https://gitlab.com/whakatau/onplia/-/boards/11220794?iteration_id=Current"': GITLAB,
-    "omarchy-launch-webapp https://chat.google.com/u/2/app/home": CHAT,
-    "rider ~/RiderProjects/onplia": MAIN,
-    "rider ~/RiderProjects/admintika-review": REVIEW,
-    "omarchy-launch-webapp https://music.youtube.com/": MUSIC,
-    "omarchy-launch-webapp https://github.com": GITHUB,
+APPS = {
+    ("GitLab", 'omarchy-launch-webapp "https://gitlab.com/whakatau/onplia/-/boards/11220794?iteration_id=Current"'): GITLAB,
+    ("Chat", "omarchy-launch-webapp https://chat.google.com/u/2/app/home"): CHAT,
+    ("Rider Main", "rider ~/RiderProjects/onplia"): MAIN,
+    ("Rider Review", "rider ~/RiderProjects/admintika-review"): REVIEW,
+    ("YouTube Music", "omarchy-launch-webapp https://music.youtube.com/"): MUSIC,
+    ("Github", "omarchy-launch-webapp https://github.com"): GITHUB,
 }
 
 
 class GuessingAWindowFromItsCommand(unittest.TestCase):
     def test_every_app_in_a_real_session_finds_its_own_window(self):
-        for command, expected in COMMANDS.items():
-            with self.subTest(command=command):
-                self.assertEqual(guess_window(command, SESSION), expected)
+        for (name, command), expected in APPS.items():
+            with self.subTest(name=name):
+                self.assertEqual(guess_window(name, command, SESSION), expected)
 
     def test_the_saved_name_finds_the_same_window_again(self):
-        for command, expected in COMMANDS.items():
+        for (_, command), expected in APPS.items():
             name = name_for(expected, SESSION, command)
             with self.subTest(name=name):
                 self.assertEqual(next(w for w in SESSION if belongs_to(w, name)), expected)
@@ -37,6 +37,14 @@ class GuessingAWindowFromItsCommand(unittest.TestCase):
     def test_a_web_app_keeps_its_class_and_rider_keeps_its_project(self):
         self.assertEqual(name_for(GITHUB, SESSION, "omarchy-launch-webapp https://github.com"), "chrome-github.com__-Default")
         self.assertEqual(name_for(MAIN, [MAIN], "rider ~/RiderProjects/onplia"), "onplia")
+
+    def test_the_name_finds_a_window_the_command_says_nothing_about(self):
+        mail = window("m", "thunderbird", "Inbox - Thunderbird")
+        self.assertEqual(guess_window("Thunderbird", "/usr/lib/mail-client --profile work", [TERMINAL, mail]), mail)
+
+    def test_the_name_never_decides_what_is_remembered(self):
+        self.assertEqual(name_for(MAIN, [MAIN], "rider ~/RiderProjects/onplia"), "onplia")
+        self.assertNotEqual(name_for(MAIN, [MAIN], "rider ~/RiderProjects/onplia"), "jetbrains-rider")
 
     def test_no_guess_without_a_clear_answer(self):
         cases = {
@@ -47,11 +55,11 @@ class GuessingAWindowFromItsCommand(unittest.TestCase):
         }
         for case, (command, windows) in cases.items():
             with self.subTest(case=case):
-                self.assertIsNone(guess_window(command, windows))
+                self.assertIsNone(guess_window("", command, windows))
 
     def test_a_bare_program_is_matched_by_its_own_name(self):
         steam = window("s", "steam", "Steam")
-        self.assertEqual(guess_window("steam", [TERMINAL, steam]), steam)
+        self.assertEqual(guess_window("", "steam", [TERMINAL, steam]), steam)
 
 
 if __name__ == "__main__":

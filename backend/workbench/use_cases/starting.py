@@ -27,7 +27,7 @@ class Run:
         self.moved: list[Placement] = []
 
     def place(self, placements: list[Placement], windows: list[Window]) -> list[Placement]:
-        ordered = [p for p in placements if p.app.named] + [p for p in placements if not p.app.named]
+        ordered = [p for p in placements if p.app.knows_window] + [p for p in placements if not p.app.knows_window]
         return [p for p in ordered if not self._placed(p, windows)]
 
     def _placed(self, placement: Placement, windows: list[Window]) -> bool:
@@ -36,18 +36,18 @@ class Run:
             return False
         self.claimed.add(window.address)
         self.found.append(placement)
-        if not placement.app.named:
-            self.apps = self.apps.with_window(placement, name_for(window, windows, placement.app.command))
+        if not placement.app.knows_window:
+            self.apps = self.apps.with_learned_window(placement, name_for(window, windows, placement.app.command))
         if window.workspace != placement.workspace:
             self.desktop.move(window, placement.workspace)
             self.moved.append(placement)
         return True
 
     def _find(self, placement: Placement, windows: list[Window]) -> Window | None:
-        if placement.app.named:
-            return window_named(placement.app.window, windows, self.claimed)
+        if placement.app.knows_window:
+            return window_named(placement.app.learned_window, windows, self.claimed)
         fresh = [w for w in windows if w.address not in self.known_before and w.address not in self.claimed]
-        return guess_window(placement.app.command, fresh)
+        return guess_window(placement.app.name, placement.app.command, fresh)
 
 
 class StartApps:

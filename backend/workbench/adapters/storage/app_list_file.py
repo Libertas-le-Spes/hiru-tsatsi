@@ -17,7 +17,7 @@ def _read(path: Path) -> dict:
 def from_saved(content: dict) -> AppList:
     return AppList(tuple(
         Workspace(int(space["number"]), str(space.get("label", "")),
-                  tuple(App(str(app["name"]), str(app["command"]), str(app.get("window") or "")) for app in space.get("apps", [])))
+                  tuple(App(str(app["name"]), str(app["command"]), str(app.get("learned_window") or "")) for app in space.get("apps", [])))
         for space in content.get("workspaces", [])))
 
 
@@ -31,7 +31,7 @@ def from_omastart(content: dict) -> AppList:
 def to_saved(apps: AppList) -> dict:
     return {"workspaces": [
         {"number": space.number, "label": space.label,
-         "apps": [{"name": app.name, "command": app.command, "window": app.window} for app in space.apps]}
+         "apps": [{"name": app.name, "command": app.command, "learned_window": app.learned_window} for app in space.apps]}
         for space in apps.workspaces]}
 
 

@@ -44,7 +44,7 @@ class StartingWorkApps(unittest.TestCase):
     def test_an_unnamed_app_learns_its_window_and_saves_it(self):
         desktop = FakeDesktop([], {STEAM.command: [window("s", "steam", "Steam", 6)]})
         _, store, _ = start(desktop, app_list((6, [STEAM])))
-        self.assertEqual(store.apps.placements()[0].app.window, "steam")
+        self.assertEqual(store.apps.placements()[0].app.learned_window, "steam")
         self.assertEqual(store.saves, 1)
 
     def test_an_unnamed_app_never_claims_a_window_that_was_already_open(self):
