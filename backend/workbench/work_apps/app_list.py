@@ -7,17 +7,18 @@ class Refused(Exception):
 
 class NumberTaken(Refused):
     def __init__(self, number: int):
-        super().__init__(number)
+        super().__init__(f"Workspace {number} is already in use" if number >= 1 else "Workspace numbers start at 1")
         self.number = number
 
 
 class NothingThere(Refused):
-    pass
+    def __init__(self):
+        super().__init__("That is no longer there; the list has changed since the page last loaded")
 
 
 class Blank(Refused):
     def __init__(self, field: str):
-        super().__init__(field)
+        super().__init__(f"The {field} can't be empty")
         self.field = field
 
 
