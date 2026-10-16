@@ -1,6 +1,6 @@
-# Omastart
+# Hiru Tsatsi
 
-An Omarchy bar widget for Hiru Tsatsi: one click starts your daily work
+The Omarchy bar widget for Hiru Tsatsi: one click starts your daily work
 apps, each one landing on its own configured workspace, and the panel next
 to the icon is where you edit them.
 
@@ -8,17 +8,24 @@ to the icon is where you edit them.
 
 Hiru Tsatsi started as Omastart, Diêgo Vieira's Omarchy bar widget
 ([diegovrocha/omarchy-omastart](https://github.com/diegovrocha/omarchy-omastart)).
-Kabelo Mosiane took it from there and renamed it.
 
-| | Diêgo Vieira | Kabelo Mosiane |
-|---|---|---|
-| Commits | the first four, up to `2845c71` (2 to 9 September 2026) | everything from `d126028` (16 October 2026) on |
-| Work | the original bar panel: apps listed per workspace, started at login after a once-per-boot question | recognising apps that are already open, starting them all at once and placing each window, finding each app's window by itself, the `hiru-tsatsi` command for any Linux desktop (`backend/`), the page for editing the app list, window names for title bars, and the rename to Hiru Tsatsi |
+**Diêgo Vieira** wrote Omastart: the first four commits, up to `2845c71`
+(2 to 9 September 2026). He built the ⚡ button in the bar and its panel,
+where apps are listed per workspace and added or removed without editing a
+config file; the question, once per boot, whether to start them; and
+starting each app on its own workspace.
+
+**Kabelo Mosiane** wrote everything from `d126028` (16 October 2026) on:
+recognising apps that are already open, starting them all at once and
+placing each window as it appears, finding each app's window by itself, the
+`hiru-tsatsi` command that does all of this on any Linux desktop
+(`backend/`), the page for editing the app list, window names for title
+bars, and the rename to Hiru Tsatsi.
 
 Both parts are MIT licensed. `LICENSE` names both copyright holders with the
 same split.
 
-![Omastart panel](preview.png)
+![Hiru Tsatsi panel](preview.png)
 
 ## Install
 
