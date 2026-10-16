@@ -1,4 +1,5 @@
 from workbench.work_apps.app_list import App, AppList, Workspace
+from workbench.work_apps.shortcut import Keys
 from workbench.work_apps.windows import Window
 
 
@@ -61,8 +62,30 @@ class FakeNames:
 
 
 class FakeNotifier:
-    def __init__(self):
+    def __init__(self, clicks: bool = False):
         self.sent: list[tuple[str, str]] = []
+        self.clicks = clicks
+        self.asked: list[str] = []
 
     def notify(self, summary: str, body: str) -> None:
         self.sent.append((summary, body))
+
+    def ask(self, summary: str, body: str, action: str) -> bool:
+        self.asked.append(summary)
+        return self.clicks
+
+
+class FakeSetUp:
+    def __init__(self, taken: set[Keys] | None = None, installed: Keys | None = None):
+        self.taken = taken or set()
+        self.installed = installed
+        self.installs: list[tuple[Keys | None, str, str]] = []
+
+    def installed_keys(self) -> Keys | None:
+        return self.installed
+
+    def taken_keys(self) -> set[Keys]:
+        return self.taken
+
+    def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None:
+        self.installs.append((keys, start_command, ask_command))
