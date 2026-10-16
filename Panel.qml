@@ -31,6 +31,8 @@ Panel {
   property bool promptStateLoaded: false
   property var config: Model.defaultConfig()
   property string newWorkspaceLabel: ""
+  property int newWorkspaceId: Model.nextWorkspaceId(root.config)
+  readonly property bool newWorkspaceIdTaken: Model.hasWorkspace(root.config, root.newWorkspaceId)
 
   function maybePromptForBoot(lastPromptedBootId) {
     if (!root.bootIdLoaded || !root.promptStateLoaded) return
@@ -51,10 +53,12 @@ Panel {
 
   function addWorkspace() {
     var label = root.newWorkspaceLabel.trim()
-    if (label.length === 0) return
-    root.config = Model.addWorkspace(root.config, label)
+    if (label.length === 0 || root.newWorkspaceIdTaken) return false
+    root.config = Model.addWorkspace(root.config, root.newWorkspaceId, label)
     root.newWorkspaceLabel = ""
+    root.newWorkspaceId = Model.nextWorkspaceId(root.config)
     root.saveConfig()
+    return true
   }
 
   function removeWorkspace(workspaceId) {
@@ -356,28 +360,46 @@ Panel {
           width: parent.width
           spacing: Style.space(6)
 
+          NumberField {
+            anchors.verticalCenter: parent.verticalCenter
+            value: root.newWorkspaceId
+            from: 1
+            to: 99
+            fieldWidth: Style.space(70)
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            onModified: function(value) { root.newWorkspaceId = value }
+          }
+
           TextField {
             id: wsLabelField
-            width: Style.space(240)
+            width: Style.space(170)
             placeholderText: root.s.newWorkspacePlaceholder
             foreground: root.bar.foreground
             onAccepted: {
               root.newWorkspaceLabel = text
-              root.addWorkspace()
-              text = ""
+              if (root.addWorkspace()) text = ""
             }
           }
 
           Button {
             text: root.s.addWorkspaceButton
+            enabled: !root.newWorkspaceIdTaken
             foreground: root.bar.foreground
             bordered: true
             onClicked: {
               root.newWorkspaceLabel = wsLabelField.text
-              root.addWorkspace()
-              wsLabelField.text = ""
+              if (root.addWorkspace()) wsLabelField.text = ""
             }
           }
+        }
+
+        Text {
+          visible: root.newWorkspaceIdTaken
+          text: root.s.workspaceTaken.arg(root.newWorkspaceId)
+          color: Qt.darker(root.bar.foreground, 1.3)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.bodySmall
         }
       }
     }

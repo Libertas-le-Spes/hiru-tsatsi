@@ -18,7 +18,8 @@ var TABLE = {
     noWindowsText: "Nenhuma janela aberta",
     addAppTip: "Adicionar app",
     newWorkspacePlaceholder: "Nome do novo workspace",
-    addWorkspaceButton: "Adicionar workspace"
+    addWorkspaceButton: "Adicionar workspace",
+    workspaceTaken: "O workspace %1 já existe"
   },
   "en_US": {
     title: "Start your work day?",
@@ -35,7 +36,8 @@ var TABLE = {
     noWindowsText: "No open windows",
     addAppTip: "Add app",
     newWorkspacePlaceholder: "New workspace name",
-    addWorkspaceButton: "Add workspace"
+    addWorkspaceButton: "Add workspace",
+    workspaceTaken: "Workspace %1 already exists"
   }
 }
 

@@ -45,9 +45,15 @@ function nextWorkspaceId(config) {
   return max + 1
 }
 
-function addWorkspace(config, label) {
+function hasWorkspace(config, workspaceId) {
+  return config.workspaces.some(function(w) { return w.id === workspaceId })
+}
+
+function addWorkspace(config, workspaceId, label) {
+  if (workspaceId < 1 || hasWorkspace(config, workspaceId)) return config
   var next = cloneConfig(config)
-  next.workspaces.push({ id: nextWorkspaceId(config), label: label || "Workspace", apps: [] })
+  next.workspaces.push({ id: workspaceId, label: label || "Workspace", apps: [] })
+  next.workspaces.sort(function(a, b) { return a.id - b.id })
   return next
 }
 
@@ -131,6 +137,7 @@ if (typeof module !== "undefined") {
     serializeConfig: serializeConfig,
     cloneConfig: cloneConfig,
     nextWorkspaceId: nextWorkspaceId,
+    hasWorkspace: hasWorkspace,
     addWorkspace: addWorkspace,
     removeWorkspace: removeWorkspace,
     addApp: addApp,
