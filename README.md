@@ -21,12 +21,18 @@ Workbench asks with a notification whether to start your work apps.
 - **Start work apps** — launches every configured app that isn't already
   open, all at once, and moves each window to its workspace as it appears.
   Apps that are already open are moved instead of opened a second time.
-- **Edit apps…** — opens Workbench's page in your browser, where
-  workspaces and apps are added, changed and removed, and each app shows
-  where its window is. The panel lists your workspaces and their apps.
+- **Add an app** — inside a workspace block, fill in a **Name** (just a
+  label) and a **Command** (a real shell command) and press **+**. If the
+  app is open, its window is recognised at once; otherwise the first time
+  Workbench starts it.
+- **Remove an app or workspace** — the ✕ next to each row.
+- **Add a workspace** — choose its number and name at the bottom of the
+  panel.
 
-The app list is Workbench's, `~/.config/workbench/apps.json`, and
-**Start work apps** runs `workbench start` (see `backend/README.md`).
+Every change goes through Workbench (`workbench add-app`, `add-workspace`
+and so on), so the panel holds no rules of its own. The list is
+`~/.config/workbench/apps.json`, and **Start work apps** runs
+`workbench start` (see `backend/README.md`).
 
 ### Command examples
 

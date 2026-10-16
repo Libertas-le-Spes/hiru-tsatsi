@@ -1,5 +1,7 @@
 import argparse
+import sys
 import webbrowser
+from dataclasses import dataclass, field
 from typing import Callable
 
 from workbench.entrypoints.web import server
@@ -7,6 +9,21 @@ from workbench.presenters.outcome_text import details, not_supported, set_up_tex
 from workbench.use_cases.ports import DesktopNotSupported, SetUpFailed
 from workbench.use_cases.starting import Outcome
 from workbench.wiring import App, open_app
+from workbench.work_apps.app_list import Refused
+
+
+@dataclass(frozen=True)
+class Argument:
+    name: str
+    kind: type
+    help: str
+
+
+@dataclass(frozen=True)
+class Command:
+    run: Callable[[App, argparse.Namespace], int]
+    help: str
+    arguments: list[Argument] = field(default_factory=list)
 
 
 def report(app: App, outcome: Outcome) -> int:
@@ -16,16 +33,16 @@ def report(app: App, outcome: Outcome) -> int:
     return 0
 
 
-def start(app: App) -> int:
+def start(app: App, chosen: argparse.Namespace) -> int:
     return report(app, app.start.run())
 
 
-def ask(app: App) -> int:
+def ask(app: App, chosen: argparse.Namespace) -> int:
     outcome = app.ask.run()
     return report(app, outcome) if outcome else 0
 
 
-def set_up(app: App) -> int:
+def set_up(app: App, chosen: argparse.Namespace) -> int:
     try:
         print(set_up_text(app.set_up.run()))
     except SetUpFailed as failed:
@@ -34,29 +51,54 @@ def set_up(app: App) -> int:
     return 0
 
 
-def edit(app: App) -> int:
+def edit(app: App, chosen: argparse.Namespace) -> int:
     print(f"Editing your work apps at {server.page_url(server.PORT)}; it stops a few minutes after you close the page.")
     server.serve(app, app.page, webbrowser.open)
     return 0
 
 
+def editing(change: Callable[[App, argparse.Namespace], object]) -> Callable[[App, argparse.Namespace], int]:
+    def run(app: App, chosen: argparse.Namespace) -> int:
+        try:
+            change(app, chosen)
+        except Refused as refused:
+            print(refused, file=sys.stderr)
+            return 1
+        return 0
+    return run
+
+
+WORKSPACE = Argument("workspace", int, "the workspace's number")
+INDEX = Argument("index", int, "the app's position in its workspace, starting at 0")
+
 COMMANDS = {
-    "start": (start, "start every work app that isn't open and put each window on its workspace"),
-    "ask": (ask, "ask with a notification whether to start your work apps, and start them if you click it"),
-    "edit": (edit, "open a page in your browser to edit your work apps and workspaces"),
-    "set-up": (set_up, "add a shortcut that starts your work apps, and the question at login"),
+    "start": Command(start, "start every work app that isn't open and put each window on its workspace"),
+    "ask": Command(ask, "ask with a notification whether to start your work apps, and start them if you click it"),
+    "edit": Command(edit, "open a page in your browser to edit your work apps and workspaces"),
+    "add-workspace": Command(editing(lambda app, c: app.edit.add_workspace(c.workspace, c.label)),
+                             "add a workspace with the number you choose",
+                             [WORKSPACE, Argument("label", str, "its name")]),
+    "remove-workspace": Command(editing(lambda app, c: app.edit.remove_workspace(c.workspace)),
+                                "remove a workspace and its apps", [WORKSPACE]),
+    "add-app": Command(editing(lambda app, c: app.edit.add_app(c.workspace, c.name, c.command)),
+                       "add an app to a workspace",
+                       [WORKSPACE, Argument("name", str, "what you call it"), Argument("command", str, "how to open it")]),
+    "remove-app": Command(editing(lambda app, c: app.edit.remove_app(c.workspace, c.index)),
+                          "remove an app from its workspace", [WORKSPACE, INDEX]),
+    "set-up": Command(set_up, "add a shortcut that starts your work apps, and the question at login"),
 }
 
 
 def main(argv: list[str] | None = None, app: App | None = None, opening: Callable[[], App] = open_app) -> int:
     parser = argparse.ArgumentParser(prog="workbench", description="Open your work apps, each on its own workspace.")
-    commands = parser.add_subparsers(dest="command", required=True)
-    for name, (_, help_text) in COMMANDS.items():
-        commands.add_parser(name, help=help_text)
+    commands = parser.add_subparsers(dest="subcommand", required=True)
+    for name, command in COMMANDS.items():
+        sub = commands.add_parser(name, help=command.help)
+        for argument in command.arguments:
+            sub.add_argument(argument.name, type=argument.kind, help=argument.help)
     chosen = parser.parse_args(argv)
-    handler, _ = COMMANDS[chosen.command]
     try:
-        return handler(app or opening())
+        return COMMANDS[chosen.subcommand].run(app or opening(), chosen)
     except DesktopNotSupported as refused:
         print(not_supported(refused.desktop))
         return 2
