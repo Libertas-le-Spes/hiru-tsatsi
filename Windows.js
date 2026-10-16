@@ -2,34 +2,31 @@ function startsWith(text, prefix) {
   return String(text || "").toLowerCase().indexOf(prefix) === 0
 }
 
-function belongsTo(window, pattern) {
-  var prefix = String(pattern || "").trim().toLowerCase()
+function windowName(job) {
+  return String(job.window || "").trim().toLowerCase()
+}
+
+function canFind(job) {
+  return windowName(job) !== ""
+}
+
+function belongsTo(window, job) {
+  var prefix = windowName(job)
   if (prefix === "") return false
   return startsWith(window.class, prefix) || startsWith(window.title, prefix)
 }
 
-function firstUnclaimed(windows, claimed, accepts) {
+function windowOf(job, windows, claimed) {
   for (var i = 0; i < windows.length; i++) {
-    if (!claimed[windows[i].address] && accepts(windows[i])) return windows[i]
+    if (!claimed[windows[i].address] && belongsTo(windows[i], job)) return windows[i]
   }
   return null
 }
 
-function alreadyOpen(job, windows, claimed) {
-  return firstUnclaimed(windows, claimed, function(w) { return belongsTo(w, job.window) })
-}
-
-function launchedWindow(job, windows, claimed, addressesBeforeLaunch) {
-  if (String(job.window || "").trim() !== "") return alreadyOpen(job, windows, claimed)
-  return firstUnclaimed(windows, claimed, function(w) {
-    return !addressesBeforeLaunch[w.address] && !w.floating
-  })
-}
-
 if (typeof module !== "undefined") {
   module.exports = {
+    canFind: canFind,
     belongsTo: belongsTo,
-    alreadyOpen: alreadyOpen,
-    launchedWindow: launchedWindow
+    windowOf: windowOf
   }
 }

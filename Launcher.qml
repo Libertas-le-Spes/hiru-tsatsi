@@ -9,17 +9,15 @@ Item {
 
   property int windowTimeoutMs: 60000
   property var plan: []
-  property var pending: []
-  property var current: null
+  property var awaiting: []
   property var claimed: ({})
-  property var addressesBeforeLaunch: ({})
   property real launchedAt: 0
-  property bool starting: false
-  readonly property bool busy: starting || current !== null
+  property bool reading: false
+  readonly property bool busy: reading || awaiting.length > 0
 
   function start(newPlan) {
     if (launcher.busy || newPlan.length === 0) return
-    launcher.starting = true
+    launcher.reading = true
     launcher.plan = newPlan
     launcher.claimed = {}
     openWindowsProc.running = true
@@ -39,48 +37,33 @@ Item {
     Quickshell.execDetached(["hyprctl", "dispatch", Model.moveArg(window.address, workspaceId)])
   }
 
-  function placeOpenAppsAndQueueTheRest(json) {
+  function placeWindowsOf(jobs, json) {
     var windows = launcher.readWindows(json)
-    var toLaunch = []
-    for (var i = 0; i < launcher.plan.length; i++) {
-      var job = launcher.plan[i]
-      var open = Windows.alreadyOpen(job, windows, launcher.claimed)
-      if (open) launcher.claim(open, job.workspaceId)
-      else toLaunch.push(job)
+    var unplaced = []
+    for (var i = 0; i < jobs.length; i++) {
+      var window = Windows.windowOf(jobs[i], windows, launcher.claimed)
+      if (window) launcher.claim(window, jobs[i].workspaceId)
+      else unplaced.push(jobs[i])
     }
-    launcher.pending = toLaunch
-    launcher.launchNext()
-    launcher.starting = false
+    return unplaced
   }
 
-  function launchNext() {
-    if (launcher.pending.length === 0) {
-      launcher.current = null
-      return
+  function launchMissing(json) {
+    var missing = launcher.placeWindowsOf(launcher.plan, json)
+    for (var i = 0; i < missing.length; i++) {
+      Quickshell.execDetached(["hyprctl", "dispatch", Model.dispatchArg(missing[i].cmd, missing[i].workspaceId)])
     }
-    launcher.current = launcher.pending[0]
-    launcher.pending = launcher.pending.slice(1)
-    snapshotProc.running = true
-  }
-
-  function launchCurrent(json) {
-    var known = {}
-    var windows = launcher.readWindows(json)
-    for (var i = 0; i < windows.length; i++) known[windows[i].address] = true
-    launcher.addressesBeforeLaunch = known
     launcher.launchedAt = Date.now()
-    Quickshell.execDetached(["hyprctl", "dispatch", Model.dispatchArg(launcher.current.cmd, launcher.current.workspaceId)])
-    pollTimer.start()
+    launcher.awaiting = missing.filter(Windows.canFind)
+    launcher.reading = false
+    if (launcher.awaiting.length > 0) pollTimer.start()
   }
 
-  function claimLaunchedWindow(json) {
-    var windows = launcher.readWindows(json)
-    var launched = Windows.launchedWindow(launcher.current, windows, launcher.claimed, launcher.addressesBeforeLaunch)
-    if (launched) launcher.claim(launched, launcher.current.workspaceId)
-    if (launched || Date.now() - launcher.launchedAt > launcher.windowTimeoutMs) {
-      pollTimer.stop()
-      launcher.launchNext()
-    }
+  function placeArrivals(json) {
+    var stillAwaiting = launcher.placeWindowsOf(launcher.awaiting, json)
+    var timedOut = Date.now() - launcher.launchedAt > launcher.windowTimeoutMs
+    launcher.awaiting = timedOut ? [] : stillAwaiting
+    if (launcher.awaiting.length === 0) pollTimer.stop()
   }
 
   Process {
@@ -88,16 +71,7 @@ Item {
     command: ["hyprctl", "clients", "-j"]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: launcher.placeOpenAppsAndQueueTheRest(text)
-    }
-  }
-
-  Process {
-    id: snapshotProc
-    command: ["hyprctl", "clients", "-j"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: launcher.launchCurrent(text)
+      onStreamFinished: launcher.launchMissing(text)
     }
   }
 
@@ -106,7 +80,7 @@ Item {
     command: ["hyprctl", "clients", "-j"]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: launcher.claimLaunchedWindow(text)
+      onStreamFinished: launcher.placeArrivals(text)
     }
   }
 

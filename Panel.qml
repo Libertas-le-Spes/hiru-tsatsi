@@ -144,6 +144,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: root.hasAnyApps ? "󱐋" : "󱐌"
+    active: launcher.busy
     onPressed: root.toggle()
   }
 
@@ -189,7 +190,8 @@ Panel {
           }
 
           Button {
-            text: root.s.startButton
+            text: launcher.busy ? root.s.startingButton : root.s.startButton
+            enabled: !launcher.busy
             foreground: root.bar.foreground
             bordered: true
             onClicked: root.launchAll()
