@@ -1,3 +1,4 @@
+from workbench.use_cases.setting_up import SetUp
 from workbench.use_cases.starting import Outcome
 
 
@@ -21,3 +22,11 @@ def details(outcome: Outcome) -> str:
              + _line("Moved to their workspace", outcome.moved)
              + _line("No window seen within a minute", outcome.unseen))
     return "\n".join(lines)
+
+
+def set_up_text(set_up: SetUp) -> str:
+    asked = "At login, a notification asks whether to start your work apps."
+    if set_up.keys is None:
+        return f"Every shortcut Workbench would pick is taken, so none was added; bind `workbench start` yourself. {asked}"
+    verb = "still starts" if set_up.kept else "now starts"
+    return f"{set_up.keys.text()} {verb} your work apps. {asked}"

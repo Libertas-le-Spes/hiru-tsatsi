@@ -12,7 +12,7 @@ def run_hyprctl(arguments: list[str]) -> str:
     return done.stdout
 
 
-def _lua_string(text: str) -> str:
+def lua_string(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
@@ -37,8 +37,8 @@ class Hyprland:
         return [_window(client) for client in clients if isinstance(client, dict)]
 
     def launch(self, command: str, workspace: int) -> None:
-        self.run(["dispatch", f'hl.dsp.exec_cmd({_lua_string(command)}, {{ workspace = "{workspace} silent" }})'])
+        self.run(["dispatch", f'hl.dsp.exec_cmd({lua_string(command)}, {{ workspace = "{workspace} silent" }})'])
 
     def move(self, window: Window, workspace: int) -> None:
-        target = _lua_string("address:" + window.address)
+        target = lua_string("address:" + window.address)
         self.run(["dispatch", f'hl.dsp.window.move({{ workspace = "{workspace}", follow = false, window = {target} }})'])
