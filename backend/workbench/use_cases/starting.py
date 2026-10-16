@@ -15,7 +15,6 @@ class Outcome:
     started: list[str] = field(default_factory=list)
     moved: list[str] = field(default_factory=list)
     unseen: list[str] = field(default_factory=list)
-    unplaceable: list[str] = field(default_factory=list)
 
 
 class Run:
@@ -68,7 +67,7 @@ class StartApps:
         already_open = list(run.found)
         for placement in missing:
             self.desktop.launch(placement.app.command, placement.workspace)
-        unseen = self._watch(run, missing) if self.desktop.sees_windows else []
+        unseen = self._watch(run, missing)
         if run.apps != apps:
             self.store.save(run.apps)
         return self._outcome(run, already_open, missing, unseen)
@@ -82,8 +81,7 @@ class StartApps:
         return awaiting
 
     def _outcome(self, run: Run, already_open: list[Placement], missing: list[Placement], unseen: list[Placement]) -> Outcome:
-        launched_blind = [] if self.desktop.sees_windows else missing
-        return Outcome(_names(already_open), _names(missing), _names(run.moved), _names(unseen), _names(launched_blind))
+        return Outcome(_names(already_open), _names(missing), _names(run.moved), _names(unseen))
 
 
 def _names(placements: list[Placement]) -> list[str]:

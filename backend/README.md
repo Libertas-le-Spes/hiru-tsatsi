@@ -6,7 +6,7 @@ Starting the day means opening the same apps and dragging each to its place. Doi
 
 So Workbench looks before it launches. Each app remembers its window: the start of its class, or of its title where several windows share a class. Apps already open are moved to their workspace instead of opened again; the rest all start at once, and each window is moved as it appears. Nobody has to know what a window class is: an app without one learns it from the first window that matches its command.
 
-Only listing windows, moving them and launching differ between desktops, so each desktop is one class and anything without one still gets its apps launched.
+Only listing windows, moving them and launching differ between desktops, so each desktop is one class. On a desktop without one, Workbench starts nothing: apps opened without being put in their places would only leave the sorting to you.
 
 ## Use
 
@@ -16,6 +16,6 @@ backend/bin/workbench start
 
 The app list is kept in `~/.config/workbench/apps.json`. Until it exists, the list from the Omarchy Omastart plugin is used.
 
-Desktops that can place windows: Hyprland. Everywhere else, apps are launched but not moved.
+Desktops so far: Hyprland.
 
 Needs Python 3.10 or newer and nothing else.

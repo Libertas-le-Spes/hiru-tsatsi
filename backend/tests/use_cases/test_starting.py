@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes import BlindDesktop, FakeClock, FakeDesktop, FakeStore, app_list, window
+from tests.fakes import FakeClock, FakeDesktop, FakeStore, app_list, window
 from workbench.use_cases.starting import StartApps
 from workbench.work_apps.app_list import App
 
@@ -58,12 +58,6 @@ class StartingWorkApps(unittest.TestCase):
         outcome, _, clock = start(desktop, app_list((2, [MAIN])))
         self.assertEqual(outcome.unseen, ["Rider Main"])
         self.assertGreaterEqual(clock.now, 60)
-
-    def test_a_desktop_that_cannot_see_windows_launches_without_waiting(self):
-        desktop = BlindDesktop([])
-        outcome, _, clock = start(desktop, app_list((2, [MAIN])))
-        self.assertEqual(desktop.launched, [(MAIN.command, 2)])
-        self.assertEqual((clock.now, outcome.unplaceable), (0, ["Rider Main"]))
 
 
 if __name__ == "__main__":
