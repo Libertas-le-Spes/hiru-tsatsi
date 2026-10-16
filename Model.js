@@ -7,7 +7,7 @@ function fromSaved(space) {
     id: Number(space.number),
     label: String(space.label || ""),
     apps: (space.apps || []).map(function(app) {
-      return { name: String(app.name), cmd: String(app.command), window: String(app.learned_window || "") }
+      return { name: String(app.name), cmd: String(app.command), status: String(app.status || "") }
     })
   }
 }
