@@ -11,8 +11,10 @@ Only listing windows, moving them and launching differ between desktops, so each
 ## Use
 
 ```sh
-backend/bin/workbench start
+./install.sh
 ```
+
+It links the `workbench` command into `~/.local/bin` and runs `workbench set-up`, which gives Workbench the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. `workbench start` starts them straight away.
 
 Every window Workbench gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars and other tools can say "Rider Main" rather than "jetbrains-rider".
 
