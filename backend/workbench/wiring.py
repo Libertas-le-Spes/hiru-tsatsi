@@ -6,7 +6,8 @@ from workbench.adapters import this_machine
 from workbench.adapters.notify_send import NotifySend
 from workbench.adapters.storage import locations
 from workbench.adapters.storage.app_list_file import AppListFile
-from workbench.use_cases.ports import Desktop, Notifier
+from workbench.adapters.storage.window_name_files import WindowNameFiles
+from workbench.use_cases.ports import Desktop, Notifier, WindowNames
 from workbench.use_cases.starting import StartApps
 
 
@@ -17,7 +18,8 @@ class App:
 
 
 def open_app(desktop: Desktop | None = None, app_list: Path | None = None, omastart: Path | None = None,
-             notifier: Notifier | None = None) -> App:
+             notifier: Notifier | None = None, names: WindowNames | None = None) -> App:
     store = AppListFile(app_list or locations.app_list_file(), omastart or locations.omastart_file())
-    start = StartApps(desktop or this_machine.desktop(), store, time.monotonic, time.sleep)
+    names = names or WindowNameFiles(locations.window_names_folder())
+    start = StartApps(desktop or this_machine.desktop(), store, names, time.monotonic, time.sleep)
     return App(start, notifier or NotifySend())

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
-from workbench.use_cases.ports import AppListStore, Desktop
+from workbench.use_cases.ports import AppListStore, Desktop, WindowNames
 from workbench.work_apps.app_list import AppList, Placement
 from workbench.work_apps.windows import Window, guess_window, name_for, window_named
 
@@ -18,8 +18,9 @@ class Outcome:
 
 
 class Run:
-    def __init__(self, desktop: Desktop, apps: AppList, known_before: set[str]):
+    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str]):
         self.desktop = desktop
+        self.names = names
         self.apps = apps
         self.known_before = known_before
         self.claimed: set[str] = set()
@@ -36,6 +37,7 @@ class Run:
             return False
         self.claimed.add(window.address)
         self.found.append(placement)
+        self.names.record(window, placement.app.name)
         if not placement.app.knows_window:
             self.apps = self.apps.with_learned_window(placement, name_for(window, windows, placement.app.command))
         if window.workspace != placement.workspace:
@@ -51,9 +53,10 @@ class Run:
 
 
 class StartApps:
-    def __init__(self, desktop: Desktop, store: AppListStore, clock: Callable[[], float], wait: Callable[[float], None],
-                 watch_seconds: float = WATCH_SECONDS):
+    def __init__(self, desktop: Desktop, store: AppListStore, names: WindowNames, clock: Callable[[], float],
+                 wait: Callable[[float], None], watch_seconds: float = WATCH_SECONDS):
         self.desktop = desktop
+        self.names = names
         self.store = store
         self.clock = clock
         self.wait = wait
@@ -62,7 +65,7 @@ class StartApps:
     def run(self) -> Outcome:
         apps = self.store.load()
         windows = self.desktop.windows()
-        run = Run(self.desktop, apps, {w.address for w in windows})
+        run = Run(self.desktop, self.names, apps, {w.address for w in windows})
         missing = run.place(apps.placements(), windows)
         already_open = list(run.found)
         for placement in missing:

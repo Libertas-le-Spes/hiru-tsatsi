@@ -52,6 +52,14 @@ class FakeClock:
         self.now += seconds
 
 
+class FakeNames:
+    def __init__(self):
+        self.recorded: dict[str, str] = {}
+
+    def record(self, window: Window, name: str) -> None:
+        self.recorded[window.address] = name
+
+
 class FakeNotifier:
     def __init__(self):
         self.sent: list[tuple[str, str]] = []

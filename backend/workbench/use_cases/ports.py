@@ -24,5 +24,9 @@ class AppListStore(Protocol):
     def save(self, apps: AppList) -> None: ...
 
 
+class WindowNames(Protocol):
+    def record(self, window: Window, name: str) -> None: ...
+
+
 class Notifier(Protocol):
     def notify(self, summary: str, body: str) -> None: ...
