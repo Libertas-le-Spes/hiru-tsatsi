@@ -16,7 +16,7 @@ For a command that goes to a folder and runs a program (`cd ~/code && claude`), 
 
 Such an app is also recognised by what runs inside a window: the program in the foreground of its terminal, and the folder it runs in, compared by where the command's folder really leads. A session opened by hand therefore counts as open whatever its title. A window whose program also draws other windows, or has more than one program inside, says nothing about what runs in it.
 
-This needs a terminal that runs each window as its own process, as foot does on Omarchy. With one that runs all its windows from one process (Ghostty, or Kitty in single-instance mode), nothing is read from inside, so a terminal app's one trial is never confirmed and sessions opened by hand are not recognised. A trial that is never confirmed, such as a typo or `btop`, whose folder Linux hides, waits its full minute before the second notification, the one that says which apps now open in a terminal.
+This needs a terminal that runs each window as its own process, as foot does on Omarchy. With one that runs all its windows from one process (Ghostty, or Kitty in single-instance mode), or starts its shells from a thread other than its first, nothing is read from inside, so a terminal app's one trial is never confirmed and sessions opened by hand are not recognised. A trial that is never confirmed, such as a typo or `btop`, whose folder Linux hides, waits its full minute before the second notification, the one that says which apps now open in a terminal.
 
 Reading what runs inside windows sits in its own layer around the desktop, so each desktop class still only lists, moves and launches windows.
 

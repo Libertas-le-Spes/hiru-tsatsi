@@ -47,6 +47,12 @@ class OneStartAtATime(unittest.TestCase):
         self.assertTrue(lock.claimed())
         self.open.assert_called_once()
 
+    def test_a_lock_that_cannot_be_taken_for_another_reason_means_it_cannot_tell(self):
+        self.flock.side_effect = OSError(37, "No locks available")
+        with self.assertRaises(CannotTellIfStarting):
+            StartLock(LOCK, ACCOUNT).claimed()
+        self.close.assert_called_once_with(OPENED)
+
     def test_without_a_runtime_folder_it_cannot_tell(self):
         with self.assertRaises(CannotTellIfStarting):
             StartLock(None, ACCOUNT).claimed()

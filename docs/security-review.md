@@ -62,8 +62,9 @@ recorded here with what each choice fails to stop.
   `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in `hyprctl`'s arguments, which every
   account can read, but another account can only put it in its own processes, which are never
   read. Only processes started at or after the launch can carry it, so they are the only ones
-  asked. If any of them, or its start time, can't be read, or processes or the time since boot
-  can't be read, the launch counts as still running: no terminal is offered.
+  asked; a process whose start time can't be read is asked too, as if it had started since. If
+  the environment of any process asked can't be read, or processes or the time since boot can't
+  be read, the launch counts as still running: no terminal is offered.
   *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive,
   which only stops a terminal from being offered. A launcher that hands its program to another
   service (over D-Bus, or through `systemd-run` as `omarchy-launch-browser` does) leaves nothing
@@ -74,9 +75,10 @@ recorded here with what each choice fails to stop.
   "Open <app> in a terminal?" for each such app, one at a time; only a click runs it again,
   inside `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. The
   question waits a minute and is then taken off the screen with `gdbus`, which comes with the
-  same library `notify-send` needs. Anything but a click (a dismissal, that minute passing, no
-  notification service) is a no, and the no is saved with the app, so it is never asked about
-  again until its command changes. The list is read again after the answers, and an app whose
+  same library `notify-send` needs. A dismissal or that minute passing is a no, and the no is
+  saved with the app, so it is never asked about again until its command changes. A question
+  that could not be shown at all (no `notify-send`, or no notification service) decides nothing:
+  nothing runs, nothing is saved, and it is asked again on the next start. The list is read again after the answers, and an app whose
   entry changed in the meantime is neither opened nor saved as a no.
   Only one start runs at a time: each holds an owner-only lock in `XDG_RUNTIME_DIR`, opened
   without following links and refused if another account owns it, until it has finished. The
