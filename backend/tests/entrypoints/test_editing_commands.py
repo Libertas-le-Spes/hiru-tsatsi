@@ -1,7 +1,7 @@
 import unittest
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
-from hiru_tsatsi.use_cases.ports import NotReadable, NotSaved
+from hiru_tsatsi.use_cases.failures import NotReadable, NotSaved
 from hiru_tsatsi.work_apps.refusals import NumberTaken
 
 TYPED_AND_CALLED = [

@@ -32,4 +32,5 @@ class Hyprland:
 
     def move(self, window: Window, workspace: int) -> None:
         target = lua_string("address:" + window.address)
-        self.run(["dispatch", f'hl.dsp.window.move({{ workspace = "{workspace}", follow = false, window = {target} }})'])
+        moving = f'hl.dsp.window.move({{ workspace = "{workspace}", follow = false, window = {target} }})'
+        self.run(["dispatch", moving])

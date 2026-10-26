@@ -5,7 +5,8 @@ from typing import Callable, Mapping, TypeVar
 from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
 from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
 from hiru_tsatsi.adapters.storage import locations
-from hiru_tsatsi.use_cases.ports import Desktop, DesktopNotSupported, DesktopSetUp
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported
+from hiru_tsatsi.use_cases.ports import Desktop, DesktopSetUp
 
 Found = TypeVar("Found")
 

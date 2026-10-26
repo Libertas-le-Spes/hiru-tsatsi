@@ -6,7 +6,7 @@ from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved, to_saved
 from hiru_tsatsi.adapters.storage.json_object import json_text
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.workspace import Workspace
@@ -21,7 +21,7 @@ FROM_WORKBENCH = AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chro
 
 
 def app_list_file(files) -> AppListFile:
-    return AppListFile(LIST, [(WORKBENCH, from_saved), (OMASTART, from_omastart)], files)
+    return AppListFile(LIST, files, [(WORKBENCH, from_saved), (OMASTART, from_omastart)])
 
 
 class KeepingTheAppList(unittest.TestCase):
@@ -33,7 +33,7 @@ class KeepingTheAppList(unittest.TestCase):
     def test_the_omastart_list_is_imported_and_saved_once(self):
         files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT)})
         self.assertEqual(app_list_file(files).load(), FROM_OMASTART)
-        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)))
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)), read_before="")
 
     def test_the_list_kept_under_the_old_name_comes_before_omastart(self):
         files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT), WORKBENCH: json.dumps(to_saved(FROM_WORKBENCH))})
@@ -45,10 +45,26 @@ class KeepingTheAppList(unittest.TestCase):
         self.assertEqual(app_list_file(files).load(), saved)
         files.write.assert_not_called()
 
-    def test_saving_writes_the_list_once(self):
+    def test_saving_a_list_never_read_writes_it_once_without_a_check(self):
         files = files_holding({})
         app_list_file(files).save(FROM_WORKBENCH)
-        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_WORKBENCH)))
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_WORKBENCH)), read_before=None)
+
+    def test_saving_after_reading_refuses_to_overwrite_a_list_changed_meanwhile(self):
+        read = json.dumps(to_saved(FROM_WORKBENCH))
+        files = files_holding({LIST: read})
+        kept = app_list_file(files)
+        kept.load()
+        kept.save(FROM_OMASTART)
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)), read_before=read)
+
+    def test_a_second_save_checks_against_what_the_first_one_wrote(self):
+        files = files_holding({})
+        kept = app_list_file(files)
+        kept.load()
+        kept.save(FROM_WORKBENCH)
+        kept.save(FROM_OMASTART)
+        self.assertEqual(files.write.call_args.kwargs["read_before"], json_text(to_saved(FROM_WORKBENCH)))
 
 
 class TheSavedFormat(unittest.TestCase):
@@ -63,6 +79,15 @@ class AListThatCannotBeRead(unittest.TestCase):
         with self.assertRaises(NotReadable):
             app_list_file(files).load()
         files.write.assert_not_called()
+
+    def test_valid_json_in_the_wrong_shape_is_refused_in_words(self):
+        wrong_shapes = ['{"workspaces": [{"label": "Comms"}]}', '{"workspaces": "abc"}', '{"workspaces": [{"number": "one"}]}']
+        for content in wrong_shapes:
+            with self.subTest(content=content):
+                files = files_holding({LIST: content})
+                with self.assertRaises(NotReadable):
+                    app_list_file(files).load()
+                files.write.assert_not_called()
 
     def test_a_list_that_is_not_an_object_is_refused(self):
         with self.assertRaises(NotReadable):

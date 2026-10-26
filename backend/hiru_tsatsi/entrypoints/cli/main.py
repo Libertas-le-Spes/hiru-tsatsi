@@ -3,13 +3,13 @@ import sys
 from typing import Callable
 
 from hiru_tsatsi.entrypoints.cli.command_list import COMMANDS
-from hiru_tsatsi.presenters.outcome_text import not_supported
-from hiru_tsatsi.use_cases.ports import DesktopNotSupported, NotReadable, NotSaved
-from hiru_tsatsi.wiring import Services, open_services
+from hiru_tsatsi.presenters.unsupported_desktop import not_supported
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported, NotReadable, NotSaved
+from hiru_tsatsi.use_cases.services import Services
 from hiru_tsatsi.work_apps.refusals import Refused
 
 
-def _parser() -> argparse.ArgumentParser:
+def parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hiru-tsatsi", description="Open your work apps, each on its own workspace.")
     commands = parser.add_subparsers(dest="subcommand", required=True)
     for name, command in COMMANDS.items():
@@ -20,13 +20,10 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None, services: Services | None = None,
-         opening: Callable[[], Services] = open_services) -> int:
-    chosen = _parser().parse_args(argv)
+def main(argv: list[str], opening: Callable[[], Services]) -> int:
+    chosen = parser().parse_args(argv)
     try:
-        if services is None:
-            services = opening()
-        return COMMANDS[chosen.subcommand].run(services, chosen)
+        return COMMANDS[chosen.subcommand].run(opening(), chosen)
     except DesktopNotSupported as refused:
         print(not_supported(refused.desktop))
         return 2

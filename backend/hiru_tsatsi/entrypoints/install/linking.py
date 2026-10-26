@@ -1,6 +1,7 @@
 import sys
 
-from hiru_tsatsi.use_cases.installing import LinkCommands, NotOurs
+from hiru_tsatsi.use_cases.failures import NotOurs
+from hiru_tsatsi.use_cases.installing import LinkCommands
 
 
 def link_commands(linking: LinkCommands) -> int:

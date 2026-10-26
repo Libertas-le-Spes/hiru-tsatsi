@@ -1,5 +1,7 @@
 # Hiru Tsatsi
 
+This describes the project as it is now. Some of it may still change as the project grows; whoever makes part of it untrue updates it in the same change.
+
 One key opens your work apps, each on the workspace you keep it on, on any Linux desktop.
 
 Starting the day means opening the same apps and dragging each to its place. Doing it by hand is slow, and launchers that fire every command blindly open a second copy of whatever is already running, and leave windows wherever you happen to be. An app that hands the request to a copy already running (a web app inside an open browser, a second project in an open IDE, a game client in the tray) opens its window wherever you are, out of the launcher's reach.

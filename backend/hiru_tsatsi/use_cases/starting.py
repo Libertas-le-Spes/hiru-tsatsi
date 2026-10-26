@@ -1,9 +1,12 @@
 from typing import Callable
 
+from hiru_tsatsi.use_cases.failures import NotSaved
+from hiru_tsatsi.use_cases.learned_during_start import applied_to, learned_between
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, WindowNames
 from hiru_tsatsi.use_cases.watching_starts import WatchingStarts
+from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.windows import Window
 
@@ -40,11 +43,18 @@ class StartApps:
         already_open = list(placing.found)
         self._launch_all(missing)
         unseen = self.watching.until_placed(placing, missing)
-        if placing.apps != apps:
-            self.store.save(placing.apps)
+        self._save_what_was_learned(apps, placing.apps)
         return Outcome(already_open=_names(already_open), started=_names(missing), moved=_names(placing.moved),
                        unseen=_names(unseen))
 
     def _launch_all(self, missing: list[Placement]) -> None:
         for placement in missing:
             self.desktop.launch(placement.app.command, placement.workspace)
+
+    def _save_what_was_learned(self, before: AppList, after: AppList) -> None:
+        if after == before:
+            return
+        try:
+            self.store.save(after)
+        except NotSaved:
+            self.store.save(applied_to(self.store.load(), learned_between(before, after)))

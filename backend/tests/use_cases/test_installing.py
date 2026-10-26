@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import Mock, call, create_autospec
 
-from hiru_tsatsi.use_cases.installing import LinkCommands, NotOurs
+from hiru_tsatsi.use_cases.failures import NotOurs
+from hiru_tsatsi.use_cases.installing import LinkCommands
 from hiru_tsatsi.use_cases.ports import CommandLinks
 
 BIN = "/home/sam/.local/bin"

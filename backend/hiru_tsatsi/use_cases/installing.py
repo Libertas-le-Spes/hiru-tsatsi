@@ -1,13 +1,8 @@
 import posixpath
 from dataclasses import dataclass
 
+from hiru_tsatsi.use_cases.failures import NotOurs
 from hiru_tsatsi.use_cases.ports import CommandLinks
-
-
-class NotOurs(Exception):
-    def __init__(self, path: str):
-        super().__init__(path)
-        self.path = path
 
 
 @dataclass(frozen=True)

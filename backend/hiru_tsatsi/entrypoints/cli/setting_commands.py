@@ -1,8 +1,8 @@
 import argparse
 
 from hiru_tsatsi.entrypoints.set_up_report import report_set_up
-from hiru_tsatsi.presenters.outcome_text import window_titles_text
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.presenters.window_titles_text import window_titles_text
+from hiru_tsatsi.use_cases.services import Services
 
 
 def set_up(services: Services, chosen: argparse.Namespace) -> int:
