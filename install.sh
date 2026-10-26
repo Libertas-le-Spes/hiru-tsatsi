@@ -4,8 +4,6 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
 command_path="$bin_dir/hiru-tsatsi"
-short_path="$bin_dir/tsatsi"
-retired_path="$bin_dir/hiru"
 
 say() {
     printf '%s\n' "$1"
@@ -21,28 +19,8 @@ require_python() {
     python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || fail "Python 3.11 or newer is needed; this machine has $(python3 --version)"
 }
 
-refuse_to_replace_another_tool() {
-    for path in "$command_path" "$short_path"; do
-        if [ -e "$path" ] || [ -L "$path" ]; then
-            case "$(readlink "$path" || true)" in
-                */backend/bin/hiru-tsatsi) ;;
-                *) fail "$path is already there and is not Hiru Tsatsi; move it away and run install.sh again" ;;
-            esac
-        fi
-    done
-}
-
-retire_the_old_short_name() {
-    case "$(readlink "$retired_path" || true)" in
-        */backend/bin/hiru-tsatsi) rm "$retired_path" && say "removed:  $retired_path, the old short name; type 'tsatsi' now" ;;
-    esac
-}
-
-link_command() {
-    mkdir -p "$bin_dir"
-    ln -sfn "$here/backend/bin/hiru-tsatsi" "$command_path"
-    ln -sfn "$here/backend/bin/hiru-tsatsi" "$short_path"
-    say "command:  $command_path, and $short_path for short"
+link_commands() {
+    PYTHONPATH="$here/backend" python3 -P -m hiru_tsatsi.entrypoints.install "$bin_dir" "$here/backend/bin/hiru-tsatsi" || exit 1
     case ":$PATH:" in
         *":$bin_dir:"*) ;;
         *) say "          $bin_dir is not on your PATH; add it to type 'tsatsi' anywhere" ;;
@@ -54,8 +32,6 @@ mention_missing_tools() {
 }
 
 require_python
-refuse_to_replace_another_tool
-retire_the_old_short_name
-link_command
+link_commands
 "$command_path" set-up
 mention_missing_tools
