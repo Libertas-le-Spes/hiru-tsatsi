@@ -12,7 +12,7 @@ class NamingWindowsForTitleBars(unittest.TestCase):
         self.names = WindowNameFiles(self.folder)
 
     def test_one_file_per_window_holding_the_app_name(self):
-        self.names.record(window("0x55d1a2b3c4d0", "jetbrains-rider", "onplia – x"), "Rider Main")
+        self.names.record(window("0x55d1a2b3c4d0", "jetbrains-rider", "harbour – x"), "Rider Main")
         self.assertEqual((self.folder / "0x55d1a2b3c4d0").read_text(), "Rider Main\n")
         self.assertEqual([p.name for p in self.folder.iterdir()], ["0x55d1a2b3c4d0"])
 

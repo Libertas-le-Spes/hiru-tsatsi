@@ -7,8 +7,8 @@ from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, from_omastar
 from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
 OMASTART = {"workspaces": [{"id": 2, "label": "Rider Main",
-                            "apps": [{"name": "Rider Main", "cmd": "rider ~/RiderProjects/onplia", "window": None}]}]}
-FROM_OMASTART = AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/RiderProjects/onplia"),)),))
+                            "apps": [{"name": "Rider Main", "cmd": "rider ~/RiderProjects/harbour", "window": None}]}]}
+FROM_OMASTART = AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/RiderProjects/harbour"),)),))
 FROM_WORKBENCH = AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chrome-chat"),)),))
 
 

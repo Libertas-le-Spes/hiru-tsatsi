@@ -18,9 +18,9 @@ class TheStartCommand(unittest.TestCase):
     def test_reports_what_it_did_on_screen_and_as_a_notification(self):
         folder = Path(tempfile.mkdtemp())
         AppListFile(folder / "apps.json").save(
-            AppList((Workspace(2, "Rider", (App("Rider Main", "rider onplia", "onplia"),)),)))
+            AppList((Workspace(2, "Rider", (App("Rider Main", "rider harbour", "harbour"),)),)))
         notifier = FakeNotifier()
-        desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 5)])
+        desktop = FakeDesktop([window("m", "jetbrains-rider", "harbour – x", 5)])
         app = open_app(desktop, folder / "apps.json", [], notifier, FakeNames(), FakeSetUp(), WindowTitles(FakeSettings(), lambda: True))
         printed = io.StringIO()
         with redirect_stdout(printed):

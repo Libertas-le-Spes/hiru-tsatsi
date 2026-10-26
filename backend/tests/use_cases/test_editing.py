@@ -6,10 +6,10 @@ from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.presenters.status_lines import status_line
 from hiru_tsatsi.work_apps.app_list import App
 
-GITLAB_COMMAND = 'omarchy-launch-webapp "https://gitlab.com/whakatau/onplia/-/boards/11220794"'
-RIDER_MAIN = App("Rider Main", "rider ~/RiderProjects/onplia", "onplia")
-RIDER_WINDOW = window("m", "jetbrains-rider", "onplia – /address-comments", 2)
-GITLAB_WINDOW = window("g", "chrome-gitlab.com__whakatau_onplia_-_boards_11220794-Default", "Issue Boards", 1)
+GITLAB_COMMAND = 'omarchy-launch-webapp "https://gitlab.com/examplecorp/harbour/-/boards/1234567"'
+RIDER_MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
+RIDER_WINDOW = window("m", "jetbrains-rider", "harbour – /address-comments", 2)
+GITLAB_WINDOW = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_1234567-Default", "Issue Boards", 1)
 
 
 def editing(open_windows, apps):
@@ -39,14 +39,14 @@ class AddingAnApp(unittest.TestCase):
 
 class TheOverview(unittest.TestCase):
     def test_each_app_shows_where_its_window_is(self):
-        moved = window("m", "jetbrains-rider", "onplia – x", 4)
+        moved = window("m", "jetbrains-rider", "harbour – x", 4)
         apps = app_list((1, [App("GitLab", GITLAB_COMMAND, "chrome-gitlab.com"), App("Chat", "chat", "chrome-chat")]),
                         (2, [RIDER_MAIN, App("Steam", "steam")]))
         _, overview, _ = editing([GITLAB_WINDOW, moved], apps)
         lines = [status_line(view) for space in overview.run() for view in space.apps]
         self.assertEqual(lines, ["✓ Issue Boards, open on workspace 1",
                                  "Recognised when it opens",
-                                 "✓ onplia – x, open on workspace 4 (moved to 2 when you start)",
+                                 "✓ harbour – x, open on workspace 4 (moved to 2 when you start)",
                                  "Will be recognised the first time Hiru Tsatsi starts it"])
 
     def test_the_windows_to_choose_from_put_the_likeliest_first_and_leave_out_owned_ones(self):

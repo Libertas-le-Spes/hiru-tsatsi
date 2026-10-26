@@ -5,7 +5,7 @@ from hiru_tsatsi.use_cases.starting import StartApps
 from hiru_tsatsi.work_apps.app_list import App
 
 CHAT = App("Chat", "omarchy-launch-webapp https://chat.google.com/", "chrome-chat.google.com")
-MAIN = App("Rider Main", "rider ~/RiderProjects/onplia", "onplia")
+MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
 STEAM = App("Steam", "steam")
 
 
@@ -18,7 +18,7 @@ def start(desktop, apps, names=None):
 
 class StartingWorkApps(unittest.TestCase):
     def test_an_open_app_on_its_workspace_is_left_alone(self):
-        desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 2)])
+        desktop = FakeDesktop([window("m", "jetbrains-rider", "harbour – x", 2)])
         outcome, _, _ = start(desktop, app_list((2, [MAIN])))
         self.assertEqual((desktop.launched, desktop.moves), ([], []))
         self.assertEqual(outcome.already_open, ["Rider Main"])
@@ -61,7 +61,7 @@ class StartingWorkApps(unittest.TestCase):
 
     def test_every_window_given_to_an_app_is_named_after_it(self):
         names = FakeNames()
-        desktop = FakeDesktop([window("m", "jetbrains-rider", "onplia – x", 2), window("c", "chrome-chat.google.com_x", "Chat", 4)],
+        desktop = FakeDesktop([window("m", "jetbrains-rider", "harbour – x", 2), window("c", "chrome-chat.google.com_x", "Chat", 4)],
                               {STEAM.command: [window("s", "steam", "Steam", 6)]})
         start(desktop, app_list((1, [CHAT]), (2, [MAIN]), (6, [STEAM])), names)
         self.assertEqual(names.recorded, {"m": "Rider Main", "c": "Chat", "s": "Steam"})
