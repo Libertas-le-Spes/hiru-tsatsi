@@ -11,7 +11,7 @@ STEAM = App("Steam", "steam")
 def ask(clicks: bool):
     desktop = FakeDesktop([])
     clock = FakeClock()
-    start = StartApps(desktop, FakeStore(app_list((6, [STEAM]))), FakeNames(), clock, clock.wait)
+    start = StartApps(desktop, FakeStore(app_list((6, [STEAM]))), FakeNames(), clock, clock.wait, lambda names: None)
     return AskToStart(FakeNotifier(clicks), start).run(), desktop
 
 

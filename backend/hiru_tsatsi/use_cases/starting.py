@@ -52,10 +52,14 @@ class Run:
         return guess_window(placement.app.name, placement.app.command, fresh)
 
 
+Announce = Callable[[list[str]], None]
+
+
 class StartApps:
     def __init__(self, desktop: Desktop, store: AppListStore, names: WindowNames, clock: Callable[[], float],
-                 wait: Callable[[float], None], watch_seconds: float = WATCH_SECONDS):
+                 wait: Callable[[float], None], announce: Announce, watch_seconds: float = WATCH_SECONDS):
         self.desktop = desktop
+        self.announce = announce
         self.names = names
         self.store = store
         self.clock = clock
@@ -68,6 +72,8 @@ class StartApps:
         run = Run(self.desktop, self.names, apps, {w.address for w in windows})
         missing = run.place(apps.placements(), windows)
         already_open = list(run.found)
+        if missing:
+            self.announce(_names(missing))
         for placement in missing:
             self.desktop.launch(placement.app.command, placement.workspace)
         unseen = self._watch(run, missing)

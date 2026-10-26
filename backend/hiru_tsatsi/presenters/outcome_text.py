@@ -12,6 +12,10 @@ def summary(outcome: Outcome) -> str:
     return f"Started {len(outcome.started)}, {len(outcome.already_open)} already open"
 
 
+def starting(names: list[str]) -> tuple[str, str]:
+    return f"Starting {len(names)} work app{'' if len(names) == 1 else 's'}", ", ".join(names)
+
+
 def not_supported(desktop: str) -> str:
     return (f"Hiru Tsatsi can't place windows on {desktop} yet, so it started nothing. "
             "Apps opened without being put on their workspaces would only need sorting by hand.")

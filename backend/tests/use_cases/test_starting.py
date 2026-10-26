@@ -9,10 +9,11 @@ MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
 STEAM = App("Steam", "steam")
 
 
-def start(desktop, apps, names=None):
+def start(desktop, apps, names=None, announced=None):
     store = FakeStore(apps)
     clock = FakeClock()
-    outcome = StartApps(desktop, store, names or FakeNames(), clock, clock.wait).run()
+    announce = (announced if announced is not None else []).append
+    outcome = StartApps(desktop, store, names or FakeNames(), clock, clock.wait, announce).run()
     return outcome, store, clock
 
 
@@ -29,6 +30,17 @@ class StartingWorkApps(unittest.TestCase):
         self.assertEqual(desktop.launched, [])
         self.assertEqual(desktop.moves, [("c", 1)])
         self.assertEqual(outcome.moved, ["Chat"])
+
+    def test_says_which_apps_are_starting_before_launching_them(self):
+        announced = []
+        desktop = FakeDesktop([window("c", "chrome-chat.google.com-Default", "Chat", 1)])
+        start(desktop, app_list((1, [CHAT]), (2, [MAIN, STEAM])), announced=announced)
+        self.assertEqual(announced, [["Rider Main", "Steam"]])
+
+    def test_says_nothing_up_front_when_every_app_is_already_open(self):
+        announced = []
+        start(FakeDesktop([window("c", "chrome-chat.google.com-Default", "Chat", 1)]), app_list((1, [CHAT])), announced=announced)
+        self.assertEqual(announced, [])
 
     def test_every_missing_app_starts_before_any_window_appears(self):
         desktop = FakeDesktop([])

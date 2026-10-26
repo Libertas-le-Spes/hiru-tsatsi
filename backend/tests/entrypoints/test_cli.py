@@ -28,6 +28,16 @@ class TheStartCommand(unittest.TestCase):
         self.assertEqual(notifier.sent, [("Started 0, 1 already open", "Already open: Rider Main\nMoved to their workspace: Rider Main")])
         self.assertIn("Started 0, 1 already open", printed.getvalue())
 
+    def test_says_which_apps_are_starting_as_soon_as_it_begins(self):
+        folder = Path(tempfile.mkdtemp())
+        AppListFile(folder / "apps.json").save(AppList((Workspace(3, "Games", (App("Steam", "steam"),)),)))
+        notifier = FakeNotifier()
+        desktop = FakeDesktop([], {"steam": [window("s", "steam", "Steam", 3)]})
+        app = open_app(desktop, folder / "apps.json", [], notifier, FakeNames(), FakeSetUp(), WindowTitles(FakeSettings(), lambda: True))
+        with redirect_stdout(io.StringIO()):
+            main(["start"], app)
+        self.assertEqual(notifier.sent[0], ("Starting 1 work app", "Steam"))
+
     def test_starts_nothing_on_a_desktop_it_cannot_place_windows_on(self):
         def refuse():
             raise DesktopNotSupported("GNOME")

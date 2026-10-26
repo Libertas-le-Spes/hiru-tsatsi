@@ -8,6 +8,7 @@ from hiru_tsatsi.adapters.storage import locations
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, EarlierList, from_omastart, from_saved
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
 from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
+from hiru_tsatsi.presenters.outcome_text import starting
 from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.overview import Overview
@@ -40,7 +41,7 @@ def open_app(desktop: Desktop | None = None, app_list: Path | None = None, earli
     names = NamesWhenWanted(titles, names or WindowNameFiles(locations.window_names_folder()))
     notifier = notifier or NotifySend()
     desktop = desktop or this_machine.desktop()
-    start = StartApps(desktop, store, names, time.monotonic, time.sleep)
+    start = StartApps(desktop, store, names, time.monotonic, time.sleep, lambda apps: notifier.notify(*starting(apps)))
     setting_up = SetUpDesktop(set_up or this_machine.set_up(), str(locations.installed_command()))
     return App(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop), Overview(store, desktop),
                titles, notifier)
