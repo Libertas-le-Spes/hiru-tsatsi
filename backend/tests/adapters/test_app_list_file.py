@@ -42,6 +42,16 @@ class KeepingTheAppList(unittest.TestCase):
         self.file.save(saved)
         self.assertEqual(self.file.load(), saved)
 
+    def test_an_app_that_opens_in_a_terminal_is_remembered(self):
+        saved = AppList((Workspace(2, "Code", (App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", True),)),))
+        self.file.save(saved)
+        self.assertEqual(self.file.load(), saved)
+
+    def test_only_a_real_true_means_a_terminal(self):
+        content = {"workspaces": [{"number": 2, "label": "Code", "apps": [
+            {"name": "Helper", "command": "helper", "in_terminal": "yes"}]}]}
+        self.assertFalse(from_saved(content).placements()[0].app.in_terminal)
+
 
 if __name__ == "__main__":
     unittest.main()

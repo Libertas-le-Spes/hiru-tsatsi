@@ -1,4 +1,7 @@
+import re
 from dataclasses import dataclass, replace
+
+NOT_IN_A_WINDOW_NAME = re.compile(r"[^a-z0-9]+")
 
 
 class Refused(Exception):
@@ -27,6 +30,7 @@ class App:
     name: str
     command: str
     learned_window: str = ""
+    in_terminal: bool = False
 
     @property
     def knows_window(self) -> bool:
@@ -45,6 +49,11 @@ class Placement:
     workspace: int
     index: int
     app: App
+
+    @property
+    def terminal_window(self) -> str:
+        named = NOT_IN_A_WINDOW_NAME.sub("-", self.app.name.lower()).strip("-") or "app"
+        return f"hiru-tsatsi.{self.workspace}-{self.index}-{named}"
 
 
 def _required(field: str, value: str) -> str:
@@ -108,7 +117,13 @@ class AppList:
         return self._with_apps(workspace, lambda apps: apps[:index] + apps[index + 1:])
 
     def with_learned_window(self, placement: Placement, window: str) -> "AppList":
-        changed = replace(self.placement(placement.workspace, placement.index).app, learned_window=window)
+        return self._with_app_replaced(placement, learned_window=window, in_terminal=False)
+
+    def with_terminal(self, placement: Placement) -> "AppList":
+        return self._with_app_replaced(placement, learned_window=placement.terminal_window, in_terminal=True)
+
+    def _with_app_replaced(self, placement: Placement, **fields) -> "AppList":
+        changed = replace(self.placement(placement.workspace, placement.index).app, **fields)
         index = placement.index
         return self._with_apps(placement.workspace, lambda apps: apps[:index] + (changed,) + apps[index + 1:])
 

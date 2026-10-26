@@ -1,12 +1,13 @@
 import unittest
 
 from tests.fakes import FakeClock, FakeDesktop, FakeNames, FakeStore, app_list, window
-from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.starting import OwnWindowStart, StartApps
 from hiru_tsatsi.work_apps.app_list import App
 
 CHAT = App("Chat", "omarchy-launch-webapp https://chat.google.com/", "chrome-chat.google.com")
 MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
 STEAM = App("Steam", "steam")
+HELPER = App("Helper", "cd code && helper")
 
 
 def start(desktop, apps, names=None, announced=None):
@@ -82,6 +83,47 @@ class StartingWorkApps(unittest.TestCase):
         names = FakeNames()
         start(FakeDesktop([window("t", "foot", "~", 4)]), app_list((2, [MAIN])), names)
         self.assertEqual(names.recorded, {})
+
+
+
+class StartingAppsThatNeedATerminal(unittest.TestCase):
+    def test_a_command_that_stops_without_a_window_is_opened_again_in_a_terminal(self):
+        desktop = FakeDesktop([], stopping={HELPER.command})
+        outcome, store, _ = start(desktop, app_list((2, [HELPER])))
+        self.assertEqual(desktop.in_terminal, [("cd code && helper", 2, "hiru-tsatsi.2-0-helper")])
+        self.assertEqual((outcome.in_terminal, outcome.unseen), (["Helper"], []))
+
+    def test_remembers_that_the_app_opens_in_a_terminal(self):
+        _, store, _ = start(FakeDesktop([], stopping={HELPER.command}), app_list((2, [HELPER])))
+        remembered = store.apps.placements()[0].app
+        self.assertEqual((remembered.in_terminal, remembered.learned_window), (True, "hiru-tsatsi.2-0-helper"))
+
+    def test_an_app_known_to_need_a_terminal_opens_in_one_at_once(self):
+        known = App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", in_terminal=True)
+        desktop = FakeDesktop([])
+        outcome, _, clock = start(desktop, app_list((2, [known])))
+        self.assertEqual(desktop.launched, [])
+        self.assertEqual(desktop.in_terminal, [("cd code && helper", 2, "hiru-tsatsi.2-0-helper")])
+        self.assertEqual((outcome.unseen, clock.now), ([], 0.5))
+
+    def test_a_slow_app_still_running_is_never_put_in_a_terminal(self):
+        desktop = FakeDesktop([])
+        outcome, store, _ = start(desktop, app_list((2, [MAIN])))
+        self.assertEqual((desktop.in_terminal, outcome.unseen), ([], ["Rider Main"]))
+        self.assertFalse(store.apps.placements()[0].app.in_terminal)
+
+    def test_a_command_that_hands_its_window_to_a_running_app_is_not_put_in_a_terminal(self):
+        handed_over = window("c", "chrome-chat.google.com-Default", "Chat", 1)
+        desktop = FakeDesktop([], {CHAT.command: [handed_over]}, stopping={CHAT.command})
+        outcome, _, _ = start(desktop, app_list((1, [CHAT])))
+        self.assertEqual((desktop.in_terminal, outcome.started, outcome.unseen), ([], ["Chat"], []))
+
+    def test_waits_ten_seconds_after_launching_before_deciding(self):
+        class Stopped:
+            def stopped(self):
+                return True
+        launched = OwnWindowStart(app_list((2, [HELPER])).placements()[0], Stopped(), since=100.0)
+        self.assertEqual((launched.needs_terminal(109.9), launched.needs_terminal(110.0)), (False, True))
 
 
 if __name__ == "__main__":

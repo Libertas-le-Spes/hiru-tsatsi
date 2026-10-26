@@ -3,6 +3,8 @@ import re
 import subprocess
 from typing import Callable, Mapping
 
+from hiru_tsatsi.adapters.tagged_launch import TaggedLaunch
+from hiru_tsatsi.adapters.terminal import in_terminal
 from hiru_tsatsi.work_apps.windows import Window
 
 Run = Callable[[list[str]], str]
@@ -25,8 +27,9 @@ def _window(client: dict) -> Window:
 
 
 class Hyprland:
-    def __init__(self, run: Run = run_hyprctl):
+    def __init__(self, run: Run = run_hyprctl, tag: Callable[[], TaggedLaunch] = TaggedLaunch):
         self.run = run
+        self.tag = tag
 
     @classmethod
     def found(cls, env: Mapping[str, str]) -> "Hyprland | None":
@@ -39,8 +42,16 @@ class Hyprland:
             return []
         return [_window(client) for client in clients if isinstance(client, dict)]
 
-    def launch(self, command: str, workspace: int) -> None:
-        self.run(["dispatch", f'hl.dsp.exec_cmd({lua_string(command)}, {{ workspace = "{workspace} silent" }})'])
+    def launch(self, command: str, workspace: int) -> TaggedLaunch:
+        launched = self.tag()
+        self._exec(launched.tagged(command), workspace)
+        return launched
+
+    def launch_in_terminal(self, command: str, workspace: int, window: str) -> None:
+        self._exec(in_terminal(command, window), workspace)
+
+    def _exec(self, shell: str, workspace: int) -> None:
+        self.run(["dispatch", f'hl.dsp.exec_cmd({lua_string(shell)}, {{ workspace = "{workspace} silent" }})'])
 
     def move(self, window: Window, workspace: int) -> None:
         target = lua_string("address:" + window.address)

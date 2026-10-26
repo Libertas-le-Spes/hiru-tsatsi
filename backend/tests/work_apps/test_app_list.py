@@ -1,7 +1,7 @@
 import unittest
 
 from tests.fakes import app_list
-from hiru_tsatsi.work_apps.app_list import App, AppList, Blank, NothingThere, NumberTaken
+from hiru_tsatsi.work_apps.app_list import App, AppList, Blank, NothingThere, NumberTaken, Workspace
 
 CHAT = App("Chat", "chat-app")
 
@@ -43,6 +43,24 @@ class EditingTheList(unittest.TestCase):
         for change in (lambda a: a.without_workspace(9), lambda a: a.without_app(1, 3), lambda a: a.with_app(9, CHAT)):
             with self.assertRaises(NothingThere):
                 change(app_list((1, [CHAT])))
+
+
+
+class OpeningInATerminal(unittest.TestCase):
+    def setUp(self):
+        self.apps = AppList((Workspace(2, "Code", (App("Main Helper!", "cd code && helper"),)),))
+
+    def test_the_terminal_window_is_named_after_the_app_and_its_place(self):
+        self.assertEqual(self.apps.placement(2, 0).terminal_window, "hiru-tsatsi.2-0-main-helper")
+
+    def test_choosing_a_terminal_remembers_its_window(self):
+        app = self.apps.with_terminal(self.apps.placement(2, 0)).placement(2, 0).app
+        self.assertEqual((app.in_terminal, app.learned_window), (True, "hiru-tsatsi.2-0-main-helper"))
+
+    def test_forgetting_the_window_also_forgets_the_terminal_so_it_is_learned_again(self):
+        in_terminal = self.apps.with_terminal(self.apps.placement(2, 0))
+        app = in_terminal.with_learned_window(in_terminal.placement(2, 0), "").placement(2, 0).app
+        self.assertEqual((app.in_terminal, app.learned_window), (False, ""))
 
 
 if __name__ == "__main__":

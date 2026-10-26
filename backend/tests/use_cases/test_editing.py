@@ -49,6 +49,11 @@ class TheOverview(unittest.TestCase):
                                  "✓ harbour – x, open on workspace 4 (moved to 2 when you start)",
                                  "Will be recognised the first time Hiru Tsatsi starts it"])
 
+    def test_an_app_that_opens_in_a_terminal_says_so(self):
+        helper = App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", in_terminal=True)
+        _, overview, _ = editing([], app_list((2, [helper])))
+        self.assertEqual([status_line(view) for view in overview.run()[0].apps], ["Opens in a terminal, recognised when it opens"])
+
     def test_the_windows_to_choose_from_put_the_likeliest_first_and_leave_out_owned_ones(self):
         terminal = window("t", "foot", "~")
         apps = app_list((1, [App("GitLab", GITLAB_COMMAND)]), (2, [RIDER_MAIN]))

@@ -2,6 +2,7 @@ import json
 import unittest
 
 from hiru_tsatsi.adapters.desktops.hyprland import Hyprland, lua_string
+from hiru_tsatsi.adapters.tagged_launch import TaggedLaunch
 from hiru_tsatsi.work_apps.windows import Window
 
 CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}}]
@@ -26,13 +27,21 @@ class TalkingToHyprland(unittest.TestCase):
 
     def test_launches_and_moves_without_following_the_window(self):
         hyprctl = FakeHyprctl()
-        hyprland = Hyprland(hyprctl)
+        hyprland = Hyprland(hyprctl, lambda: TaggedLaunch(tag="t1"))
         hyprland.launch('omarchy-launch-webapp "https://x"', 1)
         hyprland.move(Window("0xa", "steam", "Steam", 4), 6)
         self.assertEqual(hyprctl.calls, [
-            ["dispatch", 'hl.dsp.exec_cmd("omarchy-launch-webapp \\"https://x\\"", { workspace = "1 silent" })'],
+            ["dispatch", 'hl.dsp.exec_cmd("export HIRU_TSATSI_LAUNCH=t1\\010omarchy-launch-webapp \\"https://x\\"", '
+                         '{ workspace = "1 silent" })'],
             ["dispatch", 'hl.dsp.window.move({ workspace = "6", follow = false, window = "address:0xa" })'],
         ])
+
+    def test_a_terminal_app_opens_in_a_terminal_window_with_its_own_name(self):
+        hyprctl = FakeHyprctl()
+        Hyprland(hyprctl).launch_in_terminal("cd code && helper", 2, "hiru-tsatsi.2-0-helper")
+        self.assertEqual(len(hyprctl.calls), 1)
+        self.assertIn('hl.dsp.exec_cmd("xdg-terminal-exec --app-id=hiru-tsatsi.2-0-helper -- sh -c ', hyprctl.calls[0][1])
+        self.assertTrue(hyprctl.calls[0][1].endswith('{ workspace = "2 silent" })'))
 
     def test_unreadable_output_means_no_windows(self):
         self.assertEqual(Hyprland(lambda arguments: "not json").windows(), [])

@@ -8,6 +8,9 @@ So Hiru Tsatsi looks before it launches. Each app remembers its window: the star
 
 Only listing windows, moving them and launching differ between desktops, so each desktop is one class. On a desktop without one, Hiru Tsatsi starts nothing: apps opened without being put in their places would only leave the sorting to you.
 
+Some apps live in a terminal and have no window of their own, such as `claude` or `nvim`. Started without a terminal they stop at once, unseen. Hiru Tsatsi tells them apart by watching: every launch carries a random tag that the processes it starts inherit, and a command that has stopped, with no process left carrying its tag and no window after ten seconds, is opened again in a terminal (`xdg-terminal-exec`) and remembered as one. A web app's command also stops at once, but its window appears, so it never counts. Only the owner's own processes can be read for the tag; when they can't be read, the launch is taken as still running, so nothing is ever opened twice.
+
+
 ## Use
 
 ```sh
