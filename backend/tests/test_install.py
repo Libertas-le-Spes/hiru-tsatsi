@@ -19,23 +19,33 @@ class TheInstaller(unittest.TestCase):
         self.bin = self.home / ".local" / "bin"
         self.bin.mkdir(parents=True)
 
-    def test_leaves_another_tool_called_hiru_alone(self):
-        (self.bin / "hiru").write_text("#!/bin/sh\necho another tool\n")
+    def test_leaves_another_tool_called_tsatsi_alone(self):
+        (self.bin / "tsatsi").write_text("#!/bin/sh\necho another tool\n")
         done = install(self.home)
         self.assertNotEqual(done.returncode, 0)
         self.assertIn("is not Hiru Tsatsi", done.stderr)
-        self.assertEqual((self.bin / "hiru").read_text(), "#!/bin/sh\necho another tool\n")
+        self.assertEqual((self.bin / "tsatsi").read_text(), "#!/bin/sh\necho another tool\n")
         self.assertFalse((self.bin / "hiru-tsatsi").exists())
 
     def test_links_both_commands_when_they_are_free(self):
         install(self.home)
-        for name in ("hiru", "hiru-tsatsi"):
+        for name in ("tsatsi", "hiru-tsatsi"):
             self.assertEqual(os.readlink(self.bin / name), str(INSTALL.parent / "backend" / "bin" / "hiru-tsatsi"))
 
     def test_replaces_a_link_to_an_earlier_hiru_tsatsi_install(self):
+        (self.bin / "tsatsi").symlink_to("/elsewhere/hiru-tsatsi/backend/bin/hiru-tsatsi")
+        install(self.home)
+        self.assertEqual(os.readlink(self.bin / "tsatsi"), str(INSTALL.parent / "backend" / "bin" / "hiru-tsatsi"))
+
+    def test_removes_the_old_short_name_when_it_is_hiru_tsatsi(self):
         (self.bin / "hiru").symlink_to("/elsewhere/hiru-tsatsi/backend/bin/hiru-tsatsi")
         install(self.home)
-        self.assertEqual(os.readlink(self.bin / "hiru"), str(INSTALL.parent / "backend" / "bin" / "hiru-tsatsi"))
+        self.assertFalse((self.bin / "hiru").is_symlink())
+
+    def test_keeps_another_tool_that_is_called_hiru(self):
+        (self.bin / "hiru").write_text("#!/bin/sh\necho another tool\n")
+        install(self.home)
+        self.assertEqual((self.bin / "hiru").read_text(), "#!/bin/sh\necho another tool\n")
 
 
 if __name__ == "__main__":

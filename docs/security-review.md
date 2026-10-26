@@ -33,7 +33,8 @@ Every finding below is dealt with on the branch `security-review-hiru`. The owne
 for H1: the editing page is gone, so Hiru Tsatsi no longer listens for connections at all, and a
 test fails if any module imports a web server, a socket or a browser opener. That also removes M2
 and L2, which were about the same page. Each other finding was fixed as its section proposes and
-sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes.
+sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes. The
+short command the findings call `hiru` is now `tsatsi`.
 
 ## Findings
 
