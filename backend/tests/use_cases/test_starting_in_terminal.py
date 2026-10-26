@@ -34,7 +34,7 @@ class OfferingATerminal(unittest.TestCase):
         self.assertTrue(start.opened_in_its_terminal(HELPER, 2))
         self.assertEqual((offer.now_opens_in_terminal, outcome.unseen), (["Helper"], []))
 
-    def test_the_start_is_saved_and_reported_before_the_question_is_asked(self):
+    def test_the_start_saves_what_it_learned_and_hands_over_what_stopped(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER]), (6, [STEAM])), stops=True)
         appearing_once_launched(start.desktop, [], [window("s", "steam", "Steam", 6)])
         outcome = start.run()
@@ -80,6 +80,22 @@ class OfferingATerminal(unittest.TestCase):
         remembered = saved_once(start.store).placements()[0].app
         self.assertEqual((remembered.opens_in_terminal, remembered.terminal_ruled_out), (False, True))
         self.assertEqual((offer.now_opens_in_terminal, offer.not_offered_again), ([], ["Helper"]))
+
+    def test_a_trial_whose_window_shows_nothing_readable_inside_is_never_remembered(self):
+        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
+        start.window_appearing_in_its_terminal(window("t", HELPERS_TERMINAL, "foot", 2, "", ""))
+        _, offer = start.run_and_offer()
+        remembered = saved_once(start.store).placements()[0].app
+        self.assertEqual((remembered.opens_in_terminal, remembered.terminal_ruled_out), (False, True))
+        self.assertEqual(offer.not_offered_again, ["Helper"])
+
+    def test_a_question_that_could_not_be_shown_decides_nothing(self):
+        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
+        start.notifier.ask_within.return_value = None
+        _, offer = start.run_and_offer()
+        self.assertEqual(start.opened_in_terminal(), [])
+        start.store.save.assert_not_called()
+        self.assertEqual(offer, TerminalOffer())
 
     def test_a_trial_whose_terminal_never_appears_is_never_tried_again(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
@@ -145,24 +161,26 @@ class AfterATerminalWasRuledOut(unittest.TestCase):
         self.assertEqual((outcome.stopped_without_window, outcome.unseen), ([], ["Editor"]))
 
     def test_a_window_that_takes_half_a_minute_is_still_placed(self):
-        start = Start(desktop_showing([]), app_list((2, [RULED_OUT])))
+        start = Start(desktop_showing([]), app_list((2, [RULED_OUT])), stops=True)
         start.window_appearing_after(30.0, window("e", "code", "harbour - Editor", 2))
         outcome = start.run()
-        self.assertEqual(outcome.unseen, [])
+        self.assertEqual((outcome.stopped_without_window, outcome.unseen), ([], []))
 
 
 class NeverTryingATerminal(unittest.TestCase):
     def test_a_folder_and_program_editor_with_its_own_window_still_learns_that_window(self):
         desktop = desktop_showing([])
         appearing_once_launched(desktop, [], [window("e", "code", "harbour - Editor", 2)])
-        start = Start(desktop, app_list((2, [EDITOR])), stops=True)
-        start.run()
+        start = Start(desktop, app_list((2, [EDITOR])), stops=True, answers_yes=True)
+        start.run_and_offer()
+        start.notifier.ask_within.assert_not_called()
         self.assertEqual(start.opened_in_terminal(), [])
         self.assertEqual(saved_once(start.store).placements()[0].app.learned_window, "code")
 
     def test_a_command_of_any_other_shape_is_never_put_in_a_terminal_even_when_it_stops(self):
-        start = Start(desktop_showing([]), app_list((1, [FAILING])), stops=True)
-        outcome = start.run()
+        start = Start(desktop_showing([]), app_list((1, [FAILING])), stops=True, answers_yes=True)
+        outcome, _ = start.run_and_offer()
+        start.notifier.ask_within.assert_not_called()
         self.assertEqual(start.opened_in_terminal(), [])
         self.assertEqual(outcome.unseen, ["Failing"])
 
@@ -173,8 +191,9 @@ class NeverTryingATerminal(unittest.TestCase):
         start.desktop.launch.assert_called_once_with(CHAT.command, 1)
 
     def test_a_folder_and_program_command_still_running_is_never_put_in_a_terminal(self):
-        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=False)
-        outcome = start.run()
+        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=False, answers_yes=True)
+        outcome, _ = start.run_and_offer()
+        start.notifier.ask_within.assert_not_called()
         self.assertEqual(start.opened_in_terminal(), [])
         self.assertEqual(outcome.unseen, ["Helper"])
 

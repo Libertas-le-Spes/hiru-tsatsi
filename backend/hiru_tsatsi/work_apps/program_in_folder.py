@@ -13,6 +13,7 @@ RUNS_ANOTHER_PROGRAM = {"env", "exec", "nohup", "setsid", "sudo", "doas", "pkexe
                         "ionice", "chrt", "taskset", "time", "timeout", "stdbuf", "uwsm", "uwsm-app", "systemd-run",
                         "flatpak", "npx", "pnpx", "bunx", "xargs"}
 EXPANDED_BY_THE_SHELL = ("$", "`")
+QUOTES = ("'", '"')
 PLAIN_PROGRAM = re.compile(r"[A-Za-z0-9_./+@:,-]+")
 
 
@@ -45,6 +46,17 @@ def _names_another_users_home(folder: str) -> bool:
     return folder != "~" and not folder.startswith("~/")
 
 
+def _quotes_a_home_sign(command: str) -> bool:
+    for quote in QUOTES:
+        if f"{quote}~" in command:
+            return True
+    return False
+
+
+def _as_linux_keeps_it(program: str) -> str:
+    return program[:LINUX_KEEPS_OF_A_PROGRAM_NAME]
+
+
 def _full_folder(folder: str, home: str) -> str:
     if folder == "~":
         return home
@@ -60,6 +72,8 @@ class ProgramInFolder:
 
     @classmethod
     def of(cls, command: str, home: str) -> "ProgramInFolder | None":
+        if _quotes_a_home_sign(command):
+            return None
         words = _words(command)
         if not _goes_to_a_folder_first(words):
             return None
@@ -82,5 +96,4 @@ class ProgramInFolder:
         return self._same_program(window) and window.folder != self.folder
 
     def _same_program(self, window: Window) -> bool:
-        name_linux_keeps = self.program[:LINUX_KEEPS_OF_A_PROGRAM_NAME]
-        return window.program == name_linux_keeps
+        return window.program == _as_linux_keeps_it(self.program)

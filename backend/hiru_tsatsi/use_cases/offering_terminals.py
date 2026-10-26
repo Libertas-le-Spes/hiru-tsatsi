@@ -32,6 +32,12 @@ def _with_terminal_ruled_out(apps: AppList, placements: list[Placement]) -> AppL
 
 
 @dataclass(frozen=True)
+class Answers:
+    wanted: list[Placement] = field(default_factory=list)
+    declined: list[Placement] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class TerminalOffer:
     now_opens_in_terminal: list[str] = field(default_factory=list)
     not_offered_again: list[str] = field(default_factory=list)
@@ -50,21 +56,23 @@ class OfferTerminals:
             return TerminalOffer()
         if not self.one_at_a_time.claimed():
             raise AlreadyStarting()
-        wanted, declined = self._answers(_still_there(self.store.load(), stopped))
+        to_ask = _still_there(self.store.load(), stopped)
+        answers = self._answers(to_ask)
         apps = self.store.load()
-        wanted = _still_there(apps, wanted)
-        declined = _still_there(apps, declined)
+        wanted = _still_there(apps, answers.wanted)
+        declined = _still_there(apps, answers.declined)
         tried = self.trying.try_out(_with_terminal_ruled_out(apps, declined), wanted)
         save_learned(self.store, apps, tried.apps)
+        not_offered_again = declined + tried.not_confirmed
         return TerminalOffer(now_opens_in_terminal=names_of(tried.confirmed),
-                             not_offered_again=names_of(declined + tried.not_confirmed))
+                             not_offered_again=names_of(not_offered_again))
 
-    def _answers(self, placements: list[Placement]) -> tuple[list[Placement], list[Placement]]:
-        wanted = []
-        declined = []
+    def _answers(self, placements: list[Placement]) -> "Answers":
+        answers = Answers()
         for placement in placements:
-            if self.notifier.ask_within(_question(placement), EXPLANATION, ACTION, QUESTION_SECONDS):
-                wanted.append(placement)
-            else:
-                declined.append(placement)
-        return wanted, declined
+            answer = self.notifier.ask_within(_question(placement), EXPLANATION, ACTION, QUESTION_SECONDS)
+            if answer is True:
+                answers.wanted.append(placement)
+            if answer is False:
+                answers.declined.append(placement)
+        return answers

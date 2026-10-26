@@ -11,16 +11,17 @@ CLOSING = ["gdbus", "call", "--session", "--dest", "org.freedesktop.Notification
            "--method", "org.freedesktop.Notifications.CloseNotification", "42"]
 
 
-def asking_that_prints(printed: str) -> mock.Mock:
+def asking_that_prints(printed: str, exit_code: int = 0) -> mock.Mock:
     asking = mock.create_autospec(QUESTION_PROCESS, instance=True)
     asking.communicate.return_value = (printed, None)
+    asking.returncode = exit_code
     return asking
 
 
 class AskingWithADeadline(unittest.TestCase):
     def setUp(self):
         which = mock.patch.object(notify_send.shutil, "which", autospec=True, return_value="/usr/bin/notify-send")
-        which.start()
+        self.which = which.start()
         self.addCleanup(which.stop)
         popen = mock.patch.object(notify_send.subprocess, "Popen", autospec=True)
         self.popen = popen.start()
@@ -45,6 +46,15 @@ class AskingWithADeadline(unittest.TestCase):
     def test_a_dismissal_is_a_no(self):
         self.popen.return_value = asking_that_prints("42\n")
         self.assertFalse(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+
+    def test_without_notify_send_nothing_is_asked_and_there_is_no_answer(self):
+        self.which.return_value = None
+        self.assertIsNone(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.popen.assert_not_called()
+
+    def test_a_question_no_service_could_show_has_no_answer(self):
+        self.popen.return_value = asking_that_prints("", exit_code=1)
+        self.assertIsNone(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
 
     def test_no_answer_in_time_is_a_no_and_the_question_is_taken_off_the_screen(self):
         asking = asking_that_prints("42\n")

@@ -45,9 +45,9 @@ class NotifySend:
             answered = subprocess.run(question, capture_output=True, text=True, check=False)
         return answered.stdout.strip() in ANSWERS
 
-    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> bool:
+    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> bool | None:
         if not shutil.which("notify-send"):
-            return False
+            return None
         asking = subprocess.Popen(_question(summary, body, action, "--print-id"), stdout=subprocess.PIPE, text=True)
         try:
             printed, _ = asking.communicate(timeout=seconds)
@@ -56,4 +56,6 @@ class NotifySend:
             printed, _ = asking.communicate()
             _close(_line(printed, 0))
             return False
+        if asking.returncode != 0 and _line(printed, 0) == "":
+            return None
         return _line(printed, 1) in ANSWERS

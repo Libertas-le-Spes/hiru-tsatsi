@@ -26,6 +26,21 @@ def _in_a_trial_terminal(placement: Placement) -> Placement:
     return Placement(placement.workspace, placement.index, as_terminal_app(placement.app))
 
 
+def _not_in(tried: list[Placement], confirmed: list[Placement]) -> list[Placement]:
+    left = []
+    for placement in tried:
+        if placement not in confirmed:
+            left.append(placement)
+    return left
+
+
+def _record(learned: LearnedApps, confirmed: list[Placement], not_confirmed: list[Placement]) -> None:
+    for placement in confirmed:
+        learned.remember_terminal(placement)
+    for placement in not_confirmed:
+        learned.rule_out_terminal(placement)
+
+
 class TryingTerminals:
     def __init__(self, desktop: Desktop, names: WindowNames, launcher: Launcher, recognising: Recognising,
                  watching: WatchingStarts, confirming: ConfirmingTerminals, clock: Clock):
@@ -44,7 +59,8 @@ class TryingTerminals:
         trials = self._begin_all(placements)
         unseen = placements_of(self.watching.until_placed(placing, trials))
         confirmed = self.confirming.confirmed_among(self._seen(placing, trials, unseen))
-        not_confirmed = self._settled(learned, placements_of(trials), confirmed)
+        not_confirmed = _not_in(placements_of(trials), confirmed)
+        _record(learned, confirmed, not_confirmed)
         return Tried(learned.apps, confirmed, not_confirmed)
 
     def _begin_all(self, placements: list[Placement]) -> list[AppStart]:
@@ -60,14 +76,3 @@ class TryingTerminals:
             if trial.placement not in unseen:
                 seen.append((trial.placement, placing.window_given_to(trial.placement)))
         return seen
-
-    @staticmethod
-    def _settled(learned: LearnedApps, tried: list[Placement], confirmed: list[Placement]) -> list[Placement]:
-        not_confirmed = []
-        for placement in tried:
-            if placement in confirmed:
-                learned.remember_terminal(placement)
-            else:
-                learned.rule_out_terminal(placement)
-                not_confirmed.append(placement)
-        return not_confirmed

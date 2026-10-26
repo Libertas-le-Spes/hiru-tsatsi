@@ -23,6 +23,9 @@ class StartLock:
         except BlockingIOError:
             os.close(lock)
             return False
+        except OSError as error:
+            os.close(lock)
+            raise CannotTellIfStarting(f"{self.path} can't be locked ({error.strerror})")
         self.held = lock
         return True
 

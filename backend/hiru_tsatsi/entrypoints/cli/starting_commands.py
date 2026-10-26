@@ -22,20 +22,25 @@ def _report_and_offer(services: Services, outcome: Outcome) -> int:
     return 0
 
 
+def _refused_on_screen(services: Services, refused: StartRefused) -> None:
+    services.notifier.notify(NOT_STARTED, refused.explained())
+
+
 def start(services: Services, chosen: argparse.Namespace) -> int:
     try:
-        return _report_and_offer(services, services.start.run())
+        outcome = services.start.run()
     except StartRefused as refused:
-        services.notifier.notify(NOT_STARTED, refused.explained())
+        _refused_on_screen(services, refused)
         raise
+    return _report_and_offer(services, outcome)
 
 
 def ask(services: Services, chosen: argparse.Namespace) -> int:
     try:
         outcome = services.ask.run()
-        if outcome is None:
-            return 0
-        return _report_and_offer(services, outcome)
     except StartRefused as refused:
-        services.notifier.notify(NOT_STARTED, refused.explained())
+        _refused_on_screen(services, refused)
         raise
+    if outcome is None:
+        return 0
+    return _report_and_offer(services, outcome)

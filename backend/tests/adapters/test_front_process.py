@@ -20,6 +20,12 @@ class FindingWhatRunsInAWindow(unittest.TestCase):
                    23: Running("helper", "/home/sam/code", front=21, group=21)}
         self.assertEqual(front_of(20, running), ("helper", "/home/sam/code"))
 
+    def test_a_program_running_a_tool_of_its_own_is_still_what_runs(self):
+        running = {80: Running("foot", children=[81]), 81: Running("bash", children=[82], front=82, group=81),
+                   82: Running("helper", "/home/sam/code", children=[83], front=82, group=82),
+                   83: Running("grep", "/home/sam/code", front=82, group=82)}
+        self.assertEqual(front_of(80, running), ("helper", "/home/sam/code"))
+
     def test_a_shell_waiting_for_typing_is_what_runs(self):
         running = {30: Running("foot", children=[31]), 31: Running("bash", "/home/sam/code", front=31)}
         self.assertEqual(front_of(30, running), ("bash", "/home/sam/code"))
