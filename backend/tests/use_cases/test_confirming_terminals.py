@@ -27,6 +27,10 @@ class ConfirmingATrialTerminal(unittest.TestCase):
         self.assertEqual(self.confirming.newly_confirmed([with_inside("helper", "/home/sam/code")]), [HELPER])
         self.assertEqual((self.confirming.waiting, self.confirming.confirmed), (False, [HELPER]))
 
+    def test_a_trial_never_confirmed_is_listed_as_unconfirmed(self):
+        self.confirming.newly_confirmed([with_inside("sh", "/home/sam")])
+        self.assertEqual(self.confirming.unconfirmed(), [HELPER])
+
     def test_the_same_program_in_another_window_does_not_count(self):
         elsewhere = window("x", "foot", "", 2, "helper", "/home/sam/code")
         self.assertEqual(self.confirming.newly_confirmed([elsewhere]), [])

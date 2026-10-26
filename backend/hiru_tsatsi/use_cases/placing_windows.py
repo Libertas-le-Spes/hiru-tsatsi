@@ -33,6 +33,9 @@ class PlacingWindows:
     def remember_terminal(self, placement: Placement) -> None:
         self.apps = self.apps.with_terminal(placement)
 
+    def rule_out_terminal(self, placement: Placement) -> None:
+        self.apps = self.apps.with_terminal_ruled_out(placement)
+
     @staticmethod
     def _known_ones_first(placements: list[Placement]) -> list[Placement]:
         known = []

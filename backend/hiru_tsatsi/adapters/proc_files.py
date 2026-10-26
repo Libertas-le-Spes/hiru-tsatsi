@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+PROCESS_GROUP_FIELD = 4
 FOREGROUND_GROUP_FIELD = 7
 START_TIME_FIELD = 21
 TICKS_PER_SECOND = os.sysconf("SC_CLK_TCK")
@@ -22,6 +23,10 @@ def real_user_in(status: str) -> int:
         if line.startswith("Uid:"):
             return int(line.split()[1])
     return -1
+
+
+def process_group_in(stat: str) -> int:
+    return _stat_field(stat, PROCESS_GROUP_FIELD)
 
 
 def foreground_group_in(stat: str) -> int:
@@ -69,6 +74,9 @@ class ProcFiles:
         for child in self._read(pid, f"task/{pid}/children").split():
             children.append(int(child))
         return children
+
+    def process_group(self, pid: int) -> int:
+        return process_group_in(self._read(pid, "stat"))
 
     def foreground_group(self, pid: int) -> int:
         return foreground_group_in(self._read(pid, "stat"))

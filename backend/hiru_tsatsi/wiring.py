@@ -20,10 +20,12 @@ from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.installing import LinkCommands
 from hiru_tsatsi.use_cases.launching import Launcher
+from hiru_tsatsi.use_cases.offering_terminals import OfferingTerminals
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.use_cases.services import Services
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
 from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.watching_starts import WATCH_SECONDS, WatchingStarts
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 from hiru_tsatsi.work_apps.recognising import Recognising
 
@@ -42,8 +44,9 @@ def open_services() -> Services:
     desktop = SeeingInside(this_machine.desktop(), FrontProcess(processes).of_window)
     recognising = Recognising(str(Path.home()))
     launcher = Launcher(desktop, TaggedLaunches(processes), XdgTerminal())
-    start = StartApps(desktop, launcher, store, names, time.monotonic, time.sleep, StartingNotice(notifier),
-                      recognising)
+    watching = WatchingStarts(desktop, time.monotonic, time.sleep, WATCH_SECONDS)
+    offering = OfferingTerminals(notifier, launcher, watching)
+    start = StartApps(desktop, launcher, store, names, StartingNotice(notifier), recognising, watching, offering)
     setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
     return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
                     Overview(store, desktop, recognising), titles, notifier)

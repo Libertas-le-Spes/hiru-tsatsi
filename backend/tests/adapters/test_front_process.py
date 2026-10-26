@@ -15,8 +15,9 @@ class FindingWhatRunsInAWindow(unittest.TestCase):
         self.assertEqual(front_of(10, running), ("helper", "/home/sam/code"))
 
     def test_the_program_behind_shells_that_only_wait_for_it(self):
-        running = {20: Running("foot", children=[21]), 21: Running("sh", children=[22], front=21),
-                   22: Running("sh", "/home/sam/code", children=[23]), 23: Running("helper", "/home/sam/code")}
+        running = {20: Running("foot", children=[21]), 21: Running("sh", children=[22], front=21, group=21),
+                   22: Running("sh", "/home/sam/code", children=[23], front=21, group=21),
+                   23: Running("helper", "/home/sam/code", front=21, group=21)}
         self.assertEqual(front_of(20, running), ("helper", "/home/sam/code"))
 
     def test_a_shell_waiting_for_typing_is_what_runs(self):
@@ -31,10 +32,16 @@ class FindingWhatRunsInAWindow(unittest.TestCase):
     def test_a_window_with_nothing_started_inside_runs_nothing_known(self):
         self.assertEqual(front_of(40, {40: Running("chromium")}), ("", ""))
 
-    def test_a_shell_with_a_background_job_is_what_runs_not_the_job(self):
-        running = {60: Running("foot", children=[61]), 61: Running("bash", "/home/sam/code", children=[62, 63], front=61),
-                   62: Running("helper", "/home/sam/code"), 63: Running("sleep", "/home/sam/code")}
+    def test_a_shell_with_one_background_job_is_what_runs_not_the_job(self):
+        running = {60: Running("foot", children=[61]),
+                   61: Running("bash", "/home/sam/code", children=[62], front=61, group=61),
+                   62: Running("helper", "/home/sam/code", front=61, group=62)}
         self.assertEqual(front_of(60, running), ("bash", "/home/sam/code"))
+
+    def test_a_child_whose_group_cannot_be_read_is_never_taken_for_what_runs(self):
+        running = {70: Running("foot", children=[71]), 71: Running("bash", "/home/sam/code", children=[72], front=71),
+                   72: Running("helper", "/home/sam/code")}
+        self.assertEqual(front_of(70, running), ("bash", "/home/sam/code"))
 
 
 if __name__ == "__main__":

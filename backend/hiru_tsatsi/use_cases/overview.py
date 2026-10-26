@@ -40,7 +40,7 @@ class Overview:
         apps = self.store.load()
         app = apps.placement(workspace, index).app
         free = unclaimed(apps, self.desktop.windows(), self.recognising, (workspace, index))
-        return likeliest_first(app.name, app.command, free)
+        return likeliest_first(app.name, app.command, self.recognising.could_be_its_windows(app, free))
 
     @staticmethod
     def _app_views(number: int, apps: tuple[App, ...], found: dict[Spot, Window]) -> list[AppView]:

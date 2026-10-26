@@ -7,6 +7,7 @@ from hiru_tsatsi.work_apps.windows import Window
 
 class AppStart(Protocol):
     placement: Placement
+    waits_for_window: bool
 
     def next(self, now: float) -> "AppStart": ...
 

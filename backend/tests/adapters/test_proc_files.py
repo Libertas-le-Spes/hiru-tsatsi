@@ -1,7 +1,8 @@
 import unittest
 from unittest import mock
 
-from hiru_tsatsi.adapters.proc_files import TICKS_PER_SECOND, ProcFiles, foreground_group_in, real_user_in, started_in
+from hiru_tsatsi.adapters.proc_files import (TICKS_PER_SECOND, ProcFiles, foreground_group_in, process_group_in,
+                                             real_user_in, started_in)
 
 
 class ReadingWhichProcessIsInFront(unittest.TestCase):
@@ -13,6 +14,10 @@ class ReadingWhichProcessIsInFront(unittest.TestCase):
 
     def test_an_unreadable_status_line_means_none(self):
         self.assertEqual(foreground_group_in(""), 0)
+
+    def test_the_fifth_field_is_the_group_the_process_belongs_to(self):
+        self.assertEqual(process_group_in("62 (helper) S 61 62 31 34816 31 4194304"), 62)
+
 
 class ReadingWhenAProcessStarted(unittest.TestCase):
     def test_the_twenty_second_field_in_seconds_since_boot(self):

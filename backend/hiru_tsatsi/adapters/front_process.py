@@ -26,5 +26,11 @@ class FrontProcess:
             children = self.processes.children(pid)
             if self.processes.program(pid) not in SHELLS or len(children) != 1:
                 return pid
+            if not self._in_the_foreground(children[0]):
+                return pid
             pid = children[0]
         return pid
+
+    def _in_the_foreground(self, pid: int) -> bool:
+        group = self.processes.process_group(pid)
+        return group > 0 and group == self.processes.foreground_group(pid)

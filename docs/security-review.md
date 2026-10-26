@@ -63,25 +63,37 @@ recorded here with what each choice fails to stop.
   account can read, but another account can only put it in its own processes, which are never
   read. Only processes started at or after the launch can carry it, so they are the only ones
   asked. If any of them can't be read, or processes can't be listed, the launch counts as still
-  running: no terminal is opened.
+  running: no terminal is offered.
   *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive,
-  which only stops a terminal from being opened. A launcher that hands its program to another
+  which only stops a terminal from being offered. A launcher that hands its program to another
   service (over D-Bus, or through `systemd-run` as `omarchy-launch-browser` does) leaves nothing
   carrying the tag, so it looks stopped; only commands of the shape below are ever watched.
-- **Re-running a command in a terminal.** Only a command of the shape `cd <folder> && <program>`
-  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that is neither a shell
-  nor one that launches another (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`,
-  `nice`, `time`, `uwsm-app`), is ever re-run, and only such a command starts in a terminal even
-  if a hand-edited list says another one should, and only after it stopped with no window for ten seconds; windows
-  are looked for before that is decided. It runs again inside
-  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. "Opens in
-  a terminal" is saved only when the app's own program is then seen running in that terminal, so
-  a typo, which leaves only a shell waiting for Enter, is never remembered.
-  *Fails to stop:* a command of that shape whose window takes longer than ten seconds and whose
-  launcher exits is run a second time, in a terminal, for that one start. A program whose folder
-  Linux hides from its owner (one given extra privileges, such as `btop`) is never confirmed, so
-  it is tried in a terminal again on every start. A program that keeps running with no terminal
-  instead of stopping (as `nvim` can) is never put in one, and runs unseen, as it did before.
+- **Opening a command in a terminal.** Hiru Tsatsi never runs a command a second time on its own.
+  When a watched launch has stopped with no window ten seconds after it began, a notification asks
+  "Open <app> in a terminal?"; only a click runs it again, inside
+  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. Anything
+  but a click (a dismissal, the notification timing out, no notification service) is a no, and
+  the no is saved with the app, so it is never asked about again until its command changes.
+  Under that question sit three limits:
+  - Only a command of the shape `cd <folder> && <program>` (or `;`) is ever watched or offered,
+    with a plain folder (no `$`, backtick or `~user`), no `NAME=value` in front of the program,
+    and a program that is neither a shell nor one of the launchers known to run another
+    (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `pkexec`, `command`, `builtin`, `nice`,
+    `ionice`, `chrt`, `taskset`, `time`, `timeout`, `stdbuf`, `uwsm`, `uwsm-app`, `systemd-run`,
+    `flatpak`, `npx`, `pnpx`, `bunx`, `xargs`). That list is a blocklist and can never be
+    complete; the question above is what stops a launcher missing from it.
+  - Each app gets one trial. "Opens in a terminal" is saved only when the app's own program is
+    seen running in that terminal. A trial that is never confirmed (a typo, which leaves only a
+    shell waiting for Enter, or a launcher missing from the list) is saved as a no.
+  - Only a command of that shape starts in a terminal, even if a hand-edited list says another
+    one should.
+  A launch that stopped keeps its place while other apps are still being waited for, so a window
+  that arrives late is still placed and learned, and the app is not asked about.
+  *Fails to stop:* a click on yes for a command whose launcher exited while its window was still
+  coming runs it twice, once. A program whose folder Linux hides from its owner (one given extra
+  privileges, such as `btop`) is never confirmed, so it is saved as a no after its one trial. A
+  program that keeps running with no terminal instead of stopping (as `nvim` can) is never
+  offered one, and runs unseen, as it did before.
 - **Recognising a session.** A window counts as an app's when the program in front in it and its
   folder match the command. A window that shares its program with other windows, or whose
   program has more than one child, reports nothing. A terminal app's own window is matched by its
