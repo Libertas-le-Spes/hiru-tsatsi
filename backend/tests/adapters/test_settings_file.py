@@ -3,7 +3,7 @@ from pathlib import Path
 
 from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 
 SETTINGS = Path("/home/sam/.config/hiru-tsatsi/settings.json")
 
@@ -31,6 +31,7 @@ class KeepingSettings(unittest.TestCase):
         with self.assertRaises(NotReadable):
             SettingsFile(SETTINGS, files).set_window_titles(True)
         files.write.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

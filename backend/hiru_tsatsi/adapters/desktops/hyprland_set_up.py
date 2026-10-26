@@ -1,12 +1,13 @@
 import re
+import shlex
 from pathlib import Path
 from typing import Mapping
 
 from hiru_tsatsi.adapters.desktops.hyprctl import Run, inside_hyprland, run_hyprctl
 from hiru_tsatsi.adapters.desktops.hyprland_binds import taken_keys
 from hiru_tsatsi.adapters.desktops.lua import lua_string
-from hiru_tsatsi.adapters.storage.files import Disk, Files
-from hiru_tsatsi.use_cases.ports import SetUpFailed
+from hiru_tsatsi.adapters.storage.files import Files
+from hiru_tsatsi.use_cases.failures import SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
 BOUND_KEYS = re.compile(r'hl\.bind\("([^"]+)"')
@@ -30,19 +31,17 @@ def _with_line_added(text: str, line: str) -> str:
 
 
 class HyprlandSetUp:
-    def __init__(self, config_folder: Path, run: Run = run_hyprctl, files: Files | None = None):
-        if files is None:
-            files = Disk()
+    def __init__(self, config_folder: Path, files: Files, run: Run = run_hyprctl):
         self.own_file = config_folder / "hiru-tsatsi.lua"
         self.main_file = config_folder / "hyprland.lua"
         self.run = run
         self.files = files
 
     @classmethod
-    def found(cls, env: Mapping[str, str], config_home: Path) -> "HyprlandSetUp | None":
+    def found(cls, env: Mapping[str, str], config_home: Path, files: Files) -> "HyprlandSetUp | None":
         if not inside_hyprland(env):
             return None
-        return cls(config_home / "hypr")
+        return cls(config_home / "hypr", files)
 
     def installed_keys(self) -> Keys | None:
         bound = BOUND_KEYS.search(self.files.read(self.own_file))
@@ -53,8 +52,8 @@ class HyprlandSetUp:
     def taken_keys(self) -> set[Keys]:
         return taken_keys(self.run)
 
-    def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None:
-        self.files.write(self.own_file, self._own_config(keys, start_command, ask_command), follow_link=True)
+    def install(self, keys: Keys | None, command: str) -> None:
+        self.files.write(self.own_file, self._own_config(keys, shlex.quote(command)), follow_link=True)
         self._load_from_main_file()
         self.run(["reload"])
         errors = self.run(["configerrors"]).strip()
@@ -62,8 +61,8 @@ class HyprlandSetUp:
             raise SetUpFailed(errors)
 
     @staticmethod
-    def _own_config(keys: Keys | None, start_command: str, ask_command: str) -> str:
-        return _shortcut_line(keys, start_command) + _login_question(ask_command)
+    def _own_config(keys: Keys | None, command: str) -> str:
+        return _shortcut_line(keys, f"{command} start") + _login_question(f"{command} ask")
 
     def _load_from_main_file(self) -> None:
         line = f"dofile({lua_string(str(self.own_file))})"

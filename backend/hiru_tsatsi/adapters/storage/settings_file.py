@@ -1,16 +1,14 @@
 from pathlib import Path
 
-from hiru_tsatsi.adapters.storage.files import Disk, Files
+from hiru_tsatsi.adapters.storage.files import Files
 from hiru_tsatsi.adapters.storage.json_object import json_object, json_text
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 
 WINDOW_TITLES = "window_titles"
 
 
 class SettingsFile:
-    def __init__(self, path: Path, files: Files | None = None):
-        if files is None:
-            files = Disk()
+    def __init__(self, path: Path, files: Files):
         self.path = path
         self.files = files
 

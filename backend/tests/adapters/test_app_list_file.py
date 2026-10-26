@@ -6,7 +6,7 @@ from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved, to_saved
 from hiru_tsatsi.adapters.storage.json_object import json_text
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.workspace import Workspace
@@ -21,7 +21,7 @@ FROM_WORKBENCH = AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chro
 
 
 def app_list_file(files) -> AppListFile:
-    return AppListFile(LIST, [(WORKBENCH, from_saved), (OMASTART, from_omastart)], files)
+    return AppListFile(LIST, files, [(WORKBENCH, from_saved), (OMASTART, from_omastart)])
 
 
 class KeepingTheAppList(unittest.TestCase):
@@ -80,9 +80,19 @@ class AListThatCannotBeRead(unittest.TestCase):
             app_list_file(files).load()
         files.write.assert_not_called()
 
+    def test_valid_json_in_the_wrong_shape_is_refused_in_words(self):
+        wrong_shapes = ['{"workspaces": [{"label": "Comms"}]}', '{"workspaces": "abc"}', '{"workspaces": [{"number": "one"}]}']
+        for content in wrong_shapes:
+            with self.subTest(content=content):
+                files = files_holding({LIST: content})
+                with self.assertRaises(NotReadable):
+                    app_list_file(files).load()
+                files.write.assert_not_called()
+
     def test_a_list_that_is_not_an_object_is_refused(self):
         with self.assertRaises(NotReadable):
             app_list_file(files_holding({LIST: "[]"})).load()
+
 
 if __name__ == "__main__":
     unittest.main()

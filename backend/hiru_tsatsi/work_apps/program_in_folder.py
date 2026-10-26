@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from hiru_tsatsi.work_apps.windows import Window
 
 THEN = {"&&", ";"}
+LINUX_KEEPS_OF_A_PROGRAM_NAME = 15
 RUNS_ANOTHER_PROGRAM = {"env", "exec", "nohup", "setsid", "sudo", "doas", "command", "nice", "time", "uwsm-app"}
 EXPANDED_BY_THE_SHELL = ("$", "`")
 
@@ -57,4 +58,5 @@ class ProgramInFolder:
         return cls(program, _full_folder(folder, home))
 
     def runs_in(self, window: Window) -> bool:
-        return window.program == self.program and window.folder == self.folder
+        name_linux_keeps = self.program[:LINUX_KEEPS_OF_A_PROGRAM_NAME]
+        return window.program == name_linux_keeps and window.folder == self.folder

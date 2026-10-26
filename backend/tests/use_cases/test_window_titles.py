@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, create_autospec
 
 from tests.examples.windows import window
+from hiru_tsatsi.use_cases.failures import NotSaved
 from hiru_tsatsi.use_cases.ports import SettingsStore, WindowNames
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 
@@ -39,6 +40,12 @@ class NamingOnlyWhenWanted(unittest.TestCase):
         steam = window("0xa", "steam")
         NamesWhenWanted(titles(chosen=None, installed=True), names).record(steam, "Steam")
         names.record.assert_called_once_with(steam, "Steam")
+
+    def test_a_name_that_cannot_be_saved_does_not_stop_the_start(self):
+        names = create_autospec(WindowNames, instance=True)
+        names.record.side_effect = NotSaved("other accounts can write to window-names")
+        NamesWhenWanted(titles(chosen=None, installed=True), names).record(window("0xa", "steam"), "Steam")
+        names.record.assert_called_once()
 
 
 if __name__ == "__main__":

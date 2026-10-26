@@ -1,5 +1,8 @@
 class Refused(Exception):
-    pass
+    exit_code = 1
+
+    def explained(self) -> str:
+        return str(self)
 
 
 class NumberTaken(Refused):

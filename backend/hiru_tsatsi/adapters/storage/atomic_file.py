@@ -4,26 +4,23 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
-from hiru_tsatsi.use_cases.ports import NotSaved
+from hiru_tsatsi.adapters.storage.reading import read_text
+from hiru_tsatsi.use_cases.failures import ChangedMeanwhile, NotSaved
 
-OWNER_ONLY = 0o600
+OWNER_ONLY_FILE = 0o600
+OWNER_ONLY_FOLDER = 0o700
 WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
+MOST_LINKS = 40
 
-
-def text_or_nothing(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return ""
+Account = Callable[[], int]
 
 
 def write_atomically(path: Path, text: str, read_before: str | None = None, follow_link: bool = False,
-                     account: Callable[[], int] = os.getuid) -> None:
-    target = _target(path, follow_link)
+                     account: Account = os.getuid) -> None:
+    _make_missing_folders(path.parent)
+    target = _target(path, follow_link, account)
     folder = target.parent
-    folder.mkdir(parents=True, exist_ok=True)
     _refuse_unsafe_folder(folder, path, account)
-    _refuse_unsafe_folder(path.parent, path, account)
     copy = _new_copy(target, text)
     try:
         _refuse_if_changed_meanwhile(target, path, read_before)
@@ -34,13 +31,39 @@ def write_atomically(path: Path, text: str, read_before: str | None = None, foll
     _settle(folder)
 
 
-def _target(path: Path, follow_link: bool) -> Path:
-    if follow_link:
-        return path.resolve()
-    return path
+def _make_missing_folders(folder: Path) -> None:
+    missing = []
+    while not folder.exists():
+        missing.append(folder)
+        folder = folder.parent
+    for folder in reversed(missing):
+        folder.mkdir(mode=OWNER_ONLY_FOLDER)
 
 
-def _refuse_unsafe_folder(folder: Path, path: Path, account: Callable[[], int]) -> None:
+def _target(path: Path, follow_link: bool, account: Account) -> Path:
+    if not follow_link:
+        _refuse_a_link(path)
+        return path
+    _refuse_unsafe_links(path, account)
+    return path.resolve()
+
+
+def _refuse_a_link(path: Path) -> None:
+    if path.is_symlink():
+        raise NotSaved(f"{path} is a link, and Hiru Tsatsi won't replace a link with a file, so it was left as it was")
+
+
+def _refuse_unsafe_links(path: Path, account: Account) -> None:
+    hop = path
+    for _ in range(MOST_LINKS):
+        _refuse_unsafe_folder(hop.parent, path, account)
+        if not hop.is_symlink():
+            return
+        hop = hop.parent / hop.readlink()
+    raise NotSaved(f"{path} goes through too many links, so it was left as it was")
+
+
+def _refuse_unsafe_folder(folder: Path, path: Path, account: Account) -> None:
     details = folder.stat()
     if details.st_uid != account():
         raise NotSaved(f"{folder} belongs to another account, so {path} was left as it was")
@@ -50,7 +73,7 @@ def _refuse_unsafe_folder(folder: Path, path: Path, account: Callable[[], int]) 
 
 def _mode_to_keep(target: Path) -> int:
     if not target.exists():
-        return OWNER_ONLY
+        return OWNER_ONLY_FILE
     return stat.S_IMODE(target.stat().st_mode)
 
 
@@ -73,8 +96,8 @@ def _new_copy(target: Path, text: str) -> Path:
 def _refuse_if_changed_meanwhile(target: Path, path: Path, read_before: str | None) -> None:
     if read_before is None:
         return
-    if text_or_nothing(target) != read_before:
-        raise NotSaved(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
+    if read_text(target) != read_before:
+        raise ChangedMeanwhile(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
 
 
 def _settle(folder: Path) -> None:

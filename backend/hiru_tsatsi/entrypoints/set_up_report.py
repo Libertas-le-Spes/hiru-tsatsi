@@ -1,15 +1,7 @@
-from hiru_tsatsi.presenters.outcome_text import set_up_text
-from hiru_tsatsi.use_cases.ports import NotSaved, SetUpFailed
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.presenters.set_up_text import set_up_text
+from hiru_tsatsi.use_cases.services import Services
 
 
 def report_set_up(services: Services) -> int:
-    try:
-        print(set_up_text(services.set_up.run()))
-    except SetUpFailed as failed:
-        print(f"The desktop reported a problem after setting up, so check its config:\n{failed}")
-        return 1
-    except NotSaved as refused:
-        print(f"Nothing was set up: {refused}.")
-        return 1
+    print(set_up_text(services.set_up.run()))
     return 0

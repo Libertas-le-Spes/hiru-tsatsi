@@ -1,13 +1,11 @@
 from hiru_tsatsi.adapters.proc_files import ProcFiles
 
 SHELLS = {"sh", "dash", "bash", "zsh", "fish"}
-DEEPEST = 8
+MOST_SHELLS_TO_LOOK_PAST = 8
 
 
 class FrontProcess:
-    def __init__(self, processes: ProcFiles | None = None):
-        if processes is None:
-            processes = ProcFiles()
+    def __init__(self, processes: ProcFiles):
         self.processes = processes
 
     def of_window(self, pid: int) -> tuple[str, str]:
@@ -24,7 +22,7 @@ class FrontProcess:
         return group
 
     def _past_waiting_shells(self, pid: int) -> int:
-        for _ in range(DEEPEST):
+        for _ in range(MOST_SHELLS_TO_LOOK_PAST):
             children = self.processes.children(pid)
             if self.processes.program(pid) not in SHELLS or not children:
                 return pid

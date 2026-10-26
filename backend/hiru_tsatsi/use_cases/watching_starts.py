@@ -1,10 +1,10 @@
 from typing import Callable
 
-from hiru_tsatsi.use_cases.app_starts import AppStart
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
 from hiru_tsatsi.use_cases.ports import Desktop
-from hiru_tsatsi.use_cases.terminal_starts import TrialTerminalStart
+from hiru_tsatsi.use_cases.start_shape import AppStart
 from hiru_tsatsi.work_apps.placement import Placement
+from hiru_tsatsi.work_apps.windows import Window
 
 POLL_SECONDS = 0.5
 
@@ -27,22 +27,21 @@ class WatchingStarts:
     def until_placed(self, placing: PlacingWindows, starts: list[AppStart]) -> list[Placement]:
         deadline = self.clock() + self.watch_seconds
         awaiting = starts
-        while awaiting and self.clock() < deadline:
+        while self._anything_to_wait_for(placing, awaiting) and self.clock() < deadline:
             self.wait(POLL_SECONDS)
-            awaiting = self._terminals_where_needed(awaiting)
-            awaiting = self._still_without_window(placing, awaiting)
+            windows = self.desktop.windows()
+            awaiting = self._still_without_window(placing, awaiting, windows)
+            placing.confirm_terminals(windows)
+            awaiting = self._moved_on(awaiting)
         return _placements(awaiting)
 
-    def _terminals_where_needed(self, starts: list[AppStart]) -> list[AppStart]:
-        checked = []
-        for start in starts:
-            if start.needs_terminal(self.clock()):
-                start = TrialTerminalStart.begin(self.desktop, start.placement)
-            checked.append(start)
-        return checked
+    @staticmethod
+    def _anything_to_wait_for(placing: PlacingWindows, awaiting: list[AppStart]) -> bool:
+        return len(awaiting) > 0 or len(placing.unconfirmed_terminals) > 0
 
-    def _still_without_window(self, placing: PlacingWindows, starts: list[AppStart]) -> list[AppStart]:
-        unplaced = placing.place(_placements(starts), self.desktop.windows())
+    def _still_without_window(self, placing: PlacingWindows, starts: list[AppStart],
+                              windows: list[Window]) -> list[AppStart]:
+        unplaced = placing.place(_placements(starts), windows)
         waiting = []
         for start in starts:
             if start.placement in unplaced:
@@ -50,3 +49,9 @@ class WatchingStarts:
             else:
                 start.on_placed(placing)
         return waiting
+
+    def _moved_on(self, starts: list[AppStart]) -> list[AppStart]:
+        moved_on = []
+        for start in starts:
+            moved_on.append(start.next(self.clock()))
+        return moved_on

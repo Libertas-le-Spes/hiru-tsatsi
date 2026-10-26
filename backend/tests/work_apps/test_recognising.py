@@ -25,6 +25,22 @@ class RecognisingAnAppsWindow(unittest.TestCase):
     def test_an_app_that_knows_nothing_finds_nothing(self):
         self.assertIsNone(RECOGNISING.known_window(App("Steam", "steam"), [window("s", "steam", "Steam")], set()))
 
+    def test_a_terminal_app_finds_only_the_window_with_exactly_its_name(self):
+        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", in_terminal=True)
+        longer_name = window("x", "hiru-tsatsi.helper-1a2b3c4d5e", "foot")
+        page_titled_like_it = window("p", "chromium", "hiru-tsatsi.helper-1a2b3c4d")
+        exact = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot")
+        found = RECOGNISING.known_window(terminal, [longer_name, page_titled_like_it, exact], set())
+        self.assertEqual(found.address, "t")
+
+    def test_a_program_name_longer_than_linux_keeps_still_matches(self):
+        long_name = App("Long", "cd code/harbour && a-very-long-program-name")
+        cut_by_linux = window("l", "foot", "", 2, "a-very-long-pro", "/home/sam/code/harbour")
+        self.assertTrue(RECOGNISING.runs_inside(long_name, cut_by_linux))
+
+    def test_an_editor_window_with_nothing_readable_inside_does_not_run_the_app(self):
+        self.assertFalse(RECOGNISING.runs_inside(HARBOUR, window("e", "code", "harbour", 2)))
+
 
 if __name__ == "__main__":
     unittest.main()

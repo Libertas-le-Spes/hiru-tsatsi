@@ -4,7 +4,7 @@ from unittest import mock
 
 from hiru_tsatsi.adapters.storage import files
 from hiru_tsatsi.adapters.storage.files import Disk
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 
 LIST = Path("/home/sam/.config/hiru-tsatsi/apps.json")
 

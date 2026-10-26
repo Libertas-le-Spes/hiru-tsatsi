@@ -22,8 +22,7 @@ class SettingUpTheDesktop(unittest.TestCase):
         desktop = desktop_with(taken={FIRST})
         set_up = SetUpDesktop(desktop, "/home/sam/.local/bin/hiru-tsatsi").run()
         self.assertEqual((set_up.keys, set_up.kept), (SECOND, False))
-        desktop.install.assert_called_once_with(SECOND, "/home/sam/.local/bin/hiru-tsatsi start",
-                                                "/home/sam/.local/bin/hiru-tsatsi ask")
+        desktop.install.assert_called_once_with(SECOND, "/home/sam/.local/bin/hiru-tsatsi")
 
     def test_running_it_again_keeps_the_shortcut_without_looking_at_taken_ones(self):
         desktop = desktop_with(taken={FIRST, SECOND}, installed=SECOND)
@@ -34,13 +33,7 @@ class SettingUpTheDesktop(unittest.TestCase):
     def test_with_every_shortcut_taken_only_the_login_question_is_added(self):
         desktop = desktop_with(taken={FIRST, SECOND, THIRD})
         self.assertIsNone(SetUpDesktop(desktop, "hiru-tsatsi").run().keys)
-        desktop.install.assert_called_once_with(None, "hiru-tsatsi start", "hiru-tsatsi ask")
-
-    def test_a_command_path_with_a_space_or_quote_reaches_the_shell_as_one_word(self):
-        desktop = desktop_with(taken=set())
-        SetUpDesktop(desktop, "/home/sam o'neil/.local/bin/hiru-tsatsi").run()
-        quoted = "'/home/sam o'\"'\"'neil/.local/bin/hiru-tsatsi'"
-        desktop.install.assert_called_once_with(FIRST, f"{quoted} start", f"{quoted} ask")
+        desktop.install.assert_called_once_with(None, "hiru-tsatsi")
 
 
 if __name__ == "__main__":

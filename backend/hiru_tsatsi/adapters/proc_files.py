@@ -1,33 +1,51 @@
+import os
 from pathlib import Path
 
 FOREGROUND_GROUP_FIELD = 7
+START_TIME_FIELD = 21
+TICKS_PER_SECOND = os.sysconf("SC_CLK_TCK")
 
 
-def foreground_group_in(stat: str) -> int:
+def _stat_field(stat: str, field: int) -> int:
     name_starts = stat.find("(")
     name_ends = stat.rfind(")")
     if name_starts < 0 or name_ends < 0:
         return 0
     fields = stat[:name_starts].split() + ["name"] + stat[name_ends + 1:].split()
-    if len(fields) <= FOREGROUND_GROUP_FIELD:
+    if len(fields) <= field:
         return 0
-    return int(fields[FOREGROUND_GROUP_FIELD])
+    return int(fields[field])
+
+
+def foreground_group_in(stat: str) -> int:
+    return _stat_field(stat, FOREGROUND_GROUP_FIELD)
+
+
+def started_in(stat: str) -> float:
+    return _stat_field(stat, START_TIME_FIELD) / TICKS_PER_SECOND
 
 
 class ProcFiles:
     def __init__(self, root: Path = Path("/proc")):
         self.root = root
 
-    def pids(self) -> list[int] | None:
+    def own_pids(self, account: int) -> list[int] | None:
         try:
             entries = list(self.root.iterdir())
         except OSError:
             return None
         pids = []
         for entry in entries:
-            if entry.name.isdigit():
+            if entry.name.isdigit() and self._owned_by(entry, account):
                 pids.append(int(entry.name))
         return pids
+
+    @staticmethod
+    def _owned_by(entry: Path, account: int) -> bool:
+        try:
+            return entry.stat().st_uid == account
+        except OSError:
+            return False
 
     def program(self, pid: int) -> str:
         return self._read(pid, "comm").strip()
@@ -47,12 +65,26 @@ class ProcFiles:
     def foreground_group(self, pid: int) -> int:
         return foreground_group_in(self._read(pid, "stat"))
 
-    def environment(self, pid: int) -> list[str]:
+    def started(self, pid: int) -> float:
+        return started_in(self._read(pid, "stat"))
+
+    def seconds_since_boot(self) -> float:
+        return float(self._read_file("uptime").split()[0])
+
+    def environment(self, pid: int) -> list[str] | None:
         try:
             raw = (self.root / str(pid) / "environ").read_bytes()
-        except OSError:
+        except FileNotFoundError:
             return []
+        except OSError:
+            return None
         return raw.decode(errors="replace").split("\0")
+
+    def _read_file(self, name: str) -> str:
+        try:
+            return (self.root / name).read_text()
+        except OSError:
+            return "0"
 
     def _read(self, pid: int, name: str) -> str:
         try:

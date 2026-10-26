@@ -47,13 +47,13 @@ Hiru Tsatsi asks with a notification whether to start your work apps.
 - **Apps that run in a terminal** — a command that goes to a folder and
   runs a program, like `cd ~/code && claude`, works as it is. The first
   time, Hiru Tsatsi sees it stop without a window, opens it again in a
-  terminal on its workspace after about ten seconds, and once that
-  terminal's window is found, remembers it; from then on it opens in a
-  terminal at once. If it fails, the terminal stays open to show why.
-  Forgetting the app's window, or giving it a new command, undoes it. A
-  session you opened yourself counts as open when the same program runs in
-  the same folder, whatever its title says, so a second one is never
-  started.
+  terminal on its workspace after about ten seconds, and once the program
+  is seen running there, remembers it; from then on it opens in a terminal
+  at once. If it fails, the terminal stays open to show why, and it is not
+  remembered. Forgetting the app's window, or giving it a new command,
+  undoes it. A session you opened yourself counts as open when the same
+  program runs in the same folder, whatever its title says, so a second
+  one is never started.
 - **Add an app** — inside a workspace block, fill in a **Name** (just a
   label) and a **Command** (a real shell command) and press **+**. If the
   app is open, its window is recognised at once; otherwise the first time

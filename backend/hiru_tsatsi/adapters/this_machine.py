@@ -1,22 +1,18 @@
 import os
 import shutil
+from pathlib import Path
 from typing import Callable, Mapping, TypeVar
 
 from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
 from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
-from hiru_tsatsi.adapters.storage import locations
-from hiru_tsatsi.use_cases.ports import Desktop, DesktopNotSupported, DesktopSetUp
+from hiru_tsatsi.adapters.storage.files import Files
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported
+from hiru_tsatsi.use_cases.ports import Desktop, DesktopSetUp
 
 Found = TypeVar("Found")
 
 DESKTOPS = [Hyprland.found]
-
-
-def _hyprland_set_up(env: Mapping[str, str]) -> HyprlandSetUp | None:
-    return HyprlandSetUp.found(env, locations.config_home())
-
-
-SET_UPS = [_hyprland_set_up]
+SET_UPS = [HyprlandSetUp.found]
 
 
 def _desktop_name(env: Mapping[str, str]) -> str:
@@ -42,5 +38,9 @@ def desktop(env: Mapping[str, str] = os.environ) -> Desktop:
     return _first(DESKTOPS, env)
 
 
-def set_up(env: Mapping[str, str] = os.environ) -> DesktopSetUp:
-    return _first(SET_UPS, env)
+def set_up(config_home: Path, files: Files, env: Mapping[str, str] = os.environ) -> DesktopSetUp:
+    for finder in SET_UPS:
+        found = finder(env, config_home, files)
+        if found is not None:
+            return found
+    raise DesktopNotSupported(_desktop_name(env))
