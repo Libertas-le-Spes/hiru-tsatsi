@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.adapters.desktops.hyprland import Hyprland, lua_string
 from hiru_tsatsi.work_apps.windows import Window
 
 CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}}]
@@ -36,6 +36,22 @@ class TalkingToHyprland(unittest.TestCase):
 
     def test_unreadable_output_means_no_windows(self):
         self.assertEqual(Hyprland(lambda arguments: "not json").windows(), [])
+
+
+class QuotingForLua(unittest.TestCase):
+    def test_every_character_that_could_end_or_break_the_string_is_escaped(self):
+        cases = {
+            'say "hi"': '"say \\"hi\\""',
+            "ends with \\": '"ends with \\\\"',
+            "line one\nline two": '"line one\\010line two"',
+            "a\rb": '"a\\013b"',
+            "a\x00b": '"a\\000b"',
+            "a\n7": '"a\\0107"',
+            "a\x7fb": '"a\\127b"',
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(lua_string(text), expected)
 
 
 if __name__ == "__main__":

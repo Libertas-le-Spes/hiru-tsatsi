@@ -25,6 +25,12 @@ class SettingUpTheDesktop(unittest.TestCase):
         self.assertIsNone(SetUpDesktop(desktop, "hiru-tsatsi").run().keys)
         self.assertEqual(desktop.installs, [(None, "hiru-tsatsi start", "hiru-tsatsi ask")])
 
+    def test_a_command_path_with_a_space_or_quote_reaches_the_shell_as_one_word(self):
+        desktop = FakeSetUp(taken=set())
+        SetUpDesktop(desktop, "/home/sam o'neil/.local/bin/hiru-tsatsi").run()
+        quoted = "'/home/sam o'\"'\"'neil/.local/bin/hiru-tsatsi'"
+        self.assertEqual(desktop.installs, [(FIRST, f"{quoted} start", f"{quoted} ask")])
+
 
 if __name__ == "__main__":
     unittest.main()
