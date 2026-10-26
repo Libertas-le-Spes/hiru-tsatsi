@@ -1,10 +1,12 @@
 import json
+import re
 import subprocess
 from typing import Callable, Mapping
 
 from hiru_tsatsi.work_apps.windows import Window
 
 Run = Callable[[list[str]], str]
+CONTROL_CHARACTER = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def run_hyprctl(arguments: list[str]) -> str:
@@ -13,7 +15,8 @@ def run_hyprctl(arguments: list[str]) -> str:
 
 
 def lua_string(text: str) -> str:
-    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    quoted = text.replace("\\", "\\\\").replace('"', '\\"')
+    return '"' + CONTROL_CHARACTER.sub(lambda found: f"\\{ord(found.group()):03d}", quoted) + '"'
 
 
 def _window(client: dict) -> Window:
