@@ -22,6 +22,16 @@ class OpenElsewhere:
                 f"(moved to {view.placement.workspace} when you start)")
 
 
+class OpensInATerminal:
+    @staticmethod
+    def fits(view: AppView) -> bool:
+        return view.placement.app.in_terminal
+
+    @staticmethod
+    def text(view: AppView) -> str:
+        return "Opens in a terminal, recognised when it opens"
+
+
 class KnownButClosed:
     @staticmethod
     def fits(view: AppView) -> bool:
@@ -42,7 +52,7 @@ class NotYetKnown:
         return "Will be recognised the first time Hiru Tsatsi starts it"
 
 
-STATUS_LINES = [OpenInPlace, OpenElsewhere, KnownButClosed, NotYetKnown]
+STATUS_LINES = [OpenInPlace, OpenElsewhere, OpensInATerminal, KnownButClosed, NotYetKnown]
 
 
 def status_line(view: AppView) -> str:

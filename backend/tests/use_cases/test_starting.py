@@ -4,6 +4,7 @@ from unittest.mock import call
 from tests.examples.app_lists import app_list
 from tests.examples.windows import window
 from tests.use_cases.starting_scene import CHAT, MAIN, STEAM, Start, appearing_once_launched, mocked_desktop
+from hiru_tsatsi.use_cases.ports import NotSaved
 
 
 class StartingWorkApps(unittest.TestCase):
@@ -21,6 +22,17 @@ class StartingWorkApps(unittest.TestCase):
         desktop.launch.assert_not_called()
         desktop.move.assert_called_once_with(chat_window, 1)
         self.assertEqual(outcome.moved, ["Chat"])
+
+    def test_says_which_apps_are_starting_before_launching_them(self):
+        start = Start(mocked_desktop([window("c", "chrome-chat.google.com-Default", "Chat", 1)]),
+                      app_list((1, [CHAT]), (2, [MAIN, STEAM])))
+        start.run()
+        start.announcer.announce.assert_called_once_with(["Rider Main", "Steam"])
+
+    def test_says_nothing_up_front_when_every_app_is_already_open(self):
+        start = Start(mocked_desktop([window("c", "chrome-chat.google.com-Default", "Chat", 1)]), app_list((1, [CHAT])))
+        start.run()
+        start.announcer.announce.assert_not_called()
 
     def test_every_missing_app_starts_before_it_looks_for_windows_again(self):
         desktop = mocked_desktop([])
@@ -73,6 +85,20 @@ class StartingWorkApps(unittest.TestCase):
         start = Start(mocked_desktop([window("t", "foot", "~", 4)]), app_list((2, [MAIN])))
         start.run()
         start.names.record.assert_not_called()
+
+
+    def test_a_list_edited_during_the_start_keeps_the_edit_and_gets_what_was_learned(self):
+        desktop = mocked_desktop([])
+        appearing_once_launched(desktop, [], [window("s", "steam", "Steam", 6)])
+        start = Start(desktop, app_list((6, [STEAM])))
+        edited_meanwhile = app_list((6, [STEAM]), (1, [CHAT]))
+        start.store.load.side_effect = [app_list((6, [STEAM])), edited_meanwhile]
+        start.store.save.side_effect = [NotSaved("the list changed meanwhile"), None]
+        start.run()
+        saved_again = start.store.save.call_args.args[0]
+        self.assertEqual(start.store.save.call_count, 2)
+        self.assertEqual(saved_again.workspace(1).apps, (CHAT,))
+        self.assertEqual(saved_again.workspace(6).apps[0].learned_window, "steam")
 
 
 if __name__ == "__main__":

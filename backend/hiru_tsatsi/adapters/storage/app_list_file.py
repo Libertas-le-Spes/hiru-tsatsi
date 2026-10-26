@@ -16,14 +16,19 @@ class AppListFile:
         self.path = path
         self.earlier = earlier
         self.files = files
+        self.read_before: str | None = None
 
     def load(self) -> AppList:
         if self.files.exists(self.path):
-            return from_saved(self._content(self.path))
+            self.read_before = self.files.read(self.path)
+            return from_saved(json_object(self.read_before))
+        self.read_before = ""
         return self._imported_from_earlier()
 
     def save(self, apps: AppList) -> None:
-        self.files.write(self.path, json_text(to_saved(apps)))
+        text = json_text(to_saved(apps))
+        self.files.write(self.path, text, read_before=self.read_before)
+        self.read_before = text
 
     def _content(self, path: Path) -> dict:
         return json_object(self.files.read(path))

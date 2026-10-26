@@ -4,6 +4,7 @@ from hiru_tsatsi.use_cases.app_windows import Spot, unclaimed, windows_of
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
+from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.window_guessing import likeliest_first
 from hiru_tsatsi.work_apps.windows import Window
 
@@ -22,13 +23,14 @@ class WorkspaceView:
 
 
 class Overview:
-    def __init__(self, store: AppListStore, desktop: Desktop):
+    def __init__(self, store: AppListStore, desktop: Desktop, recognising: Recognising):
         self.store = store
         self.desktop = desktop
+        self.recognising = recognising
 
     def run(self) -> list[WorkspaceView]:
         apps = self.store.load()
-        found = windows_of(apps, self.desktop.windows())
+        found = windows_of(apps, self.desktop.windows(), self.recognising)
         views = []
         for space in apps.workspaces:
             views.append(WorkspaceView(space.number, space.label, self._app_views(space.number, space.apps, found)))
@@ -37,7 +39,7 @@ class Overview:
     def candidates(self, workspace: int, index: int) -> list[Window]:
         apps = self.store.load()
         app = apps.placement(workspace, index).app
-        free = unclaimed(apps, self.desktop.windows(), (workspace, index))
+        free = unclaimed(apps, self.desktop.windows(), self.recognising, (workspace, index))
         return likeliest_first(app.name, app.command, free)
 
     @staticmethod

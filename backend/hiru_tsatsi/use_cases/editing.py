@@ -2,6 +2,7 @@ from hiru_tsatsi.use_cases.app_windows import unclaimed
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
+from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.refusals import NothingThere
 from hiru_tsatsi.work_apps.window_guessing import guess_window
 from hiru_tsatsi.work_apps.window_naming import name_for
@@ -9,9 +10,10 @@ from hiru_tsatsi.work_apps.windows import Window
 
 
 class EditAppList:
-    def __init__(self, store: AppListStore, desktop: Desktop):
+    def __init__(self, store: AppListStore, desktop: Desktop, recognising: Recognising):
         self.store = store
         self.desktop = desktop
+        self.recognising = recognising
 
     def add_workspace(self, number: int, label: str) -> AppList:
         return self._saved(self.store.load().with_workspace(number, label))
@@ -56,7 +58,7 @@ class EditAppList:
 
     def _recognised(self, apps: AppList, name: str, command: str) -> str:
         windows = self.desktop.windows()
-        guessed = guess_window(name, command, unclaimed(apps, windows))
+        guessed = guess_window(name, command, unclaimed(apps, windows, self.recognising))
         if guessed is None:
             return ""
         return name_for(guessed, windows, command)
