@@ -1,13 +1,11 @@
 import argparse
 import json
 import sys
-import webbrowser
 from dataclasses import dataclass, field
 from typing import Callable
 
-from hiru_tsatsi.entrypoints.web import server
 from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary, window_titles_text
-from hiru_tsatsi.presenters.page_state import page_state, window_choices
+from hiru_tsatsi.presenters.bar_state import bar_state, window_choices
 from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
 from hiru_tsatsi.use_cases.starting import Outcome
 from hiru_tsatsi.wiring import App, open_app
@@ -55,12 +53,6 @@ def set_up(app: App, chosen: argparse.Namespace) -> int:
     return 0
 
 
-def edit(app: App, chosen: argparse.Namespace) -> int:
-    print(f"Editing your work apps at {server.page_url(server.PORT)}; it stops a few minutes after you close the page.")
-    server.serve(app, app.page, webbrowser.open)
-    return 0
-
-
 def window_titles(app: App, chosen: argparse.Namespace) -> int:
     if chosen.state:
         app.window_titles.turn(chosen.state == "on")
@@ -69,7 +61,7 @@ def window_titles(app: App, chosen: argparse.Namespace) -> int:
 
 
 def overview(app: App, chosen: argparse.Namespace) -> int:
-    print(json.dumps(page_state(app.overview.run(), app.window_titles.wanted())))
+    print(json.dumps(bar_state(app.overview.run(), app.window_titles.wanted())))
     return 0
 
 
@@ -99,7 +91,6 @@ INDEX = Argument("index", int, "the app's position in its workspace, starting at
 COMMANDS = {
     "start": Command(start, "start every work app that isn't open and put each window on its workspace"),
     "ask": Command(ask, "ask with a notification whether to start your work apps, and start them if you click it"),
-    "edit": Command(edit, "open a page in your browser to edit your work apps and workspaces"),
     "add-workspace": Command(editing(lambda app, c: app.edit.add_workspace(c.workspace, c.label)),
                              "add a workspace with the number you choose",
                              [WORKSPACE, Argument("label", str, "its name")]),
