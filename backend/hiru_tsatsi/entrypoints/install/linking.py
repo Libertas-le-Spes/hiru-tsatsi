@@ -1,5 +1,4 @@
 import sys
-from typing import Callable
 
 from hiru_tsatsi.use_cases.installing import LinkCommands, NotOurs
 
@@ -15,9 +14,3 @@ def link_commands(linking: LinkCommands) -> int:
         print(f"removed:  {linked.retired}, the old short name; type 'tsatsi' now")
     print(f"command:  {linked.command}, and {linked.short} for short")
     return 0
-
-
-def main(argv: list[str], opening: Callable[[str, str], LinkCommands]) -> int:
-    bin_dir = argv[0]
-    launcher = argv[1]
-    return link_commands(opening(bin_dir, launcher))

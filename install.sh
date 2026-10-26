@@ -3,7 +3,6 @@ set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
-command_path="$bin_dir/hiru-tsatsi"
 
 say() {
     printf '%s\n' "$1"
@@ -19,7 +18,7 @@ require_python() {
     python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || fail "Python 3.11 or newer is needed; this machine has $(python3 --version)"
 }
 
-link_commands() {
+install_commands() {
     PYTHONPATH="$here/backend" python3 -P -m hiru_tsatsi.entrypoints.install "$bin_dir" "$here/backend/bin/hiru-tsatsi" || exit 1
     case ":$PATH:" in
         *":$bin_dir:"*) ;;
@@ -32,6 +31,5 @@ mention_missing_tools() {
 }
 
 require_python
-link_commands
-"$command_path" set-up
+install_commands
 mention_missing_tools

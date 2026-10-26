@@ -6,6 +6,10 @@ from hiru_tsatsi.wiring import App
 
 
 def set_up(app: App, chosen: argparse.Namespace) -> int:
+    return report_set_up(app)
+
+
+def report_set_up(app: App) -> int:
     try:
         print(set_up_text(app.set_up.run()))
     except SetUpFailed as failed:
