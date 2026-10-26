@@ -14,7 +14,7 @@ Only listing windows, moving them and launching differ between desktops, so each
 ./install.sh
 ```
 
-It links the `hiru-tsatsi` command, and `tsatsi` for short, into `~/.local/bin` and runs `hiru-tsatsi set-up`, which gives Hiru Tsatsi the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. `hiru-tsatsi start` starts them straight away.
+It links the `hiru-tsatsi` command, and `tsatsi` for short, into `~/.local/bin` and runs `hiru-tsatsi set-up`, which gives Hiru Tsatsi the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. On a desktop Hiru Tsatsi can't place windows on yet, the command is still installed and the shortcut and the question are skipped. `hiru-tsatsi start` starts them straight away.
 
 When [window-names](https://github.com/Libertas-le-Spes/window-names) is installed, every window Hiru Tsatsi gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars can say "Rider Main" rather than "jetbrains-rider". `hiru-tsatsi window-titles off` stops that, and `on` starts it even without window-names.
 

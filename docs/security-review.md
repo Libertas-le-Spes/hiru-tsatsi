@@ -29,12 +29,18 @@ accounts, it is a real path to the owner's session.
 
 ## Status
 
-Every finding below is dealt with on the branch `security-review-hiru`. The owner chose option A
+Every finding below is dealt with on the branch `security-fixes-hiru`. The owner chose option A
 for H1: the editing page is gone, so Hiru Tsatsi no longer listens for connections at all, and a
 test fails if any module imports a web server, a socket or a browser opener. That also removes M2
 and L2, which were about the same page. Each other finding was fixed as its section proposes and
 sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes. The
 short command the findings call `hiru` is now `tsatsi`.
+
+"Checked and found sound" and the step plan describe commit `8372a7c` as it was reviewed. Since
+then the page, its server and its rendering are gone, so the items about them no longer apply;
+steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Saved files now
+replace the real file behind a linked dotfile instead of the link, and window-name files are
+written only for Hyprland addresses (`0x` followed by hex digits).
 
 ## Findings
 
@@ -325,9 +331,9 @@ them from a secret store.
 - **Saved state.** `apps.json` and `settings.json` are written through `mkstemp` and `os.replace`
   in the same folder, owner-only (`-rw-------` in a test run), and replacing a symlink replaces the
   link rather than writing through it. Nothing is written under `/tmp`.
-- **The editing page's own rendering.** `page.js` builds every element with `textContent`; no
+- **The editing page's own rendering (page since removed).** `page.js` builds every element with `textContent`; no
   `innerHTML`. A hostile window title shows as text on the page.
-- **Browser attacks on the server.** It binds 127.0.0.1 only; the `Host` check stops DNS
+- **Browser attacks on the server (server since removed).** It binds 127.0.0.1 only; the `Host` check stops DNS
   rebinding; the token is compared in constant time; cross-site pages can't add the custom header
   without a CORS preflight that is never answered. Reasoned from code; not demonstrated in a browser.
 - **Bar IPC.** The panel's IPC target exposes only open, close, show, hide and toggle.
