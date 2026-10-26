@@ -46,15 +46,16 @@ followed by hex digits). The panel's window-choice buttons show web-page titles 
 own `Button`, which sets `Text.PlainText` (`/usr/share/omarchy/shell/Ui/Button.qml`); that safety
 lives outside this repository.
 
-## Terminal apps and recognition (added later, branch `terminal-apps-hiru`)
+## Terminal apps and recognition (added later, pull request #4)
 
 These features came after the review and widen what Hiru Tsatsi reads and runs, so they are
 recorded here with what each choice fails to stop.
 
 - **Reading processes.** To tell whether a launch has stopped, and what runs inside a window,
   Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`.
-  Whether a launch stopped is judged only from the owner's own processes (the owner of
-  `/proc/<pid>`). What runs inside a window is read from that window's own process tree. It
+  Whether a launch stopped is judged only from the owner's own processes, chosen by the real user
+  in `/proc/<pid>/status` (readable by anyone), so a process of the owner's that Linux hides behind
+  a root-owned `/proc/<pid>` is still counted, and its unreadable environment means "can't tell". What runs inside a window is read from that window's own process tree. It
   reads, never writes, and stores nothing.
   *Fails to stop:* nothing new; the owner's own processes can already read the same.
 - **The launch tag.** Only a launch that may need a terminal (see below) exports
@@ -63,12 +64,15 @@ recorded here with what each choice fails to stop.
   read. Only processes started at or after the launch can carry it, so they are the only ones
   asked. If any of them can't be read, or processes can't be listed, the launch counts as still
   running: no terminal is opened.
-  *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive;
-  that only stops a terminal from being opened.
+  *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive,
+  which only stops a terminal from being opened. A launcher that hands its program to another
+  service (over D-Bus, or through `systemd-run` as `omarchy-launch-browser` does) leaves nothing
+  carrying the tag, so it looks stopped; only commands of the shape below are ever watched.
 - **Re-running a command in a terminal.** Only a command of the shape `cd <folder> && <program>`
-  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that does not launch
-  another (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`, `nice`, `time`,
-  `uwsm-app`), is ever re-run, and only after it stopped with no window for ten seconds; windows
+  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that is neither a shell
+  nor one that launches another (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`,
+  `nice`, `time`, `uwsm-app`), is ever re-run, and only such a command starts in a terminal even
+  if a hand-edited list says another one should, and only after it stopped with no window for ten seconds; windows
   are looked for before that is decided. It runs again inside
   `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. "Opens in
   a terminal" is saved only when the app's own program is then seen running in that terminal, so
@@ -82,7 +86,9 @@ recorded here with what each choice fails to stop.
   folder match the command. A window that shares its program with other windows, or whose
   program has more than one child, reports nothing. A terminal app's own window is matched by its
   exact name, so a web page titled like it is never taken for it. An app of that shape whose
-  window reports nothing, such as an editor, learns its window name like any other app.
+  window reports nothing, such as an editor, learns its window name like any other app, but a
+  window running the same program in another folder, another session of it, is never taken for
+  it, by title or by a learned name.
   *Fails to stop:* two windows running the same program in the same folder; either is taken, and
   both are that app.
 

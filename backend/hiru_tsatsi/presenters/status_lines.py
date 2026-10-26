@@ -25,7 +25,7 @@ class OpenElsewhere:
 class OpensInATerminal:
     @staticmethod
     def fits(view: AppView) -> bool:
-        return view.placement.app.in_terminal
+        return view.placement.app.opens_in_terminal
 
     @staticmethod
     def text(view: AppView) -> str:

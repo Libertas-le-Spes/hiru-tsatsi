@@ -1,13 +1,13 @@
 import shlex
 import unittest
 
-from hiru_tsatsi.adapters.terminal import KEEP_OPEN_AFTER_FAILURE, XdgTerminal, in_terminal
+from hiru_tsatsi.adapters.terminal import KEEP_OPEN_AFTER_FAILURE, XdgTerminal
 
-WINDOW = "hiru-tsatsi.2-0-helper"
+WINDOW = "hiru-tsatsi.helper-1a2b3c4d"
 
 
 def words(command: str) -> list[str]:
-    return shlex.split(in_terminal(command, WINDOW))
+    return shlex.split(XdgTerminal().command_for(command, WINDOW))
 
 
 class OpeningACommandInATerminal(unittest.TestCase):
@@ -16,9 +16,6 @@ class OpeningACommandInATerminal(unittest.TestCase):
 
     def test_runs_the_command_in_its_own_shell_then_keeps_a_failure_on_screen(self):
         self.assertEqual(words("cd code && helper")[5], f"(\ncd code && helper\n)\n{KEEP_OPEN_AFTER_FAILURE}")
-
-    def test_the_terminal_object_hands_back_that_same_command(self):
-        self.assertEqual(XdgTerminal().wrapped("cd code && helper", WINDOW), in_terminal("cd code && helper", WINDOW))
 
 
 if __name__ == "__main__":

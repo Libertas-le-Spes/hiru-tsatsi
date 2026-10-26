@@ -2,6 +2,7 @@ import posixpath
 import shlex
 from dataclasses import dataclass
 
+from hiru_tsatsi.work_apps.shells import SHELLS
 from hiru_tsatsi.work_apps.windows import Window
 
 THEN = {"&&", ";"}
@@ -53,10 +54,16 @@ class ProgramInFolder:
             return None
         folder = words[1]
         program = posixpath.basename(words[3])
-        if not _folder_is_plain(folder) or program in RUNS_ANOTHER_PROGRAM:
+        if not _folder_is_plain(folder) or program in RUNS_ANOTHER_PROGRAM or program in SHELLS:
             return None
         return cls(program, _full_folder(folder, home))
 
     def runs_in(self, window: Window) -> bool:
+        return self._same_program(window) and window.folder == self.folder
+
+    def runs_elsewhere_in(self, window: Window) -> bool:
+        return self._same_program(window) and window.folder != self.folder
+
+    def _same_program(self, window: Window) -> bool:
         name_linux_keeps = self.program[:LINUX_KEEPS_OF_A_PROGRAM_NAME]
-        return window.program == name_linux_keeps and window.folder == self.folder
+        return window.program == name_linux_keeps

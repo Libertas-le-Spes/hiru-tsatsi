@@ -49,6 +49,12 @@ class ChoosingAWindowByHand(unittest.TestCase):
         edit.forget_window(1, 0)
         self.assertEqual(saved_once(store).workspace(1).apps[0].learned_window, "")
 
+    def test_a_folder_and_program_app_never_learns_another_folders_session_by_its_title(self):
+        other_project = window("o", "foot", "✳ Claude Code", 4, "claude", "/home/sam/other")
+        edit, store = editing([other_project], app_list((1, [])))
+        edit.add_app(1, "Claude Code", "cd code && claude")
+        self.assertEqual(saved_once(store).workspace(1).apps[0].learned_window, "")
+
 
 if __name__ == "__main__":
     unittest.main()

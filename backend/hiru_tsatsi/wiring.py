@@ -42,11 +42,12 @@ def open_services() -> Services:
     desktop = SeeingInside(this_machine.desktop(), FrontProcess(processes).of_window)
     recognising = Recognising(str(Path.home()))
     launcher = Launcher(desktop, TaggedLaunches(processes), XdgTerminal())
-    start = StartApps(launcher, store, names, time.monotonic, time.sleep, StartingNotice(notifier), recognising)
+    start = StartApps(desktop, launcher, store, names, time.monotonic, time.sleep, StartingNotice(notifier),
+                      recognising)
     setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
     return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
                     Overview(store, desktop, recognising), titles, notifier)
 
 
-def open_linking(bin_dir: str, launcher: str) -> LinkCommands:
-    return LinkCommands(SymbolicLinks(), bin_dir, launcher)
+def open_linking(bin_dir: str, launcher_path: str) -> LinkCommands:
+    return LinkCommands(SymbolicLinks(), bin_dir, launcher_path)

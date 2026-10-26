@@ -17,5 +17,5 @@ def details(outcome: Outcome) -> str:
     lines = (_line("Started", outcome.started) + _line("Already open", outcome.already_open)
              + _line("Moved to their workspace", outcome.moved)
              + _line("No window seen within a minute", outcome.unseen)
-             + _line("Opened in a terminal, as they need one", outcome.in_terminal))
+             + _line("Now opens in a terminal", outcome.now_opens_in_terminal))
     return "\n".join(lines)

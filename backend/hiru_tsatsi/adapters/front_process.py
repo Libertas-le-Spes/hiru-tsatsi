@@ -1,6 +1,6 @@
 from hiru_tsatsi.adapters.proc_files import ProcFiles
+from hiru_tsatsi.work_apps.shells import SHELLS
 
-SHELLS = {"sh", "dash", "bash", "zsh", "fish"}
 MOST_SHELLS_TO_LOOK_PAST = 8
 
 
@@ -24,7 +24,7 @@ class FrontProcess:
     def _past_waiting_shells(self, pid: int) -> int:
         for _ in range(MOST_SHELLS_TO_LOOK_PAST):
             children = self.processes.children(pid)
-            if self.processes.program(pid) not in SHELLS or not children:
+            if self.processes.program(pid) not in SHELLS or len(children) != 1:
                 return pid
             pid = children[0]
         return pid

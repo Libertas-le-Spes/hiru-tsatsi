@@ -58,7 +58,8 @@ class EditAppList:
 
     def _recognised(self, apps: AppList, name: str, command: str) -> str:
         windows = self.desktop.windows()
-        guessed = guess_window(name, command, unclaimed(apps, windows, self.recognising))
+        free = unclaimed(apps, windows, self.recognising)
+        guessed = guess_window(name, command, self.recognising.could_be_its_windows(App(name, command), free))
         if guessed is None:
             return ""
         return name_for(guessed, windows, command)

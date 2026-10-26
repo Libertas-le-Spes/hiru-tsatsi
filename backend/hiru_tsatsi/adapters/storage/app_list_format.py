@@ -42,7 +42,7 @@ def from_omastart(content: dict) -> AppList:
 
 def _app_to_save(app: App) -> dict:
     return {"name": app.name, "command": app.command, "learned_window": app.learned_window,
-            "in_terminal": app.in_terminal}
+            "in_terminal": app.opens_in_terminal}
 
 
 def _workspace_to_save(space: Workspace) -> dict:

@@ -24,7 +24,8 @@ class ReadingWhatACommandRunsAndWhere(unittest.TestCase):
         commands = ["helper", "omarchy-launch-webapp https://example.com/", "cd code", "cd code || helper",
                     "cd 'unclosed && helper", "(cd code && helper)", 'cd "$HOME/code" && helper',
                     "cd `pwd`/code && helper", "cd ~sam/code && helper", "cd code && env X=1 helper",
-                    "cd code; exec helper", "cd code && nohup helper", "cd code && sudo helper"]
+                    "cd code; exec helper", "cd code && nohup helper", "cd code && sudo helper",
+                    "cd code && bash", "cd code && sh run.sh"]
         for command in commands:
             with self.subTest(command=command):
                 self.assertIsNone(ProgramInFolder.of(command, HOME))

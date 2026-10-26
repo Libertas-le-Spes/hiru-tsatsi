@@ -11,11 +11,24 @@ class Recognising:
         running = self._window_running(app, windows, claimed)
         if running is not None:
             return running
-        if app.in_terminal:
+        if app.opens_in_terminal:
             return window_of_class(app.learned_window, windows, claimed)
         if app.knows_window:
-            return window_named(app.learned_window, windows, claimed)
+            return window_named(app.learned_window, self.could_be_its_windows(app, windows), claimed)
         return None
+
+    def could_be_its_windows(self, app: App, windows: list[Window]) -> list[Window]:
+        possible = []
+        for window in windows:
+            if self._could_be_its_window(app, window):
+                possible.append(window)
+        return possible
+
+    def _could_be_its_window(self, app: App, window: Window) -> bool:
+        inside = self._program_in_folder(app)
+        if inside is None:
+            return True
+        return not inside.runs_elsewhere_in(window)
 
     def recognised_by_what_runs(self, app: App) -> bool:
         return self._program_in_folder(app) is not None
