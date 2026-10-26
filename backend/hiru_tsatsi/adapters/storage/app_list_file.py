@@ -21,7 +21,7 @@ class AppListFile:
     def load(self) -> AppList:
         if self.files.exists(self.path):
             self.read_before = self.files.read(self.path)
-            return from_saved(json_object(self.read_before))
+            return from_saved(json_object(self.read_before, self.path))
         self.read_before = ""
         return self._imported_from_earlier()
 
@@ -31,7 +31,7 @@ class AppListFile:
         self.read_before = text
 
     def _content(self, path: Path) -> dict:
-        return json_object(self.files.read(path))
+        return json_object(self.files.read(path), path)
 
     def _imported_from_earlier(self) -> AppList:
         for place, reader in self.earlier:

@@ -67,7 +67,7 @@ class AppList:
 
     def with_app_changed(self, workspace: int, index: int, name: str, command: str) -> "AppList":
         current = self.placement(workspace, index)
-        return self._with_app_at(current, current.app.renamed(name, command))
+        return self._with_app_at(current, current.app.changed(name, command))
 
     def without_app(self, workspace: int, index: int) -> "AppList":
         self.placement(workspace, index)

@@ -56,8 +56,6 @@ class EditingTheList(unittest.TestCase):
             apps.with_app(9, CHAT)
 
 
-
-
 class OpeningInATerminal(unittest.TestCase):
     def setUp(self):
         self.apps = AppList((Workspace(2, "Code", (App("Main Helper!", "cd code && helper"),)),))

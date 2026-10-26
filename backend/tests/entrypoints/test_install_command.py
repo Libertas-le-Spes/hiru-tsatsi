@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock, create_autospec
 
 from tests.entrypoints.mocked_services import mocked_services
-from hiru_tsatsi.entrypoints.install.installing import install
+from hiru_tsatsi.entrypoints.install.install_command import install
 from hiru_tsatsi.use_cases.installing import LinkCommands, Linked, NotOurs
 from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
 from hiru_tsatsi.use_cases.setting_up import SetUp
@@ -34,7 +34,7 @@ class Installed:
         self.errors = errors.getvalue()
 
 
-def app_that_sets_up() -> Mock:
+def services_that_set_up() -> Mock:
     services = mocked_services()
     services.set_up.run.return_value = SetUp(Keys.parse("SUPER + CTRL + U"), kept=False)
     return Mock(return_value=services)
@@ -42,7 +42,7 @@ def app_that_sets_up() -> Mock:
 
 class InstallingTheCommand(unittest.TestCase):
     def test_links_for_the_given_folder_and_launcher_then_sets_up_once(self):
-        opening = app_that_sets_up()
+        opening = services_that_set_up()
         installed = Installed(linking_that_links(), opening)
         installed.linking_for.assert_called_once_with(BIN, LAUNCHER)
         opening.return_value.set_up.run.assert_called_once_with()
@@ -50,13 +50,13 @@ class InstallingTheCommand(unittest.TestCase):
         self.assertIn(f"command:  {BIN}/hiru-tsatsi, and {BIN}/tsatsi for short", installed.printed)
 
     def test_says_when_it_retired_the_old_short_name(self):
-        installed = Installed(linking_that_links(retired=f"{BIN}/hiru"), app_that_sets_up())
+        installed = Installed(linking_that_links(retired=f"{BIN}/hiru"), services_that_set_up())
         self.assertIn(f"removed:  {BIN}/hiru, the old short name; type 'tsatsi' now", installed.printed)
 
     def test_a_refused_link_fails_in_words_and_sets_nothing_up(self):
         linking = create_autospec(LinkCommands, instance=True)
         linking.run.side_effect = NotOurs(f"{BIN}/tsatsi")
-        opening = app_that_sets_up()
+        opening = services_that_set_up()
         installed = Installed(linking, opening)
         opening.assert_not_called()
         self.assertEqual(installed.exit_code, 1)
@@ -70,7 +70,7 @@ class InstallingTheCommand(unittest.TestCase):
                       "the command itself is installed", installed.printed)
 
     def test_a_real_set_up_problem_still_fails_the_install(self):
-        opening = app_that_sets_up()
+        opening = services_that_set_up()
         opening.return_value.set_up.run.side_effect = SetUpFailed("hiru-tsatsi.lua:1: bad")
         installed = Installed(linking_that_links(), opening)
         self.assertEqual(installed.exit_code, 1)
@@ -79,6 +79,12 @@ class InstallingTheCommand(unittest.TestCase):
         self.assertIn('python3 -P -m hiru_tsatsi.entrypoints.install "$bin_dir" "$here/backend/bin/hiru-tsatsi" || exit 1',
                       INSTALL_SCRIPT.read_text())
 
+    def test_run_by_hand_without_its_two_arguments_it_says_how_to_use_it(self):
+        errors = io.StringIO()
+        with redirect_stderr(errors):
+            exit_code = install([], Mock(), Mock())
+        self.assertEqual(exit_code, 2)
+        self.assertIn("usage:", errors.getvalue())
 
 if __name__ == "__main__":
     unittest.main()

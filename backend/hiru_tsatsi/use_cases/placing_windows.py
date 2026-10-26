@@ -67,9 +67,11 @@ class PlacingWindows:
 
     def _find(self, placement: Placement, windows: list[Window]) -> Window | None:
         app = placement.app
-        known = self.recognising.known_window(app, windows, self.claimed)
-        if known is not None or app.knows_window:
-            return known
+        recognised = self.recognising.known_window(app, windows, self.claimed)
+        if recognised is not None:
+            return recognised
+        if app.knows_window:
+            return None
         return guess_window(app.name, app.command, self._new_windows(windows))
 
     def _new_windows(self, windows: list[Window]) -> list[Window]:

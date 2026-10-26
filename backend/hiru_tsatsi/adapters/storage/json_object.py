@@ -1,13 +1,18 @@
 import json
+from pathlib import Path
+
+from hiru_tsatsi.use_cases.ports import NotReadable
 
 
-def json_object(text: str) -> dict:
+def json_object(text: str, path: Path) -> dict:
+    if text.strip() == "":
+        return {}
     try:
         content = json.loads(text)
-    except json.JSONDecodeError:
-        return {}
+    except json.JSONDecodeError as broken:
+        raise NotReadable(f"{path} is not valid JSON ({broken})") from broken
     if not isinstance(content, dict):
-        return {}
+        raise NotReadable(f"{path} does not hold a JSON object")
     return content
 
 
