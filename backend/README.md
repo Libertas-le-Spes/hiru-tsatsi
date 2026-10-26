@@ -16,9 +16,9 @@ Only listing windows, moving them and launching differ between desktops, so each
 
 It links the `hiru-tsatsi` command, and `hiru` for short, into `~/.local/bin` and runs `hiru-tsatsi set-up`, which gives Hiru Tsatsi the first free shortcut of SUPER + CTRL + U, SUPER + ALT + U and SUPER + SHIFT + U, and a notification at login asking whether to start your work apps. `hiru-tsatsi start` starts them straight away.
 
-When [window-names](https://github.com/Libertas-le-Spes/window-names) is installed, every window Hiru Tsatsi gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars can say "Rider Main" rather than "jetbrains-rider". `hiru-tsatsi window-titles off` (or the switch on the editing page) stops that, and `on` starts it even without window-names.
+When [window-names](https://github.com/Libertas-le-Spes/window-names) is installed, every window Hiru Tsatsi gives to an app is also named after it in `~/.local/state/window-names/<window address>`, so title bars can say "Rider Main" rather than "jetbrains-rider". `hiru-tsatsi window-titles off` stops that, and `on` starts it even without window-names.
 
-The app list is kept in `~/.config/hiru-tsatsi/apps.json`. `hiru-tsatsi edit` opens a page in the browser for changing it, and `hiru-tsatsi add-workspace`, `remove-workspace`, `add-app` and `remove-app` change it from a terminal or a bar. Until it exists, the list is imported once from where Hiru Tsatsi kept it when it was called Workbench (`~/.config/workbench/apps.json`), or else from the Omarchy Omastart plugin.
+The app list is kept in `~/.config/hiru-tsatsi/apps.json`. `hiru-tsatsi add-workspace`, `remove-workspace`, `add-app` and `remove-app` change it from a terminal or a bar. There is no editing page in the browser: it was removed because any other account on the machine could use it to run commands as you (see `docs/security-review.md`, H1), and nothing that opens a port will come back without a way to refuse other accounts. Until it exists, the list is imported once from where Hiru Tsatsi kept it when it was called Workbench (`~/.config/workbench/apps.json`), or else from the Omarchy Omastart plugin.
 
 Desktops so far: Hyprland.
 

@@ -13,7 +13,7 @@ class NumberTaken(Refused):
 
 class NothingThere(Refused):
     def __init__(self):
-        super().__init__("That is no longer there; the list has changed since the page last loaded")
+        super().__init__("That is no longer there; the list has changed since it was last shown")
 
 
 class Blank(Refused):

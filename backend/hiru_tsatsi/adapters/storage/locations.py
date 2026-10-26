@@ -14,10 +14,6 @@ def app_list_file() -> Path:
     return config_home() / "hiru-tsatsi" / "apps.json"
 
 
-def page_folder() -> Path:
-    return Path(__file__).resolve().parents[3] / "page"
-
-
 def installed_command() -> Path:
     return Path.home() / ".local" / "bin" / "hiru-tsatsi"
 

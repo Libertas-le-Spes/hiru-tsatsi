@@ -19,7 +19,7 @@ starting each app on its own workspace.
 recognising apps that are already open, starting them all at once and
 placing each window as it appears, finding each app's window by itself, the
 `hiru-tsatsi` command that does all of this on any Linux desktop
-(`backend/`), the page for editing the app list, window names for title
+(`backend/`), a page for editing the app list (since removed for security), window names for title
 bars, and the rename to Hiru Tsatsi.
 
 Both parts are MIT licensed. `LICENSE` names both copyright holders with the
