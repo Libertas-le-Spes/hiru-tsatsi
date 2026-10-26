@@ -42,6 +42,41 @@ steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Sav
 replace the real file behind a linked dotfile instead of the link, and window-name files are
 written only for Hyprland addresses (`0x` followed by hex digits).
 
+## Terminal apps and recognition (added later, branch `terminal-apps-hiru`)
+
+These features came after the review and widen what Hiru Tsatsi reads and runs, so they are
+recorded here with what each choice fails to stop.
+
+- **Reading processes.** To tell whether a launch has stopped, and what runs inside a window,
+  Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`. Linux
+  lets an account read another account's `environ` and `cwd` only with privileges it does not
+  have, so only the owner's processes are read. It reads, never writes, and stores nothing.
+  *Fails to stop:* nothing new; the owner's own processes can already read the same.
+- **The launch tag.** Each launch exports `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in
+  `hyprctl`'s arguments, which every account can read, so another account can learn it; but it
+  can only put the tag in its own processes, which Hiru Tsatsi never reads. When processes can't
+  be listed, the launch counts as still running, so nothing is ever opened twice.
+  *Fails to stop:* a process of the owner's own that copies the tag can keep a launch looking
+  alive; that only stops a terminal from being opened.
+- **Re-running a command in a terminal.** Only a command of the shape `cd <folder> && <program>`
+  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that is not a
+  launcher of other programs (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`, `nice`,
+  `time`, `uwsm-app`), is ever re-run, and only after it stopped with no window for ten seconds.
+  The command is the owner's own, already run once; it runs again inside
+  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`; the window
+  name is reduced to `[a-z0-9-]`. "Opens in a terminal" is saved only once that window is found.
+  *Fails to stop:* a command of that shape that stops and has a slow window is run a second
+  time; a new command or forgetting the window undoes the mark.
+- **Recognising a session.** A window counts as an app's when the program in front in it and its
+  folder match the command. A window that shares its program with other windows, or whose
+  program has more than one child, reports nothing, so a terminal that runs all its windows from
+  one program can never be taken for the wrong app.
+  *Fails to stop:* two windows running the same program in the same folder; either is taken, and
+  both are that app.
+- **Saving what a start learned.** Start saves only if the list is unchanged since it read it;
+  otherwise it re-reads the list and re-applies only what it learned to apps that are still the
+  same, so an app added during a start is never lost.
+
 ## Findings
 
 | Id | Severity | Title | Location | Status |
