@@ -1,5 +1,7 @@
 # Hiru Tsatsi
 
+This describes the project as it is now. Some of it may still change as the project grows; whoever makes part of it untrue updates it in the same change.
+
 One key opens your work apps, each on the workspace you keep it on, on any Linux desktop.
 
 Starting the day means opening the same apps and dragging each to its place. Doing it by hand is slow, and launchers that fire every command blindly open a second copy of whatever is already running, and leave windows wherever you happen to be. An app that hands the request to a copy already running (a web app inside an open browser, a second project in an open IDE, a game client in the tray) opens its window wherever you are, out of the launcher's reach.
@@ -8,7 +10,7 @@ So Hiru Tsatsi looks before it launches. Each app remembers its window: the star
 
 Only listing windows, moving them and launching differ between desktops, so each desktop is one class. On a desktop without one, Hiru Tsatsi starts nothing: apps opened without being put in their places would only leave the sorting to you.
 
-Some apps live in a terminal and have no window of their own, such as `claude` or `nvim`. Started without a terminal they stop at once, unseen. For a command that goes to a folder and runs a program (`cd ~/code && claude`), Hiru Tsatsi watches: every launch carries a random tag that the processes it starts inherit, and when no process carries it any more and no window has appeared ten seconds after launching, the command is opened again in a terminal (`xdg-terminal-exec`) with a window name of its own; once that window is found, the app is remembered as one that opens in a terminal. Any other command is never put in a terminal, so a web app whose launcher hands off and exits, or a command with a typo, stays as it is. Such an app is also recognised by what runs inside a window, the program in front in its terminal and the folder it runs in, so a session opened by hand counts as open whatever its title. A window whose program also draws other windows, or has more than one program inside, says nothing about what runs in it.
+Some apps live in a terminal and have no window of their own, such as `claude` or `nvim`. Started without a terminal they stop at once, unseen. For a command that goes to a folder and runs a program (`cd ~/code && claude`), Hiru Tsatsi watches: the launch carries a random tag that the processes it starts inherit, and when none of the owner's processes started since carries it and no window has appeared ten seconds after launching, the command is opened again in a terminal (`xdg-terminal-exec`) with a window name of its own; once the program is seen running there, the app is remembered as one that opens in a terminal. Any other command is never watched or put in a terminal. Such an app is also recognised by what runs inside a window, the program in front in its terminal and the folder it runs in, so a session opened by hand counts as open whatever its title; a window whose program also draws other windows, or has more than one program inside, says nothing about what runs in it. Reading what runs inside windows sits in its own layer around the desktop, so each desktop class still only lists, moves and launches windows.
 
 ## Use
 

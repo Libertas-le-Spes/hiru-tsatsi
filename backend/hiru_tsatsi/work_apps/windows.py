@@ -9,6 +9,7 @@ class Window:
     workspace: int
     program: str = ""
     folder: str = ""
+    pid: int = 0
 
 
 def starts_with(text: str, prefix: str) -> bool:
@@ -25,5 +26,12 @@ def belongs_to(window: Window, name: str) -> bool:
 def window_named(name: str, windows: list[Window], claimed: set[str]) -> Window | None:
     for window in windows:
         if window.address not in claimed and belongs_to(window, name):
+            return window
+    return None
+
+
+def window_of_class(window_class: str, windows: list[Window], claimed: set[str]) -> Window | None:
+    for window in windows:
+        if window.address not in claimed and window.window_class == window_class:
             return window
     return None

@@ -19,6 +19,8 @@ class PlacingWindows:
         self.found: list[Placement] = []
         self.moved: list[Placement] = []
         self.in_terminal: list[Placement] = []
+        self.windows_found: dict[tuple[int, int], Window] = {}
+        self.unconfirmed_terminals: list[tuple[Placement, str]] = []
 
     def place(self, placements: list[Placement], windows: list[Window]) -> list[Placement]:
         unplaced = []
@@ -28,8 +30,24 @@ class PlacingWindows:
         return unplaced
 
     def remember_terminal(self, placement: Placement) -> None:
-        self.apps = self.apps.with_terminal(placement)
-        self.in_terminal.append(placement)
+        window = self.windows_found[(placement.workspace, placement.index)]
+        self.unconfirmed_terminals.append((placement, window.address))
+
+    def confirm_terminals(self, windows: list[Window]) -> None:
+        still_unconfirmed = []
+        for placement, address in self.unconfirmed_terminals:
+            if self._runs_in_window_at(placement, address, windows):
+                self.apps = self.apps.with_terminal(placement)
+                self.in_terminal.append(placement)
+            else:
+                still_unconfirmed.append((placement, address))
+        self.unconfirmed_terminals = still_unconfirmed
+
+    def _runs_in_window_at(self, placement: Placement, address: str, windows: list[Window]) -> bool:
+        for window in windows:
+            if window.address == address:
+                return self.recognising.runs_inside(placement.app, window)
+        return False
 
     @staticmethod
     def _known_ones_first(placements: list[Placement]) -> list[Placement]:
@@ -47,6 +65,7 @@ class PlacingWindows:
         if window is None:
             return False
         self.claimed.add(window.address)
+        self.windows_found[(placement.workspace, placement.index)] = window
         self.found.append(placement)
         self.names.record(window, placement.app.name)
         self._learn_its_window(placement, window, windows)
@@ -55,7 +74,7 @@ class PlacingWindows:
 
     def _learn_its_window(self, placement: Placement, window: Window, windows: list[Window]) -> None:
         app = placement.app
-        if app.knows_window or self.recognising.by_what_runs(app):
+        if app.knows_window or self.recognising.runs_inside(app, window):
             return
         self.apps = self.apps.with_learned_window(placement, name_for(window, windows, app.command))
 

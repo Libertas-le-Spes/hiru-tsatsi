@@ -5,36 +5,30 @@ from hiru_tsatsi.work_apps.shortcut import Keys
 from hiru_tsatsi.work_apps.windows import Window
 
 
-class DesktopNotSupported(Exception):
-    def __init__(self, desktop: str):
-        super().__init__(desktop)
-        self.desktop = desktop
-
-
-class SetUpFailed(Exception):
-    pass
-
-
-class NotSaved(Exception):
-    pass
-
-
-class NotReadable(Exception):
-    pass
-
-
-class Launched(Protocol):
-    def stopped(self) -> bool: ...
-
-
 class Desktop(Protocol):
     def windows(self) -> list[Window]: ...
 
-    def launch(self, command: str, workspace: int) -> Launched: ...
-
-    def launch_in_terminal(self, command: str, workspace: int, window: str) -> None: ...
+    def launch(self, command: str, workspace: int) -> None: ...
 
     def move(self, window: Window, workspace: int) -> None: ...
+
+
+class Launch(Protocol):
+    def wrapped(self, command: str) -> str: ...
+
+    def stopped(self) -> bool: ...
+
+
+class Launches(Protocol):
+    def new(self) -> Launch: ...
+
+
+class Terminal(Protocol):
+    def wrapped(self, command: str, window: str) -> str: ...
+
+
+class Announcer(Protocol):
+    def announce(self, starting: list[str]) -> None: ...
 
 
 class AppListStore(Protocol):
@@ -53,10 +47,6 @@ class SettingsStore(Protocol):
     def set_window_titles(self, on: bool) -> None: ...
 
 
-class Announcer(Protocol):
-    def announce(self, starting: list[str]) -> None: ...
-
-
 class Notifier(Protocol):
     def notify(self, summary: str, body: str) -> None: ...
 
@@ -68,7 +58,7 @@ class DesktopSetUp(Protocol):
 
     def taken_keys(self) -> set[Keys]: ...
 
-    def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None: ...
+    def install(self, keys: Keys | None, command: str) -> None: ...
 
 
 class CommandLinks(Protocol):

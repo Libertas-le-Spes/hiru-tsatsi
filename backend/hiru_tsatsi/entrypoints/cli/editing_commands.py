@@ -1,6 +1,6 @@
 import argparse
 
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.use_cases.services import Services
 
 
 def add_workspace(services: Services, chosen: argparse.Namespace) -> int:

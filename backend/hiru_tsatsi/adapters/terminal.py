@@ -16,3 +16,8 @@ def in_terminal(command: str, window: str) -> str:
     app_id = shlex.quote(window)
     script = shlex.quote(_script(command))
     return f"xdg-terminal-exec --app-id={app_id} -- sh -c {script}"
+
+
+class XdgTerminal:
+    def wrapped(self, command: str, window: str) -> str:
+        return in_terminal(command, window)

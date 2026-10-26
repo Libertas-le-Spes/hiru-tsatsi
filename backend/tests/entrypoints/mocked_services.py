@@ -1,16 +1,16 @@
 import io
 from contextlib import redirect_stderr, redirect_stdout
-from unittest.mock import create_autospec
+from unittest.mock import Mock, create_autospec
 
 from hiru_tsatsi.entrypoints.cli.main import main
 from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.use_cases.ports import Notifier
+from hiru_tsatsi.use_cases.services import Services
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
 from hiru_tsatsi.use_cases.starting import StartApps
 from hiru_tsatsi.use_cases.window_titles import WindowTitles
-from hiru_tsatsi.wiring import Services
 
 
 def mocked_services() -> Services:
@@ -25,6 +25,6 @@ class Typed:
         printed = io.StringIO()
         errors = io.StringIO()
         with redirect_stdout(printed), redirect_stderr(errors):
-            self.exit_code = main(argv, services)
+            self.exit_code = main(argv, Mock(return_value=services))
         self.printed = printed.getvalue()
         self.errors = errors.getvalue()

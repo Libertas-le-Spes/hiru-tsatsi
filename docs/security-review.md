@@ -36,9 +36,7 @@ and L2, which were about the same page. Each other finding was fixed as its sect
 sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes. The
 short command the findings call `hiru` is now `tsatsi`.
 
-"Checked and found sound" and the step plan describe commit `8372a7c` as it was reviewed. Since
-then the page, its server and its rendering are gone, so the items about them no longer apply;
-steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Every write now
+Since the review, the page, its server and its rendering are gone. Every write now
 refuses a folder that belongs to another account or that other accounts can write to. A write
 replaces a link rather than following it, except for the two Hyprland config files, where a
 linked dotfile is expected; there the folder holding the link must pass the same check. A file
@@ -54,34 +52,39 @@ These features came after the review and widen what Hiru Tsatsi reads and runs, 
 recorded here with what each choice fails to stop.
 
 - **Reading processes.** To tell whether a launch has stopped, and what runs inside a window,
-  Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`. Linux
-  lets an account read another account's `environ` and `cwd` only with privileges it does not
-  have, so only the owner's processes are read. It reads, never writes, and stores nothing.
+  Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`.
+  Whether a launch stopped is judged only from the owner's own processes (the owner of
+  `/proc/<pid>`). What runs inside a window is read from that window's own process tree. It
+  reads, never writes, and stores nothing.
   *Fails to stop:* nothing new; the owner's own processes can already read the same.
-- **The launch tag.** Each launch exports `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in
-  `hyprctl`'s arguments, which every account can read, so another account can learn it; but it
-  can only put the tag in its own processes, which Hiru Tsatsi never reads. When processes can't
-  be listed, the launch counts as still running, so nothing is ever opened twice.
-  *Fails to stop:* a process of the owner's own that copies the tag can keep a launch looking
-  alive; that only stops a terminal from being opened.
+- **The launch tag.** Only a launch that may need a terminal (see below) exports
+  `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in `hyprctl`'s arguments, which every
+  account can read, but another account can only put it in its own processes, which are never
+  read. Only processes started at or after the launch can carry it, so they are the only ones
+  asked. If any of them can't be read, or processes can't be listed, the launch counts as still
+  running: no terminal is opened.
+  *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive;
+  that only stops a terminal from being opened.
 - **Re-running a command in a terminal.** Only a command of the shape `cd <folder> && <program>`
-  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that is not a
-  launcher of other programs (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`, `nice`,
-  `time`, `uwsm-app`), is ever re-run, and only after it stopped with no window for ten seconds.
-  The command is the owner's own, already run once; it runs again inside
-  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`; the window
-  name is reduced to `[a-z0-9-]`. "Opens in a terminal" is saved only once that window is found.
-  *Fails to stop:* a command of that shape that stops and has a slow window is run a second
-  time; a new command or forgetting the window undoes the mark.
+  (or `;`), with a plain folder (no `$`, backtick or `~user`) and a program that does not launch
+  another (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `command`, `nice`, `time`,
+  `uwsm-app`), is ever re-run, and only after it stopped with no window for ten seconds; windows
+  are looked for before that is decided. It runs again inside
+  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. "Opens in
+  a terminal" is saved only when the app's own program is then seen running in that terminal, so
+  a typo, which leaves only a shell waiting for Enter, is never remembered.
+  *Fails to stop:* a command of that shape whose window takes longer than ten seconds and whose
+  launcher exits is run a second time, in a terminal, for that one start. A program whose folder
+  Linux hides from its owner (one given extra privileges, such as `btop`) is never confirmed, so
+  it is tried in a terminal again on every start. A program that keeps running with no terminal
+  instead of stopping (as `nvim` can) is never put in one, and runs unseen, as it did before.
 - **Recognising a session.** A window counts as an app's when the program in front in it and its
   folder match the command. A window that shares its program with other windows, or whose
-  program has more than one child, reports nothing, so a terminal that runs all its windows from
-  one program can never be taken for the wrong app.
+  program has more than one child, reports nothing. A terminal app's own window is matched by its
+  exact name, so a web page titled like it is never taken for it. An app of that shape whose
+  window reports nothing, such as an editor, learns its window name like any other app.
   *Fails to stop:* two windows running the same program in the same folder; either is taken, and
   both are that app.
-- **Saving what a start learned.** Start saves only if the list is unchanged since it read it;
-  otherwise it re-reads the list and re-applies only what it learned to apps that are still the
-  same, so an app added during a start is never lost.
 
 ## Findings
 
@@ -356,59 +359,6 @@ that the **Command** field is not a place for passwords or tokens; put those in 
 them from a secret store.
 
 ---
-
-## Checked and found sound
-
-- **No hidden shell.** No `shell=True`, `os.system`, `os.popen` or `eval` in the backend. Every
-  subprocess is an argument list. The bar's `Process` items are argument lists too, and Quickshell
-  documents that `Process` "does not run command in a shell".
-- **Launching is the only shell, by design.** An app's **Command** goes to Hyprland's `exec_cmd`,
-  which runs it with `sh -c`; that is the feature. Lua quoting holds (I1 table). The trust boundary
-  is who can write the list, and only the owner can, apart from H1.
-- **Window addresses.** Moving a window uses the address Hyprland reported, Lua-quoted. Choosing a
-  window from the page or CLI is checked against the currently open windows before it is saved.
-  Window-name files are written only for addresses matching `[\w.-]+`, so a crafted address can't
-  escape the folder.
-- **Saved state.** `apps.json` and `settings.json` are written through `mkstemp` and `os.replace`
-  in the same folder, owner-only (`-rw-------` in a test run), and replacing a symlink replaces the
-  link rather than writing through it. Nothing is written under `/tmp`.
-- **The editing page's own rendering (page since removed).** `page.js` builds every element with `textContent`; no
-  `innerHTML`. A hostile window title shows as text on the page.
-- **Browser attacks on the server (server since removed).** It binds 127.0.0.1 only; the `Host` check stops DNS
-  rebinding; the token is compared in constant time; cross-site pages can't add the custom header
-  without a CORS preflight that is never answered. Reasoned from code; not demonstrated in a browser.
-- **Bar IPC.** The panel's IPC target exposes only open, close, show, hide and toggle.
-- **Desktop entries.** The repository ships no `.desktop` files, so `Exec` field-code quoting does
-  not apply.
-- **Supply chain.** No third-party dependencies (Python standard library only), no
-  `curl | sh`, and no GitHub Actions workflows to review.
-- **Tests.** The existing 80 tests pass with every external command stubbed, and none of them
-  tried to open a browser or notification.
-
-## Step plan
-
-Each step is small, ships on its own, and leaves the project safer than before. Order is by
-safety, not ease.
-
-1. **Refuse other accounts at the door (H1, option B).** Add a `Peers` interface and its
-   `/proc/net/tcp` implementation in its own file under `adapters/`; make it a required argument of
-   `PageServer`; refuse unknown owners. Tests from H1's seal. This alone closes H1.
-2. **Random port, fail closed (M2, H1 option D).** Bind port 0; open the browser only on a port
-   this process bound; drop the "already open" path. Test from M2's seal.
-3. **Safe launcher (M1).** `python3 -P -m`, Python 3.11 minimum in `install.sh` and both READMEs.
-   Planted-module test.
-4. **Stop handing out the token (H1, option C).** Forwarding file in `$XDG_RUNTIME_DIR`, token in
-   the fragment, never in a response. The file writer is its own class; the page reads and clears
-   the fragment. Tests from H1's seal.
-5. **Response headers (L2).** In the single send method. Header test.
-6. **Plain text in the bar (L1).** `textFormat: Text.PlainText` on every `Text`; QML scan test.
-7. **Atomic config writes (L3).** One atomic writer shared by all storage; failure and symlink
-   tests.
-8. **Quoting and install tidy-ups (I1, I2, I3).** Shell-quote the path, escape control characters,
-   protect an existing `hiru`, and a README line on secrets.
-
-If the editing page turns out to be rarely used, replace steps 1, 2, 4 and 5 with one step that
-removes it (option A).
 
 ## Sources
 

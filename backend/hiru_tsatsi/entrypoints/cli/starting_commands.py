@@ -1,8 +1,8 @@
 import argparse
 
-from hiru_tsatsi.presenters.outcome_text import details, summary
+from hiru_tsatsi.presenters.start_report import details, summary
 from hiru_tsatsi.use_cases.outcome import Outcome
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.use_cases.services import Services
 
 
 def report(services: Services, outcome: Outcome) -> int:

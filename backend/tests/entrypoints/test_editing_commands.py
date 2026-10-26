@@ -1,7 +1,7 @@
 import unittest
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
-from hiru_tsatsi.use_cases.ports import NotReadable, NotSaved
+from hiru_tsatsi.use_cases.failures import NotReadable, NotSaved
 from hiru_tsatsi.work_apps.refusals import NumberTaken
 
 TYPED_AND_CALLED = [
@@ -43,6 +43,7 @@ class EditingFromTheCommandLine(unittest.TestCase):
         services.edit.add_workspace.side_effect = NotReadable("apps.json is not valid JSON")
         typed = Typed(["add-workspace", "4", "Comms"], services)
         self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was changed: apps.json is not valid JSON.\n"))
+
 
 if __name__ == "__main__":
     unittest.main()

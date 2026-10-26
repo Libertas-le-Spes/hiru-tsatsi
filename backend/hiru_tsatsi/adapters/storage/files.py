@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Protocol
 
 from hiru_tsatsi.adapters.storage.atomic_file import write_atomically
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.adapters.storage.reading import read_text
 
 
 class Files(Protocol):
@@ -15,12 +15,7 @@ class Files(Protocol):
 
 class Disk:
     def read(self, path: Path) -> str:
-        try:
-            return path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            return ""
-        except (OSError, UnicodeDecodeError) as unreadable:
-            raise NotReadable(f"{path} could not be read ({unreadable})") from unreadable
+        return read_text(path)
 
     def exists(self, path: Path) -> bool:
         return path.exists()
