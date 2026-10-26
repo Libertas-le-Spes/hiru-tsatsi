@@ -3,7 +3,10 @@ from pathlib import Path
 
 
 def _home(variable: str, fallback: str) -> Path:
-    return Path(os.environ.get(variable) or Path.home() / fallback)
+    chosen = os.environ.get(variable)
+    if chosen:
+        return Path(chosen)
+    return Path.home() / fallback
 
 
 def config_home() -> Path:

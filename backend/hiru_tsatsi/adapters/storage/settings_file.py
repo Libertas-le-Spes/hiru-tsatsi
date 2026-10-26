@@ -1,27 +1,28 @@
-import json
 from pathlib import Path
 
-from hiru_tsatsi.adapters.storage.atomic_file import write_atomically
+from hiru_tsatsi.adapters.storage.files import Disk, Files
+from hiru_tsatsi.adapters.storage.json_object import json_object, json_text
 
 WINDOW_TITLES = "window_titles"
 
 
 class SettingsFile:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, files: Files | None = None):
+        if files is None:
+            files = Disk()
         self.path = path
-
-    def _read(self) -> dict:
-        try:
-            content = json.loads(self.path.read_text())
-        except (OSError, json.JSONDecodeError):
-            return {}
-        return content if isinstance(content, dict) else {}
+        self.files = files
 
     def window_titles(self) -> bool | None:
-        chosen = self._read().get(WINDOW_TITLES)
-        return chosen if isinstance(chosen, bool) else None
+        chosen = self._settings().get(WINDOW_TITLES)
+        if not isinstance(chosen, bool):
+            return None
+        return chosen
 
     def set_window_titles(self, on: bool) -> None:
-        settings = self._read()
+        settings = self._settings()
         settings[WINDOW_TITLES] = on
-        write_atomically(self.path, json.dumps(settings, indent=2) + "\n")
+        self.files.write(self.path, json_text(settings))
+
+    def _settings(self) -> dict:
+        return json_object(self.files.read(self.path))

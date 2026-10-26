@@ -19,6 +19,10 @@ class ConfigLeftAlone(Exception):
     pass
 
 
+class NotSaved(Exception):
+    pass
+
+
 class Desktop(Protocol):
     def windows(self) -> list[Window]: ...
 
@@ -55,3 +59,13 @@ class DesktopSetUp(Protocol):
     def taken_keys(self) -> set[Keys]: ...
 
     def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None: ...
+
+
+class CommandLinks(Protocol):
+    def present(self, path: str) -> bool: ...
+
+    def is_ours(self, path: str) -> bool: ...
+
+    def link(self, path: str, target: str) -> None: ...
+
+    def remove(self, path: str) -> None: ...
