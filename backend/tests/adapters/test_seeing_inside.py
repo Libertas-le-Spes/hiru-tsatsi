@@ -30,6 +30,12 @@ class LookingInsideWindows(unittest.TestCase):
             self.assertEqual((seen.program, seen.folder), ("", ""))
         what_runs.assert_not_called()
 
+    def test_a_window_without_a_known_program_says_nothing(self):
+        what_runs = Mock(side_effect=helper_in_code)
+        seen = SeeingInside(desktop_with([Window("0xc", "steam", "Steam", 6, pid=0)]), what_runs).windows()[0]
+        self.assertEqual((seen.program, seen.folder), ("", ""))
+        what_runs.assert_not_called()
+
     def test_launching_and_moving_go_straight_to_the_desktop(self):
         desktop = desktop_with([])
         steam = window("0xa", "steam")

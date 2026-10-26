@@ -62,19 +62,26 @@ recorded here with what each choice fails to stop.
   `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in `hyprctl`'s arguments, which every
   account can read, but another account can only put it in its own processes, which are never
   read. Only processes started at or after the launch can carry it, so they are the only ones
-  asked. If any of them can't be read, or processes can't be listed, the launch counts as still
-  running: no terminal is offered.
+  asked. If any of them, or its start time, can't be read, or processes or the time since boot
+  can't be read, the launch counts as still running: no terminal is offered.
   *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive,
   which only stops a terminal from being offered. A launcher that hands its program to another
   service (over D-Bus, or through `systemd-run` as `omarchy-launch-browser` does) leaves nothing
   carrying the tag, so it looks stopped; only commands of the shape below are ever watched.
 - **Opening a command in a terminal.** Hiru Tsatsi never runs a command a second time on its own.
-  When a watched launch has stopped with no window ten seconds after it began, a notification asks
-  "Open <app> in a terminal?"; only a click runs it again, inside
-  `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. Anything
-  but a click (a dismissal, the notification timing out, no notification service) is a no, and
-  the no is saved with the app, so it is never asked about again until its command changes.
-  Under that question sit three limits:
+  A watched launch that has stopped with no window ten seconds after it began is reported as
+  "stopped without a window". Once the start is over, saved and reported, a notification asks
+  "Open <app> in a terminal?" for each such app, one at a time; only a click runs it again,
+  inside `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. The
+  question waits a minute and is then taken off the screen. Anything but a click (a dismissal,
+  that minute passing, no notification service) is a no, and the no is saved with the app, so it
+  is never asked about again until its command changes. An app whose entry changed while the
+  question was coming is not asked about.
+  Only one start runs at a time: each holds an owner-only lock in `XDG_RUNTIME_DIR`, opened
+  without following links and refused if another account owns it, until it has finished,
+  questions included. A second start while one runs starts nothing. If the lock can't be made
+  sure of, nothing starts.
+  Under the question sit three limits:
   - Only a command of the shape `cd <folder> && <program>` (or `;`) is ever watched or offered,
     with a plain folder (no `$`, backtick or `~user`), no `NAME=value` in front of the program,
     and a program that is neither a shell nor one of the launchers known to run another
@@ -88,7 +95,9 @@ recorded here with what each choice fails to stop.
   - Only a command of that shape starts in a terminal, even if a hand-edited list says another
     one should.
   A launch that stopped keeps its place while other apps are still being waited for, so a window
-  that arrives late is still placed and learned, and the app is not asked about.
+  that arrives late is still placed and learned, and the app is not asked about. The question
+  therefore comes once every other app has its window, or after the minute's wait, whichever is
+  first.
   *Fails to stop:* a click on yes for a command whose launcher exited while its window was still
   coming runs it twice, once. A program whose folder Linux hides from its owner (one given extra
   privileges, such as `btop`) is never confirmed, so it is saved as a no after its one trial. A
@@ -100,7 +109,10 @@ recorded here with what each choice fails to stop.
   exact name, so a web page titled like it is never taken for it. An app of that shape whose
   window reports nothing, such as an editor, learns its window name like any other app, but a
   window running the same program in another folder, another session of it, is never taken for
-  it, by title or by a learned name.
+  it, by title or by a learned name. The command's folder is compared by where it really leads,
+  links followed, as Linux reports the folder a program runs in. A terminal app's window with
+  only a shell left in it, such as the "Press Enter to close" prompt after the program ended,
+  is not counted as the app being open.
   *Fails to stop:* two windows running the same program in the same folder; either is taken, and
   both are that app.
 

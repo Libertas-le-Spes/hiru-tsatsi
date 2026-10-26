@@ -4,18 +4,25 @@ from pathlib import Path
 PROCESS_GROUP_FIELD = 4
 FOREGROUND_GROUP_FIELD = 7
 START_TIME_FIELD = 21
+FIRST_FIELD_AFTER_THE_NAME = 2
 TICKS_PER_SECOND = os.sysconf("SC_CLK_TCK")
 
 
-def _stat_field(stat: str, field: int) -> int:
-    name_starts = stat.find("(")
-    name_ends = stat.rfind(")")
-    if name_starts < 0 or name_ends < 0:
+def _stat_field(stat: str, field: int) -> int | None:
+    if ")" not in stat:
+        return None
+    _, _, after_the_name = stat.rpartition(")")
+    fields = after_the_name.split()
+    position = field - FIRST_FIELD_AFTER_THE_NAME
+    if position >= len(fields):
+        return None
+    return int(fields[position])
+
+
+def _group_or_none_found(group: int | None) -> int:
+    if group is None:
         return 0
-    fields = stat[:name_starts].split() + ["name"] + stat[name_ends + 1:].split()
-    if len(fields) <= field:
-        return 0
-    return int(fields[field])
+    return group
 
 
 def real_user_in(status: str) -> int:
@@ -26,15 +33,18 @@ def real_user_in(status: str) -> int:
 
 
 def process_group_in(stat: str) -> int:
-    return _stat_field(stat, PROCESS_GROUP_FIELD)
+    return _group_or_none_found(_stat_field(stat, PROCESS_GROUP_FIELD))
 
 
 def foreground_group_in(stat: str) -> int:
-    return _stat_field(stat, FOREGROUND_GROUP_FIELD)
+    return _group_or_none_found(_stat_field(stat, FOREGROUND_GROUP_FIELD))
 
 
-def started_in(stat: str) -> float:
-    return _stat_field(stat, START_TIME_FIELD) / TICKS_PER_SECOND
+def started_in(stat: str) -> float | None:
+    ticks = _stat_field(stat, START_TIME_FIELD)
+    if ticks is None:
+        return None
+    return ticks / TICKS_PER_SECOND
 
 
 class ProcFiles:
@@ -81,11 +91,15 @@ class ProcFiles:
     def foreground_group(self, pid: int) -> int:
         return foreground_group_in(self._read(pid, "stat"))
 
-    def started(self, pid: int) -> float:
+    def started(self, pid: int) -> float | None:
         return started_in(self._read(pid, "stat"))
 
-    def seconds_since_boot(self) -> float:
-        return float(self._read_file("uptime").split()[0])
+    def seconds_since_boot(self) -> float | None:
+        try:
+            uptime = (self.root / "uptime").read_text()
+        except OSError:
+            return None
+        return float(uptime.split()[0])
 
     def environment(self, pid: int) -> list[str] | None:
         try:
@@ -95,12 +109,6 @@ class ProcFiles:
         except OSError:
             return None
         return raw.decode(errors="replace").split("\0")
-
-    def _read_file(self, name: str) -> str:
-        try:
-            return (self.root / name).read_text()
-        except OSError:
-            return "0"
 
     def _read(self, pid: int, name: str) -> str:
         try:

@@ -1,18 +1,30 @@
+from typing import Callable
+
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.program_in_folder import ProgramInFolder
+from hiru_tsatsi.work_apps.shells import SHELLS
 from hiru_tsatsi.work_apps.windows import Window, window_named, window_of_class
 
 
+def _not_only_a_shell_waiting(windows: list[Window]) -> list[Window]:
+    alive = []
+    for window in windows:
+        if window.program not in SHELLS:
+            alive.append(window)
+    return alive
+
+
 class Recognising:
-    def __init__(self, home: str):
+    def __init__(self, home: str, real_folder: Callable[[str], str]):
         self.home = home
+        self.real_folder = real_folder
 
     def known_window(self, app: App, windows: list[Window], claimed: set[str]) -> Window | None:
         running = self._window_running(app, windows, claimed)
         if running is not None:
             return running
         if app.opens_in_terminal:
-            return window_of_class(app.learned_window, windows, claimed)
+            return window_of_class(app.learned_window, _not_only_a_shell_waiting(windows), claimed)
         if app.knows_window:
             return window_named(app.learned_window, self.could_be_its_windows(app, windows), claimed)
         return None
@@ -46,4 +58,7 @@ class Recognising:
         return None
 
     def _program_in_folder(self, app: App) -> ProgramInFolder | None:
-        return ProgramInFolder.of(app.command, self.home)
+        inside = ProgramInFolder.of(app.command, self.home)
+        if inside is None:
+            return None
+        return inside.leading_to(self.real_folder)

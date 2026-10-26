@@ -12,3 +12,26 @@ class AppStart(Protocol):
     def next(self, now: float) -> "AppStart": ...
 
     def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None: ...
+
+
+def placements_of(starts: list[AppStart]) -> list[Placement]:
+    placements = []
+    for start in starts:
+        placements.append(start.placement)
+    return placements
+
+
+def still_waiting(starts: list[AppStart]) -> list[AppStart]:
+    waiting = []
+    for start in starts:
+        if start.waits_for_window:
+            waiting.append(start)
+    return waiting
+
+
+def stopped_without_window(starts: list[AppStart]) -> list[AppStart]:
+    stopped = []
+    for start in starts:
+        if not start.waits_for_window:
+            stopped.append(start)
+    return stopped

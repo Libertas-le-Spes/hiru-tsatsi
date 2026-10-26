@@ -1,6 +1,7 @@
 import posixpath
 import shlex
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import Callable
 
 from hiru_tsatsi.work_apps.shells import SHELLS
 from hiru_tsatsi.work_apps.windows import Window
@@ -32,9 +33,15 @@ def _folder_is_plain(folder: str) -> bool:
     for sign in EXPANDED_BY_THE_SHELL:
         if sign in folder:
             return False
-    if folder.startswith("~") and folder != "~" and not folder.startswith("~/"):
+    if _names_another_users_home(folder):
         return False
     return True
+
+
+def _names_another_users_home(folder: str) -> bool:
+    if not folder.startswith("~"):
+        return False
+    return folder != "~" and not folder.startswith("~/")
 
 
 def _full_folder(folder: str, home: str) -> str:
@@ -63,6 +70,9 @@ class ProgramInFolder:
         if program in RUNS_ANOTHER_PROGRAM or program in SHELLS:
             return None
         return cls(program, _full_folder(folder, home))
+
+    def leading_to(self, real_folder: Callable[[str], str]) -> "ProgramInFolder":
+        return replace(self, folder=real_folder(self.folder))
 
     def runs_in(self, window: Window) -> bool:
         return self._same_program(window) and window.folder == self.folder

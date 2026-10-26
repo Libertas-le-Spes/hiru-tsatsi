@@ -5,7 +5,7 @@ from tests.examples.app_lists import app_list
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, saved_once
 from tests.use_cases.starting_scene import CHAT, MAIN, STEAM, Start, appearing_once_launched
-from hiru_tsatsi.use_cases.failures import ChangedMeanwhile, NotSaved
+from hiru_tsatsi.use_cases.failures import AlreadyStarting, ChangedMeanwhile, NotSaved
 
 
 class StartingWorkApps(unittest.TestCase):
@@ -58,7 +58,7 @@ class StartingWorkApps(unittest.TestCase):
         start = Start(desktop_showing([]), app_list((2, [MAIN])))
         outcome = start.run()
         self.assertEqual(outcome.unseen, ["Rider Main"])
-        self.assertGreaterEqual(start.clock.now, 60)
+        self.assertGreaterEqual(start.clock.seconds, 60)
 
     def test_every_window_given_to_an_app_is_named_after_it(self):
         rider = window("m", "jetbrains-rider", "harbour – x", 2)
@@ -98,6 +98,14 @@ class StartingWorkApps(unittest.TestCase):
             start.run()
         start.store.save.assert_called_once()
         start.store.load.assert_called_once()
+
+    def test_a_second_start_while_one_is_running_starts_nothing(self):
+        start = Start(desktop_showing([]), app_list((6, [STEAM])))
+        start.one_at_a_time.claimed.return_value = False
+        with self.assertRaises(AlreadyStarting):
+            start.run()
+        start.desktop.launch.assert_not_called()
+        start.store.load.assert_not_called()
 
     def test_says_which_apps_are_starting_before_launching_them(self):
         start = Start(desktop_showing([window("c", "chrome-chat.google.com-Default", "Chat", 1)]),

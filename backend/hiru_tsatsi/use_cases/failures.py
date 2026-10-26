@@ -31,6 +31,16 @@ class ChangedMeanwhile(NotSaved):
     pass
 
 
+class AlreadyStarting(Failure):
+    def explained(self) -> str:
+        return "Your work apps are already being started, so nothing more was started."
+
+
+class CannotTellIfStarting(Failure):
+    def explained(self) -> str:
+        return f"Nothing was started, because Hiru Tsatsi couldn't make sure no other start is running: {self}."
+
+
 class NotReadable(Failure):
     def explained(self) -> str:
         return f"Nothing was changed: {self}."

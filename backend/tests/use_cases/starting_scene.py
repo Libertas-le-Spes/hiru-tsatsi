@@ -5,9 +5,10 @@ from tests.examples.home import RECOGNISING
 from tests.use_cases.mocked_list import store_holding
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.outcome import Outcome
-from hiru_tsatsi.use_cases.offering_terminals import OfferingTerminals
-from hiru_tsatsi.use_cases.ports import Announcer, Launch, Launches, Notifier, Terminal, WindowNames
+from hiru_tsatsi.use_cases.offering_terminals import OfferTerminals, TerminalOffer
+from hiru_tsatsi.use_cases.ports import Announcer, Launch, Launches, Notifier, OneStartAtATime, Terminal, WindowNames
 from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.trying_terminals import TryingTerminals
 from hiru_tsatsi.use_cases.watching_starts import WATCH_SECONDS, WatchingStarts
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
@@ -51,19 +52,25 @@ class Start:
         self.names = create_autospec(WindowNames, instance=True)
         self.announcer = create_autospec(Announcer, instance=True)
         self.notifier = create_autospec(Notifier, instance=True)
-        self.notifier.ask.return_value = answers_yes
+        self.notifier.ask_within.return_value = answers_yes
+        self.one_at_a_time = create_autospec(OneStartAtATime, instance=True)
+        self.one_at_a_time.claimed.return_value = True
         self.clock = TickingClock()
+        self.launcher = Launcher(self.desktop, self.launches, self.terminal)
+        self.watching = WatchingStarts(self.desktop, self.clock, WATCH_SECONDS)
 
     def run(self) -> Outcome:
-        launcher = Launcher(self.desktop, self.launches, self.terminal)
-        watching = WatchingStarts(self.desktop, self.clock, self.clock.wait, WATCH_SECONDS)
-        offering = OfferingTerminals(self.notifier, launcher, watching)
-        return StartApps(self.desktop, launcher, self.store, self.names, self.announcer, RECOGNISING, watching,
-                         offering).run()
+        return StartApps(self.desktop, self.launcher, self.store, self.names, self.announcer, RECOGNISING,
+                         self.watching, self.clock, self.one_at_a_time).run()
+
+    def run_and_offer(self) -> tuple[Outcome, TerminalOffer]:
+        outcome = self.run()
+        trying = TryingTerminals(self.desktop, self.names, self.launcher, RECOGNISING, self.watching, self.clock)
+        return outcome, OfferTerminals(self.notifier, self.store, trying).run(outcome.stopped_without_window)
 
     def window_appearing_after(self, seconds: float, window: Window) -> None:
         def windows() -> list[Window]:
-            if self.clock.now >= seconds:
+            if self.clock.seconds >= seconds:
                 return [window]
             return []
         self.desktop.windows.side_effect = windows

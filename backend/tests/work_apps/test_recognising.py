@@ -1,12 +1,17 @@
 import unittest
 
 from tests.examples.windows import window
-from tests.examples.home import RECOGNISING
+from tests.examples.home import HOME, RECOGNISING
 from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.recognising import Recognising
 
 HARBOUR = App("Harbour", "cd code/harbour && helper")
 LANTERN_WINDOW = window("a", "foot", "✳ Some talk", 3, "helper", "/home/sam/code/lantern")
 HARBOUR_WINDOW = window("b", "foot", "✳ Other talk", 2, "helper", "/home/sam/code/harbour")
+
+
+def through_a_link(folder: str) -> str:
+    return folder.replace("/home/sam/code", "/data/code")
 
 
 class RecognisingAnAppsWindow(unittest.TestCase):
@@ -32,6 +37,16 @@ class RecognisingAnAppsWindow(unittest.TestCase):
         exact = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot")
         found = RECOGNISING.known_window(terminal, [longer_name, page_titled_like_it, exact], set())
         self.assertEqual(found.address, "t")
+
+    def test_a_terminal_apps_window_with_only_a_shell_left_waiting_is_not_it(self):
+        helper = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
+        finished = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot", 2, "sh", "/home/sam/code")
+        self.assertIsNone(RECOGNISING.known_window(helper, [finished], set()))
+
+    def test_a_folder_reached_through_a_link_matches_where_the_link_leads(self):
+        recognising = Recognising(HOME, through_a_link)
+        inside_the_link = window("b", "foot", "✳ Some talk", 2, "helper", "/data/code/harbour")
+        self.assertEqual(recognising.known_window(HARBOUR, [inside_the_link], set()), inside_the_link)
 
     def test_a_program_name_longer_than_linux_keeps_still_matches(self):
         long_name = App("Long", "cd code/harbour && a-very-long-program-name")

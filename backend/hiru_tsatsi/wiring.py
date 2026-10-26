@@ -1,4 +1,4 @@
-import time
+import os
 from pathlib import Path
 
 from hiru_tsatsi.adapters import this_machine
@@ -7,12 +7,14 @@ from hiru_tsatsi.adapters.front_process import FrontProcess
 from hiru_tsatsi.adapters.notify_send import NotifySend
 from hiru_tsatsi.adapters.proc_files import ProcFiles
 from hiru_tsatsi.adapters.seeing_inside import SeeingInside
+from hiru_tsatsi.adapters.start_lock import StartLock
 from hiru_tsatsi.adapters.storage import locations
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, EarlierList
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved
 from hiru_tsatsi.adapters.storage.files import Disk
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
 from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
+from hiru_tsatsi.adapters.system_clock import SystemClock
 from hiru_tsatsi.adapters.tagged_launch import TaggedLaunches
 from hiru_tsatsi.adapters.terminal import XdgTerminal
 from hiru_tsatsi.presenters.starting_notice import StartingNotice
@@ -20,11 +22,12 @@ from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.installing import LinkCommands
 from hiru_tsatsi.use_cases.launching import Launcher
-from hiru_tsatsi.use_cases.offering_terminals import OfferingTerminals
+from hiru_tsatsi.use_cases.offering_terminals import OfferTerminals
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.use_cases.services import Services
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
 from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.trying_terminals import TryingTerminals
 from hiru_tsatsi.use_cases.watching_starts import WATCH_SECONDS, WatchingStarts
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 from hiru_tsatsi.work_apps.recognising import Recognising
@@ -42,13 +45,16 @@ def open_services() -> Services:
     names = NamesWhenWanted(titles, WindowNameFiles(locations.window_names_folder(), disk))
     notifier = NotifySend()
     desktop = SeeingInside(this_machine.desktop(), FrontProcess(processes).of_window)
-    recognising = Recognising(str(Path.home()))
+    recognising = Recognising(str(Path.home()), os.path.realpath)
     launcher = Launcher(desktop, TaggedLaunches(processes), XdgTerminal())
-    watching = WatchingStarts(desktop, time.monotonic, time.sleep, WATCH_SECONDS)
-    offering = OfferingTerminals(notifier, launcher, watching)
-    start = StartApps(desktop, launcher, store, names, StartingNotice(notifier), recognising, watching, offering)
+    clock = SystemClock()
+    watching = WatchingStarts(desktop, clock, WATCH_SECONDS)
+    one_at_a_time = StartLock(locations.start_lock_file(), os.getuid())
+    start = StartApps(desktop, launcher, store, names, StartingNotice(notifier), recognising, watching, clock,
+                      one_at_a_time)
+    offer = OfferTerminals(notifier, store, TryingTerminals(desktop, names, launcher, recognising, watching, clock))
     setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
-    return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
+    return Services(start, offer, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
                     Overview(store, desktop, recognising), titles, notifier)
 
 
