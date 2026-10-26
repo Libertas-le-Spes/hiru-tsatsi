@@ -4,7 +4,7 @@ from tests.examples.clock import TickingClock
 from tests.examples.home import RECOGNISING
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing
-from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
+from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals, Trial
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.windows import Window
@@ -23,7 +23,7 @@ class ConfirmingATrialTerminal(unittest.TestCase):
 
     def confirmed_while_showing(self, windows: list[Window]) -> list[Placement]:
         confirming = ConfirmingTerminals(desktop_showing(windows), self.clock, RECOGNISING, 60.0)
-        return confirming.confirmed_among([(HELPER, TERMINAL)])
+        return confirming.confirmed_among([Trial(HELPER, TERMINAL)])
 
     def test_confirms_at_once_when_the_apps_program_runs_in_it(self):
         self.assertEqual(self.confirmed_while_showing([with_inside("helper", "/home/sam/code")]), [HELPER])
@@ -33,7 +33,7 @@ class ConfirmingATrialTerminal(unittest.TestCase):
         desktop = desktop_showing([])
         desktop.windows.side_effect = [[with_inside("sh", "/home/sam")], [with_inside("helper", "/home/sam/code")]]
         confirming = ConfirmingTerminals(desktop, self.clock, RECOGNISING, 60.0)
-        self.assertEqual(confirming.confirmed_among([(HELPER, TERMINAL)]), [HELPER])
+        self.assertEqual(confirming.confirmed_among([Trial(HELPER, TERMINAL)]), [HELPER])
 
     def test_gives_up_after_its_time_when_only_a_shell_runs_in_it(self):
         self.assertEqual(self.confirmed_while_showing([with_inside("sh", "/home/sam")]), [])

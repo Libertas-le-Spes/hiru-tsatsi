@@ -28,11 +28,11 @@ class WatchedStart:
         return cls(placement, launcher.launch_watched(placement), now)
 
     def next(self, now: float) -> AppStart:
-        if not self.stopped_without_window(now):
+        if not self._given_up(now):
             return self
         return StoppedWithoutWindow(self.placement)
 
-    def stopped_without_window(self, now: float) -> bool:
+    def _given_up(self, now: float) -> bool:
         waited_long_enough = now - self.since >= GIVE_UP_AFTER_SECONDS
         return waited_long_enough and self.launch.stopped()
 

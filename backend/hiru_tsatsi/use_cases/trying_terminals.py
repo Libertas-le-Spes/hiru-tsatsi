@@ -74,5 +74,5 @@ class TryingTerminals:
         seen = []
         for trial in trials:
             if trial.placement not in unseen:
-                seen.append((trial.placement, placing.window_given_to(trial.placement)))
+                seen.append(Trial(trial.placement, placing.window_given_to(trial.placement)))
         return seen

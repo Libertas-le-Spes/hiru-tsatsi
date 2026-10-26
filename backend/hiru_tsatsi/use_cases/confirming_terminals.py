@@ -1,10 +1,17 @@
+from dataclasses import dataclass
+
 from hiru_tsatsi.use_cases.ports import Clock, Desktop
+from hiru_tsatsi.use_cases.watching_starts import POLL_SECONDS
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.windows import Window
 
-POLL_SECONDS = 0.5
-Trial = tuple[Placement, Window]
+
+
+@dataclass(frozen=True)
+class Trial:
+    placement: Placement
+    window: Window
 
 
 class ConfirmingTerminals:
@@ -26,11 +33,11 @@ class ConfirmingTerminals:
     def _newly_confirmed(self, trials: list[Trial], confirmed: list[Placement]) -> list[Trial]:
         windows = self.desktop.windows()
         waiting = []
-        for placement, window in trials:
-            if self._runs_in_window_at(placement, window.address, windows):
-                confirmed.append(placement)
+        for trial in trials:
+            if self._runs_in_window_at(trial.placement, trial.window.address, windows):
+                confirmed.append(trial.placement)
             else:
-                waiting.append((placement, window))
+                waiting.append(trial)
         return waiting
 
     def _runs_in_window_at(self, placement: Placement, address: str, windows: list[Window]) -> bool:

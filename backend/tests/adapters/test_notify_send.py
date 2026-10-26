@@ -4,6 +4,7 @@ from unittest import mock
 
 from hiru_tsatsi.adapters import notify_send
 from hiru_tsatsi.adapters.notify_send import NotifySend
+from hiru_tsatsi.use_cases.ports import Answer
 
 QUESTION_PROCESS = subprocess.Popen
 CLOSING = ["gdbus", "call", "--session", "--dest", "org.freedesktop.Notifications",
@@ -35,32 +36,39 @@ class AskingWithADeadline(unittest.TestCase):
         NotifySend().ask_within("Open Helper?", "Why", "Open", 60)
         self.popen.assert_called_once_with(
             ["notify-send", "-a", "Hiru Tsatsi", "--urgency=critical", "--print-id", "--action=default=Open",
-             "--action=start=Open", "Open Helper?", "Why"], stdout=subprocess.PIPE, text=True)
+             "--action=start=Open", "--", "Open Helper?", "Why"], stdout=subprocess.PIPE, text=True)
 
     def test_a_click_is_a_yes_within_the_time_given(self):
         self.popen.return_value = asking_that_prints("42\nstart\n")
-        self.assertTrue(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.YES)
         self.popen.return_value.communicate.assert_called_once_with(timeout=60)
         self.run.assert_not_called()
 
     def test_a_dismissal_is_a_no(self):
         self.popen.return_value = asking_that_prints("42\n")
-        self.assertFalse(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NO)
 
     def test_without_notify_send_nothing_is_asked_and_there_is_no_answer(self):
         self.which.return_value = None
-        self.assertIsNone(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_SHOWN)
         self.popen.assert_not_called()
 
     def test_a_question_no_service_could_show_has_no_answer(self):
         self.popen.return_value = asking_that_prints("", exit_code=1)
-        self.assertIsNone(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_SHOWN)
+
+    def test_a_click_landing_at_the_deadline_still_counts(self):
+        asking = asking_that_prints("42\n")
+        asking.communicate.side_effect = [subprocess.TimeoutExpired("notify-send", 60), ("42\nstart\n", None)]
+        self.popen.return_value = asking
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.YES)
+        self.run.assert_not_called()
 
     def test_no_answer_in_time_is_a_no_and_the_question_is_taken_off_the_screen(self):
         asking = asking_that_prints("42\n")
         asking.communicate.side_effect = [subprocess.TimeoutExpired("notify-send", 60), ("42\n", None)]
         self.popen.return_value = asking
-        self.assertFalse(NotifySend().ask_within("Open Helper?", "Why", "Open", 60))
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NO)
         asking.kill.assert_called_once_with()
         self.run.assert_called_once_with(CLOSING, capture_output=True, check=False)
 

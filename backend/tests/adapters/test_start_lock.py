@@ -1,9 +1,10 @@
+import os
 import unittest
 from pathlib import Path
 from unittest import mock
 
 from hiru_tsatsi.adapters import start_lock
-from hiru_tsatsi.adapters.start_lock import OPENING, OWNER_ONLY, StartLock
+from hiru_tsatsi.adapters.start_lock import StartLock
 from hiru_tsatsi.use_cases.failures import CannotTellIfStarting
 
 LOCK = Path("/run/user/1000/hiru-tsatsi-start.lock")
@@ -33,7 +34,7 @@ class OneStartAtATime(unittest.TestCase):
 
     def test_the_first_start_claims_the_owner_only_lock_without_following_links(self):
         self.assertTrue(StartLock(LOCK, ACCOUNT).claimed())
-        self.open.assert_called_once_with(LOCK, OPENING, OWNER_ONLY)
+        self.open.assert_called_once_with(LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
         self.flock.assert_called_once_with(OPENED, start_lock.fcntl.LOCK_EX | start_lock.fcntl.LOCK_NB)
 
     def test_a_start_while_another_holds_the_lock_is_refused(self):

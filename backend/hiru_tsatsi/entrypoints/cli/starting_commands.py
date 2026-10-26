@@ -16,7 +16,7 @@ def _tell(services: Services, summary: str, details: str) -> None:
 
 def _report_and_offer(services: Services, outcome: Outcome) -> int:
     _tell(services, start_report.summary(outcome), start_report.details(outcome))
-    offer = services.offer.run(outcome.stopped_without_window)
+    offer = services.offer.run(outcome.for_the_offer)
     if terminal_offer_report.anything_to_say(offer):
         _tell(services, terminal_offer_report.SUMMARY, terminal_offer_report.details(offer))
     return 0

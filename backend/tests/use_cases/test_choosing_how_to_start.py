@@ -11,8 +11,9 @@ from hiru_tsatsi.use_cases.ports import Launch
 from hiru_tsatsi.use_cases.terminal_starts import TerminalStart
 from hiru_tsatsi.use_cases.watched_starts import StoppedWithoutWindow, WatchedStart
 from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 
-KNOWN_HELPER = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
+KNOWN_HELPER = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
 
 
 def kind_for(app: App) -> type:
@@ -28,7 +29,7 @@ class ChoosingHowToStartAnApp(unittest.TestCase):
         self.assertIs(kind_for(HELPER), WatchedStart)
 
     def test_a_folder_and_program_command_whose_terminal_was_ruled_out_starts_with_its_own_window(self):
-        self.assertIs(kind_for(App("Helper", "cd code && helper", terminal_ruled_out=True)), OwnWindowStart)
+        self.assertIs(kind_for(App("Helper", "cd code && helper", terminal=TerminalUse.RULED_OUT)), OwnWindowStart)
 
     def test_an_app_known_to_need_a_terminal_is_never_also_watched(self):
         self.assertFalse(WatchedStart.fits(KNOWN_HELPER, RECOGNISING))
