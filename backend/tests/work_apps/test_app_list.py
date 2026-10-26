@@ -54,6 +54,5 @@ class EditingTheList(unittest.TestCase):
             apps.with_app(9, CHAT)
 
 
-
 if __name__ == "__main__":
     unittest.main()

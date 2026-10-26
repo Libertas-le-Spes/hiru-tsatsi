@@ -15,11 +15,11 @@ class SetUpFailed(Exception):
     pass
 
 
-class ConfigLeftAlone(Exception):
+class NotSaved(Exception):
     pass
 
 
-class NotSaved(Exception):
+class NotReadable(Exception):
     pass
 
 

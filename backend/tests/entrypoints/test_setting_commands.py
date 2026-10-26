@@ -1,7 +1,7 @@
 import unittest
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
-from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, SetUpFailed
+from hiru_tsatsi.use_cases.ports import NotSaved, SetUpFailed
 from hiru_tsatsi.use_cases.setting_up import SetUp
 from hiru_tsatsi.work_apps.shortcut import Keys
 
@@ -43,7 +43,7 @@ class TheSetUpCommand(unittest.TestCase):
 
     def test_a_config_left_alone_fails_and_says_nothing_was_set_up(self):
         services = mocked_services()
-        services.set_up.run.side_effect = ConfigLeftAlone("hyprland.lua changed meanwhile")
+        services.set_up.run.side_effect = NotSaved("hyprland.lua changed meanwhile")
         typed = Typed(["set-up"], services)
         self.assertEqual((typed.exit_code, typed.printed), (1, "Nothing was set up: hyprland.lua changed meanwhile.\n"))
 

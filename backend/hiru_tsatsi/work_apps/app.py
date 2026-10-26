@@ -16,7 +16,7 @@ class App:
     def checked(self) -> "App":
         return replace(self, name=required("name", self.name), command=required("command", self.command))
 
-    def renamed(self, name: str, command: str) -> "App":
+    def changed(self, name: str, command: str) -> "App":
         changed = replace(self, name=name, command=command).checked()
         if changed.command == self.command:
             return changed

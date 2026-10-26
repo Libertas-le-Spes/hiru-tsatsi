@@ -1,3 +1,4 @@
+import sys
 from typing import Callable
 
 from hiru_tsatsi.entrypoints.install.linking import link_commands
@@ -7,6 +8,9 @@ from hiru_tsatsi.wiring import Services
 
 
 def install(argv: list[str], linking_for: Callable[[str, str], LinkCommands], opening: Callable[[], Services]) -> int:
+    if len(argv) != 2:
+        print("usage: python3 -P -m hiru_tsatsi.entrypoints.install <bin folder> <launcher>", file=sys.stderr)
+        return 2
     bin_dir = argv[0]
     launcher = argv[1]
     linked = link_commands(linking_for(bin_dir, launcher))

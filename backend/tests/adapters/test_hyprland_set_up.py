@@ -4,7 +4,7 @@ from pathlib import Path
 
 from tests.adapters.mocked_files import files_holding, written
 from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
-from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, NotSaved, SetUpFailed
+from hiru_tsatsi.use_cases.ports import NotSaved, SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
 FOLDER = Path("/home/sam/.config/hypr")
@@ -49,7 +49,7 @@ class SettingUpHyprland(unittest.TestCase):
     def test_adds_one_line_to_the_main_config_once_and_says_what_it_read(self):
         keys = Keys.parse("SUPER + ALT + U")
         self.set_up.install(keys, "w start", "w ask")
-        self.files.write.assert_any_call(MAIN, MAIN_BEFORE + LOADS_OWN + "\n", read_before=MAIN_BEFORE)
+        self.files.write.assert_any_call(MAIN, MAIN_BEFORE + LOADS_OWN + "\n", read_before=MAIN_BEFORE, follow_link=True)
         self.assertEqual(len(written(self.files, MAIN)), 1)
 
     def test_leaves_the_main_config_alone_when_it_already_loads_its_file(self):
@@ -76,11 +76,11 @@ class SettingUpHyprland(unittest.TestCase):
         self.assertIn('hl.on("hyprland.start"', own)
 
     def test_a_main_config_changed_meanwhile_leaves_hyprland_unreloaded(self):
-        def refuse_the_main_config(path, text, read_before=None):
+        def refuse_the_main_config(path, text, read_before=None, follow_link=False):
             if path == MAIN:
                 raise NotSaved("hyprland.lua changed meanwhile")
         self.files.write.side_effect = refuse_the_main_config
-        with self.assertRaises(ConfigLeftAlone):
+        with self.assertRaises(NotSaved):
             self.set_up.install(None, "w start", "w ask")
         self.assertEqual(len(written(self.files, OWN)), 1)
         self.assertEqual(self.hyprctl.calls, [])

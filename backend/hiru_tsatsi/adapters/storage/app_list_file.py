@@ -26,7 +26,7 @@ class AppListFile:
         self.files.write(self.path, json_text(to_saved(apps)))
 
     def _content(self, path: Path) -> dict:
-        return json_object(self.files.read(path))
+        return json_object(self.files.read(path), path)
 
     def _imported_from_earlier(self) -> AppList:
         for place, reader in self.earlier:
