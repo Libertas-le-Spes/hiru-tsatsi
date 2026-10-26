@@ -8,7 +8,7 @@ NAME = Argument("name", str, "what you call it")
 HOW_TO_OPEN = Argument("command", str, "how to open it")
 NEW_NUMBER = Argument("new_number", int, "its new number, or the same one")
 ADDRESS = Argument("address", str, "the window's address, from windows-for")
-ON_OR_OFF = Argument("state", str, "on or off; leave out to see which it is", ("on", "off"), True)
+ON_OR_OFF = Argument("state", str, "on or off; leave out to see which it is", choices=("on", "off"), optional=True)
 
 COMMANDS = {
     "start": Command(

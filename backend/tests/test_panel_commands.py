@@ -49,9 +49,8 @@ class TheBarPanelAndTheCommandLine(unittest.TestCase):
             with self.subTest(command=command):
                 parser().parse_args(as_typed(command, arguments, edit=False))
 
-    def test_an_edit_whose_text_starts_with_a_dash_is_read_as_text(self):
-        chosen = parser().parse_args(["add-app", EDITS_ARE_SENT_AFTER, "1", "Notes", "-n"])
-        self.assertEqual((chosen.name, chosen.command), ("Notes", "-n"))
+    def test_the_panel_sends_every_edit_after_the_mark_that_ends_options(self):
+        self.assertIn(f'[root.hiruTsatsiCommand, edit[0], "{EDITS_ARE_SENT_AFTER}"]', PANEL.read_text())
 
 
 if __name__ == "__main__":

@@ -93,5 +93,6 @@ class AListThatCannotBeRead(unittest.TestCase):
         with self.assertRaises(NotReadable):
             app_list_file(files_holding({LIST: "[]"})).load()
 
+
 if __name__ == "__main__":
     unittest.main()

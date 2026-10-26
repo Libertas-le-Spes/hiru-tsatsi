@@ -3,7 +3,7 @@ import unittest
 from tests.examples.windows import window
 from hiru_tsatsi.work_apps.window_guessing import guess_window
 from hiru_tsatsi.work_apps.window_naming import name_for
-from hiru_tsatsi.work_apps.windows import belongs_to
+from hiru_tsatsi.work_apps.windows import window_named
 
 GITLAB = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_1234567-Default", "Issue Boards · Lantern - Tide · GitLab")
 CHAT = window("c", "chrome-chat.google.com__u_2_app_home-Default", "Chat")
@@ -34,7 +34,7 @@ class GuessingAWindowFromItsCommand(unittest.TestCase):
         for (_, command), expected in APPS.items():
             name = name_for(expected, SESSION, command)
             with self.subTest(name=name):
-                self.assertEqual(next(w for w in SESSION if belongs_to(w, name)), expected)
+                self.assertEqual(window_named(name, SESSION, set()), expected)
 
     def test_a_web_app_keeps_its_class_and_rider_keeps_its_project(self):
         self.assertEqual(name_for(GITHUB, SESSION, "omarchy-launch-webapp https://github.com"), "chrome-github.com__-Default")

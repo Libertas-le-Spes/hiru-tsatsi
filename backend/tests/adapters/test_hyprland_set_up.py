@@ -97,11 +97,11 @@ class SettingUpHyprland(unittest.TestCase):
         with self.assertRaises(SetUpFailed):
             failing.install(None, "w")
 
-
     def test_a_command_path_with_a_space_or_quote_reaches_the_shell_as_one_word(self):
         self.set_up.install(None, "/home/sam o'neil/.local/bin/hiru-tsatsi")
         quoted = "'/home/sam o'\\\"'\\\"'neil/.local/bin/hiru-tsatsi'"
         self.assertIn(f'hl.exec_cmd("{quoted} ask")', written(self.files, OWN)[0])
+
 
 if __name__ == "__main__":
     unittest.main()

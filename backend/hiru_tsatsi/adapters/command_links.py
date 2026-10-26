@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from hiru_tsatsi.use_cases.failures import NotSaved
+
 OUR_LAUNCHER = "/backend/bin/hiru-tsatsi"
 
 
@@ -16,10 +18,13 @@ class SymbolicLinks:
 
     def link(self, path: str, target: str) -> None:
         place = Path(path)
-        place.parent.mkdir(parents=True, exist_ok=True)
-        if place.is_symlink():
-            place.unlink()
-        place.symlink_to(target)
+        try:
+            place.parent.mkdir(parents=True, exist_ok=True)
+            if place.is_symlink():
+                place.unlink()
+            place.symlink_to(target)
+        except OSError as refused:
+            raise NotSaved(f"{path} could not be linked ({refused})") from refused
 
     def remove(self, path: str) -> None:
         Path(path).unlink()

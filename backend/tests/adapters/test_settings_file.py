@@ -32,5 +32,6 @@ class KeepingSettings(unittest.TestCase):
             SettingsFile(SETTINGS, files).set_window_titles(True)
         files.write.assert_not_called()
 
+
 if __name__ == "__main__":
     unittest.main()

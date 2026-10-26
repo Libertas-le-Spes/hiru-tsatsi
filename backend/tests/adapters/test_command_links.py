@@ -3,6 +3,7 @@ from unittest import mock
 
 from hiru_tsatsi.adapters import command_links
 from hiru_tsatsi.adapters.command_links import SymbolicLinks
+from hiru_tsatsi.use_cases.failures import NotSaved
 
 TSATSI = "/home/sam/.local/bin/tsatsi"
 
@@ -26,6 +27,15 @@ class TellingWhetherALinkIsOurs(unittest.TestCase):
     def test_a_file_that_is_not_a_link_is_not(self):
         with mock.patch.object(command_links, "Path", return_value=a_link_to(None)):
             self.assertFalse(SymbolicLinks().is_ours(TSATSI))
+
+
+class LinkingACommand(unittest.TestCase):
+    def test_a_link_that_cannot_be_made_is_reported_as_not_saved(self):
+        place = a_link_to(None)
+        place.symlink_to.side_effect = NotADirectoryError("~/.local/bin is a file")
+        with mock.patch.object(command_links, "Path", return_value=place):
+            with self.assertRaises(NotSaved):
+                SymbolicLinks().link(TSATSI, "/home/sam/apps/hiru-tsatsi/backend/bin/hiru-tsatsi")
 
 
 if __name__ == "__main__":

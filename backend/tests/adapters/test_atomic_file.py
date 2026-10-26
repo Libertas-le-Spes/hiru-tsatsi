@@ -66,11 +66,13 @@ class WritingAFileAtomically(unittest.TestCase):
         self.written().write.assert_called_once_with("replacement\n")
         self.os.replace.assert_called_once_with(self.copy(), file)
 
-    def test_does_not_resolve_a_path_unless_asked_so_a_link_is_replaced_not_followed(self):
-        file = a_file(a_folder())
-        write_atomically(file, "replacement\n", account=owner)
-        file.resolve.assert_not_called()
-        self.os.replace.assert_called_once_with(self.copy(), file)
+    def test_refuses_a_link_unless_asked_to_follow_it_and_never_replaces_it(self):
+        link = a_link(a_folder(), a_file(a_folder()), a_file(a_folder()))
+        with self.assertRaises(NotSaved):
+            write_atomically(link, "replacement\n", account=owner)
+        link.resolve.assert_not_called()
+        self.tempfile.mkstemp.assert_not_called()
+        self.os.replace.assert_not_called()
 
     def test_follows_a_link_when_asked_so_a_linked_dotfile_stays_a_link(self):
         real = a_file(a_folder(), exists=False)
