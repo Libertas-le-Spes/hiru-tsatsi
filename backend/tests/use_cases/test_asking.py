@@ -1,9 +1,14 @@
 import unittest
 
-from tests.fakes import HOME, FakeClock, FakeDesktop, FakeNames, FakeNotifier, FakeStore, app_list
+from tests.fakes.app_lists import FakeStore, app_list
+from tests.fakes.clock import FakeClock
+from tests.fakes.desktop import FakeDesktop
+from tests.fakes.notifying import FakeAnnouncer, FakeNotifier
+from tests.fakes.recognising import RECOGNISING
+from tests.fakes.window_names import FakeNames
 from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.starting import StartApps
-from hiru_tsatsi.work_apps.app_list import App
+from hiru_tsatsi.work_apps.app import App
 
 STEAM = App("Steam", "steam")
 
@@ -11,7 +16,7 @@ STEAM = App("Steam", "steam")
 def ask(clicks: bool):
     desktop = FakeDesktop([])
     clock = FakeClock()
-    start = StartApps(desktop, FakeStore(app_list((6, [STEAM]))), FakeNames(), clock, clock.wait, lambda names: None, HOME)
+    start = StartApps(desktop, FakeStore(app_list((6, [STEAM]))), FakeNames(), clock, clock.wait, FakeAnnouncer(), RECOGNISING)
     return AskToStart(FakeNotifier(clicks), start).run(), desktop
 
 

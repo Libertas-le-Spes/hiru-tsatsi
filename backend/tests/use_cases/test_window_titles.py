@@ -1,6 +1,8 @@
 import unittest
 
-from tests.fakes import FakeNames, FakeSettings, window
+from tests.fakes.desktop import window
+from tests.fakes.settings import FakeSettings
+from tests.fakes.window_names import FakeNames
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 
 

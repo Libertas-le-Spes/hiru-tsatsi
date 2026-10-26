@@ -17,9 +17,15 @@ def run_hyprctl(arguments: list[str]) -> str:
     return done.stdout
 
 
+def _as_lua_number_escape(found: re.Match) -> str:
+    code = ord(found.group())
+    return f"\\{code:03d}"
+
+
 def lua_string(text: str) -> str:
     quoted = text.replace("\\", "\\\\").replace('"', '\\"')
-    return '"' + CONTROL_CHARACTER.sub(lambda found: f"\\{ord(found.group()):03d}", quoted) + '"'
+    escaped = CONTROL_CHARACTER.sub(_as_lua_number_escape, quoted)
+    return f'"{escaped}"'
 
 
 class Hyprland:
@@ -38,7 +44,11 @@ class Hyprland:
             clients = json.loads(self.run(["clients", "-j"]) or "[]")
         except json.JSONDecodeError:
             return []
-        return [self._window(client) for client in clients if isinstance(client, dict)]
+        windows = []
+        for client in clients:
+            if isinstance(client, dict):
+                windows.append(self._window(client))
+        return windows
 
     def _window(self, client: dict) -> Window:
         program, folder = self.front(int(client.get("pid") or 0))

@@ -8,6 +8,10 @@ from unittest import mock
 from hiru_tsatsi.adapters.storage.atomic_file import NotWritten, write_atomically
 
 
+def another_account() -> int:
+    return os.getuid() + 1
+
+
 class WritingAFileAtomically(unittest.TestCase):
     def setUp(self):
         self.folder = Path(tempfile.mkdtemp())
@@ -47,7 +51,7 @@ class WritingAFileAtomically(unittest.TestCase):
 
     def test_refuses_a_folder_that_belongs_to_another_account(self):
         with self.assertRaises(NotWritten):
-            write_atomically(self.file, "new\n", account=lambda: os.getuid() + 1)
+            write_atomically(self.file, "new\n", account=another_account)
         self.assertFalse(self.file.exists())
 
 

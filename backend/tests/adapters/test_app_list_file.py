@@ -3,8 +3,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, from_omastart, from_saved, to_saved
-from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
+from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
+from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved, to_saved
+from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.app_list import AppList
+from hiru_tsatsi.work_apps.workspace import Workspace
 
 OMASTART = {"workspaces": [{"id": 2, "label": "Rider Main",
                             "apps": [{"name": "Rider Main", "cmd": "rider ~/RiderProjects/harbour", "window": None}]}]}

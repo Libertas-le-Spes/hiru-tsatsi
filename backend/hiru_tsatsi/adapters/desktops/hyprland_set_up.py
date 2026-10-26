@@ -17,6 +17,12 @@ def keys_from_bind(bind: dict) -> Keys:
     return Keys(frozenset(name for name, bit in MODIFIER_BITS.items() if mask & bit), str(bind.get("key", "")).upper())
 
 
+def _with_line_added(text: str, line: str) -> str:
+    if text != "" and not text.endswith("\n"):
+        text = text + "\n"
+    return text + line + "\n"
+
+
 class HyprlandSetUp:
     def __init__(self, config_folder: Path, run: Run = run_hyprctl):
         self.own_file = config_folder / "hiru-tsatsi.lua"
@@ -58,6 +64,6 @@ class HyprlandSetUp:
     def _load_from_main_file(self) -> None:
         line = f"dofile({lua_string(str(self.own_file))})"
         current = text_or_nothing(self.main_file)
-        if line not in current:
-            write_atomically(self.main_file, current + ("" if current.endswith("\n") or not current else "\n") + line + "\n",
-                             read_before=current)
+        if line in current:
+            return
+        write_atomically(self.main_file, _with_line_added(current, line), read_before=current)

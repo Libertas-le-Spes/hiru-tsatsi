@@ -1,10 +1,12 @@
 import unittest
 
-from tests.fakes import HOME, FakeDesktop, FakeStore, app_list, window
+from tests.fakes.app_lists import FakeStore, app_list
+from tests.fakes.desktop import FakeDesktop, window
+from tests.fakes.recognising import RECOGNISING
+from hiru_tsatsi.presenters.status_lines import status_line
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.overview import Overview
-from hiru_tsatsi.presenters.status_lines import status_line
-from hiru_tsatsi.work_apps.app_list import App
+from hiru_tsatsi.work_apps.app import App
 
 GITLAB_COMMAND = 'omarchy-launch-webapp "https://gitlab.com/examplecorp/harbour/-/boards/1234567"'
 RIDER_MAIN = App("Rider Main", "rider ~/RiderProjects/harbour", "harbour")
@@ -15,7 +17,7 @@ GITLAB_WINDOW = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_123
 def editing(open_windows, apps):
     store = FakeStore(apps)
     desktop = FakeDesktop(open_windows)
-    return EditAppList(store, desktop, HOME), Overview(store, desktop, HOME), store
+    return EditAppList(store, desktop, RECOGNISING), Overview(store, desktop, RECOGNISING), store
 
 
 class AddingAnApp(unittest.TestCase):

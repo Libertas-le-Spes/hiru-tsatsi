@@ -27,7 +27,10 @@ class TalkingToHyprland(unittest.TestCase):
 
     def test_launches_and_moves_without_following_the_window(self):
         hyprctl = FakeHyprctl()
-        hyprland = Hyprland(hyprctl, lambda: TaggedLaunch(tag="t1"))
+        def tagged_t1() -> TaggedLaunch:
+            return TaggedLaunch(tag="t1")
+
+        hyprland = Hyprland(hyprctl, tagged_t1)
         hyprland.launch('omarchy-launch-webapp "https://x"', 1)
         hyprland.move(Window("0xa", "steam", "Steam", 4), 6)
         self.assertEqual(hyprctl.calls, [
@@ -44,9 +47,13 @@ class TalkingToHyprland(unittest.TestCase):
         self.assertTrue(hyprctl.calls[0][1].endswith('{ workspace = "2 silent" })'))
 
     def test_each_window_says_what_runs_inside_it(self):
-        hyprland = Hyprland(lambda arguments: json.dumps([{"address": "0xb", "class": "foot", "title": "t", "pid": 77,
-                                                            "workspace": {"id": 2}}]),
-                            front=lambda pid: ("helper", f"/home/sam/code-{pid}"))
+        def one_terminal(arguments: list[str]) -> str:
+            return json.dumps([{"address": "0xb", "class": "foot", "title": "t", "pid": 77, "workspace": {"id": 2}}])
+
+        def helper_in_a_folder_named_after(pid: int) -> tuple[str, str]:
+            return "helper", f"/home/sam/code-{pid}"
+
+        hyprland = Hyprland(one_terminal, front=helper_in_a_folder_named_after)
         self.assertEqual(hyprland.windows(), [Window("0xb", "foot", "t", 2, "helper", "/home/sam/code-77")])
 
     def test_unreadable_output_means_no_windows(self):

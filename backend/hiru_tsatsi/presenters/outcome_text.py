@@ -1,19 +1,17 @@
+from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.setting_up import SetUp
-from hiru_tsatsi.use_cases.starting import Outcome
 
 
 def _line(label: str, names: list[str]) -> list[str]:
-    return [f"{label}: {', '.join(names)}"] if names else []
+    if not names:
+        return []
+    return [f"{label}: {', '.join(names)}"]
 
 
 def summary(outcome: Outcome) -> str:
     if not outcome.started and not outcome.already_open:
         return "No work apps are set up yet"
     return f"Started {len(outcome.started)}, {len(outcome.already_open)} already open"
-
-
-def starting(names: list[str]) -> tuple[str, str]:
-    return f"Starting {len(names)} work app{'' if len(names) == 1 else 's'}", ", ".join(names)
 
 
 def not_supported(desktop: str) -> str:
@@ -32,9 +30,20 @@ def details(outcome: Outcome) -> str:
 UNCHOSEN_REASON = {True: "because window-names is installed", False: "because window-names isn't installed"}
 
 
+def _on_or_off(on: bool) -> str:
+    if on:
+        return "on"
+    return "off"
+
+
+def _why(on: bool, chosen: bool) -> str:
+    if chosen:
+        return "as you chose"
+    return UNCHOSEN_REASON[on]
+
+
 def window_titles_text(on: bool, chosen: bool) -> str:
-    reason = "as you chose" if chosen else UNCHOSEN_REASON[on]
-    return (f"Window titles are {'on' if on else 'off'}, {reason}. "
+    return (f"Window titles are {_on_or_off(on)}, {_why(on, chosen)}. "
             "Turn them on or off with `hiru-tsatsi window-titles on` or `off`.")
 
 

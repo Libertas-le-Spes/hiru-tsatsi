@@ -5,17 +5,19 @@ from pathlib import Path
 from hiru_tsatsi.adapters import this_machine
 from hiru_tsatsi.adapters.notify_send import NotifySend
 from hiru_tsatsi.adapters.storage import locations
-from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, EarlierList, from_omastart, from_saved
+from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, EarlierList
+from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
 from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
-from hiru_tsatsi.presenters.outcome_text import starting
+from hiru_tsatsi.presenters.starting_notice import StartingNotice
 from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.use_cases.ports import Desktop, DesktopSetUp, Notifier, WindowNames
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
-from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
+from hiru_tsatsi.work_apps.recognising import Recognising
 
 
 @dataclass(frozen=True)
@@ -33,16 +35,54 @@ def earlier_lists() -> list[EarlierList]:
     return [(locations.workbench_list_file(), from_saved), (locations.omastart_file(), from_omastart)]
 
 
+def _store(app_list: Path | None, earlier: list[EarlierList] | None) -> AppListFile:
+    if app_list is None:
+        app_list = locations.app_list_file()
+    if earlier is None:
+        earlier = earlier_lists()
+    return AppListFile(app_list, earlier)
+
+
+def _titles(titles: WindowTitles | None) -> WindowTitles:
+    if titles is None:
+        return WindowTitles(SettingsFile(locations.settings_file()), this_machine.window_namer_installed)
+    return titles
+
+
+def _names(titles: WindowTitles, names: WindowNames | None) -> WindowNames:
+    if names is None:
+        names = WindowNameFiles(locations.window_names_folder())
+    return NamesWhenWanted(titles, names)
+
+
+def _notifier(notifier: Notifier | None) -> Notifier:
+    if notifier is None:
+        return NotifySend()
+    return notifier
+
+
+def _desktop(desktop: Desktop | None) -> Desktop:
+    if desktop is None:
+        return this_machine.desktop()
+    return desktop
+
+
+def _set_up(set_up: DesktopSetUp | None) -> DesktopSetUp:
+    if set_up is None:
+        return this_machine.set_up()
+    return set_up
+
+
 def open_app(desktop: Desktop | None = None, app_list: Path | None = None, earlier: list[EarlierList] | None = None,
              notifier: Notifier | None = None, names: WindowNames | None = None, set_up: DesktopSetUp | None = None,
              titles: WindowTitles | None = None) -> App:
-    store = AppListFile(app_list or locations.app_list_file(), earlier_lists() if earlier is None else earlier)
-    titles = titles or WindowTitles(SettingsFile(locations.settings_file()), this_machine.window_namer_installed)
-    names = NamesWhenWanted(titles, names or WindowNameFiles(locations.window_names_folder()))
-    notifier = notifier or NotifySend()
-    desktop = desktop or this_machine.desktop()
-    home = str(Path.home())
-    start = StartApps(desktop, store, names, time.monotonic, time.sleep, lambda apps: notifier.notify(*starting(apps)), home)
-    setting_up = SetUpDesktop(set_up or this_machine.set_up(), str(locations.installed_command()))
-    return App(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, home), Overview(store, desktop, home),
-               titles, notifier)
+    store = _store(app_list, earlier)
+    titles = _titles(titles)
+    notifier = _notifier(notifier)
+    desktop = _desktop(desktop)
+    recognising = Recognising(str(Path.home()))
+    start = StartApps(desktop, store, _names(titles, names), time.monotonic, time.sleep, StartingNotice(notifier),
+                      recognising)
+    setting_up = SetUpDesktop(_set_up(set_up), str(locations.installed_command()))
+    return App(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
+               Overview(store, desktop, recognising), titles, notifier)

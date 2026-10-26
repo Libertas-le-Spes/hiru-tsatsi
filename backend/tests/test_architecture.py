@@ -49,9 +49,11 @@ class DependenciesPointInward(unittest.TestCase):
                     self.assertNotIn(name.split(".")[0], OUTSIDE_WORLD, f"{path.name}:{line} reaches outside with {name}")
 
     def test_nothing_listens_for_connections_or_opens_a_browser(self):
-        doors = [f"{path.relative_to(PACKAGE.parent)}:{line} imports {name}"
-                 for path in sorted(PACKAGE.rglob("*.py"))
-                 for line, name in imported_names(path) if name.split(".")[0] in OPENS_A_DOOR]
+        doors = []
+        for path in sorted(PACKAGE.rglob("*.py")):
+            for line, name in imported_names(path):
+                if name.split(".")[0] in OPENS_A_DOOR:
+                    doors.append(f"{path.relative_to(PACKAGE.parent)}:{line} imports {name}")
         self.assertEqual(doors, [])
 
 

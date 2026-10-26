@@ -49,6 +49,10 @@ class SettingsStore(Protocol):
     def set_window_titles(self, on: bool) -> None: ...
 
 
+class Announcer(Protocol):
+    def announce(self, starting: list[str]) -> None: ...
+
+
 class Notifier(Protocol):
     def notify(self, summary: str, body: str) -> None: ...
 

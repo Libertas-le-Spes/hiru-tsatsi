@@ -1,7 +1,10 @@
 import unittest
 
-from tests.fakes import app_list
-from hiru_tsatsi.work_apps.app_list import App, AppList, Blank, NothingThere, NumberTaken, Workspace
+from tests.fakes.app_lists import app_list
+from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.app_list import AppList
+from hiru_tsatsi.work_apps.refusals import Blank, NothingThere, NumberTaken
+from hiru_tsatsi.work_apps.workspace import Workspace
 
 CHAT = App("Chat", "chat-app")
 

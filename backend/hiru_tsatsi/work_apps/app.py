@@ -1,0 +1,27 @@
+from dataclasses import dataclass, replace
+
+from hiru_tsatsi.work_apps.refusals import required
+
+
+@dataclass(frozen=True)
+class App:
+    name: str
+    command: str
+    learned_window: str = ""
+    in_terminal: bool = False
+
+    @property
+    def knows_window(self) -> bool:
+        return self.learned_window.strip() != ""
+
+    def checked(self) -> "App":
+        return replace(self, name=required("name", self.name), command=required("command", self.command))
+
+    def renamed(self, name: str, command: str) -> "App":
+        return replace(self, name=name, command=command).checked()
+
+    def knowing_window(self, window: str) -> "App":
+        return replace(self, learned_window=window, in_terminal=False)
+
+    def opening_in_terminal(self, window: str) -> "App":
+        return replace(self, learned_window=window, in_terminal=True)

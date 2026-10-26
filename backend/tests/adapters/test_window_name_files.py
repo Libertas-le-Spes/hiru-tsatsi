@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.fakes import window
+from tests.fakes.desktop import window
 from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
 
 

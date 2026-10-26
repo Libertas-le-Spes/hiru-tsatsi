@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes import FakeSetUp
+from tests.fakes.set_up import FakeSetUp
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
 from hiru_tsatsi.work_apps.shortcut import Keys
 
