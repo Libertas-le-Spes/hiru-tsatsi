@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 from hiru_tsatsi.adapters import this_machine
 from hiru_tsatsi.adapters.command_links import SymbolicLinks
@@ -9,6 +10,7 @@ from hiru_tsatsi.adapters.storage.app_list_file import AppListFile, EarlierList
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
 from hiru_tsatsi.adapters.storage.window_name_files import WindowNameFiles
+from hiru_tsatsi.presenters.starting_notice import StartingNotice
 from hiru_tsatsi.use_cases.asking import AskToStart
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.installing import LinkCommands
@@ -17,6 +19,7 @@ from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, DesktopSetUp, Not
 from hiru_tsatsi.use_cases.setting_up import SetUpDesktop
 from hiru_tsatsi.use_cases.starting import StartApps
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
+from hiru_tsatsi.work_apps.recognising import Recognising
 
 
 @dataclass(frozen=True)
@@ -77,10 +80,12 @@ def open_app(desktop: Desktop | None = None, store: AppListStore | None = None, 
     titles = _titles(titles)
     notifier = _notifier(notifier)
     desktop = _desktop(desktop)
-    start = StartApps(desktop, store, _names(titles, names), time.monotonic, time.sleep)
+    recognising = Recognising(str(Path.home()))
+    start = StartApps(desktop, store, _names(titles, names), time.monotonic, time.sleep, StartingNotice(notifier),
+                      recognising)
     setting_up = SetUpDesktop(_set_up(set_up), str(locations.installed_command()))
-    return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop),
-                    Overview(store, desktop), titles, notifier)
+    return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
+                    Overview(store, desktop, recognising), titles, notifier)
 
 
 def open_linking(bin_dir: str, launcher: str) -> LinkCommands:

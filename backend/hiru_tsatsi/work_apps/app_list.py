@@ -78,6 +78,14 @@ class AppList:
         current = self.placement(placement.workspace, placement.index)
         return self._with_app_at(current, current.app.knowing_window(window))
 
+    def with_app_replaced(self, placement: Placement, app: App) -> "AppList":
+        current = self.placement(placement.workspace, placement.index)
+        return self._with_app_at(current, app)
+
+    def with_terminal(self, placement: Placement) -> "AppList":
+        current = self.placement(placement.workspace, placement.index)
+        return self._with_app_at(current, current.as_terminal().app)
+
     def _refuse_taken_number(self, number: int) -> None:
         if number < 1 or self.has_workspace(number):
             raise NumberTaken(number)

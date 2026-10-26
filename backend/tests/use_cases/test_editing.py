@@ -2,6 +2,7 @@ import unittest
 
 from tests.examples.app_lists import app_list
 from tests.examples.windows import window
+from tests.examples.home import RECOGNISING
 from tests.use_cases.mocked_list import desktop_showing, saved_once, store_holding
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.work_apps.app import App
@@ -16,7 +17,7 @@ BOARDS = App("Boards", "some-browser --board")
 
 def editing(open_windows, apps):
     store = store_holding(apps)
-    return EditAppList(store, desktop_showing(open_windows)), store
+    return EditAppList(store, desktop_showing(open_windows), RECOGNISING), store
 
 
 class AddingAnApp(unittest.TestCase):

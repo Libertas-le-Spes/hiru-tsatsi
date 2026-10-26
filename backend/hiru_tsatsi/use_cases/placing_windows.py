@@ -1,21 +1,24 @@
-from hiru_tsatsi.use_cases.app_windows import known_window
 from hiru_tsatsi.use_cases.ports import Desktop, WindowNames
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.placement import Placement
+from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.window_guessing import guess_window
 from hiru_tsatsi.work_apps.window_naming import name_for
 from hiru_tsatsi.work_apps.windows import Window
 
 
 class PlacingWindows:
-    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str]):
+    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str],
+                 recognising: Recognising):
         self.desktop = desktop
         self.names = names
         self.apps = apps
         self.known_before = known_before
+        self.recognising = recognising
         self.claimed: set[str] = set()
         self.found: list[Placement] = []
         self.moved: list[Placement] = []
+        self.in_terminal: list[Placement] = []
 
     def place(self, placements: list[Placement], windows: list[Window]) -> list[Placement]:
         unplaced = []
@@ -23,6 +26,10 @@ class PlacingWindows:
             if not self._placed(placement, windows):
                 unplaced.append(placement)
         return unplaced
+
+    def remember_terminal(self, placement: Placement) -> None:
+        self.apps = self.apps.with_terminal(placement)
+        self.in_terminal.append(placement)
 
     @staticmethod
     def _known_ones_first(placements: list[Placement]) -> list[Placement]:
@@ -48,7 +55,7 @@ class PlacingWindows:
 
     def _learn_its_window(self, placement: Placement, window: Window, windows: list[Window]) -> None:
         app = placement.app
-        if app.knows_window:
+        if app.knows_window or self.recognising.by_what_runs(app):
             return
         self.apps = self.apps.with_learned_window(placement, name_for(window, windows, app.command))
 
@@ -60,7 +67,7 @@ class PlacingWindows:
 
     def _find(self, placement: Placement, windows: list[Window]) -> Window | None:
         app = placement.app
-        known = known_window(app, windows, self.claimed)
+        known = self.recognising.known_window(app, windows, self.claimed)
         if known is not None or app.knows_window:
             return known
         return guess_window(app.name, app.command, self._new_windows(windows))

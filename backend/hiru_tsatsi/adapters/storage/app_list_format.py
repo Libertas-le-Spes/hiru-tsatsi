@@ -12,7 +12,7 @@ def _text(value) -> str:
 
 
 def _saved_app(app: dict) -> App:
-    return App(str(app["name"]), str(app["command"]), _text(app.get("learned_window")))
+    return App(str(app["name"]), str(app["command"]), _text(app.get("learned_window")), app.get("in_terminal") is True)
 
 
 def _omastart_app(app: dict) -> App:
@@ -41,7 +41,8 @@ def from_omastart(content: dict) -> AppList:
 
 
 def _app_to_save(app: App) -> dict:
-    return {"name": app.name, "command": app.command, "learned_window": app.learned_window}
+    return {"name": app.name, "command": app.command, "learned_window": app.learned_window,
+            "in_terminal": app.in_terminal}
 
 
 def _workspace_to_save(space: Workspace) -> dict:

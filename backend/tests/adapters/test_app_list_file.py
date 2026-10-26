@@ -32,7 +32,7 @@ class KeepingTheAppList(unittest.TestCase):
     def test_the_omastart_list_is_imported_and_saved_once(self):
         files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT)})
         self.assertEqual(app_list_file(files).load(), FROM_OMASTART)
-        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)))
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)), read_before="")
 
     def test_the_list_kept_under_the_old_name_comes_before_omastart(self):
         files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT), WORKBENCH: json.dumps(to_saved(FROM_WORKBENCH))})
@@ -44,10 +44,26 @@ class KeepingTheAppList(unittest.TestCase):
         self.assertEqual(app_list_file(files).load(), saved)
         files.write.assert_not_called()
 
-    def test_saving_writes_the_list_once(self):
+    def test_saving_a_list_never_read_writes_it_once_without_a_check(self):
         files = files_holding({})
         app_list_file(files).save(FROM_WORKBENCH)
-        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_WORKBENCH)))
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_WORKBENCH)), read_before=None)
+
+    def test_saving_after_reading_refuses_to_overwrite_a_list_changed_meanwhile(self):
+        read = json.dumps(to_saved(FROM_WORKBENCH))
+        files = files_holding({LIST: read})
+        kept = app_list_file(files)
+        kept.load()
+        kept.save(FROM_OMASTART)
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)), read_before=read)
+
+    def test_a_second_save_checks_against_what_the_first_one_wrote(self):
+        files = files_holding({})
+        kept = app_list_file(files)
+        kept.load()
+        kept.save(FROM_WORKBENCH)
+        kept.save(FROM_OMASTART)
+        self.assertEqual(files.write.call_args.kwargs["read_before"], json_text(to_saved(FROM_WORKBENCH)))
 
 
 class TheSavedFormat(unittest.TestCase):
