@@ -1,19 +1,20 @@
 import unittest
+from unittest.mock import create_autospec
 
-from tests.fakes.notifying import FakeNotifier
 from hiru_tsatsi.presenters.starting_notice import StartingNotice
+from hiru_tsatsi.use_cases.ports import Notifier
 
 
 class SayingWhichAppsAreStarting(unittest.TestCase):
     def test_one_app(self):
-        notifier = FakeNotifier()
+        notifier = create_autospec(Notifier, instance=True)
         StartingNotice(notifier).announce(["Steam"])
-        self.assertEqual(notifier.sent, [("Starting 1 work app", "Steam")])
+        notifier.notify.assert_called_once_with("Starting 1 work app", "Steam")
 
     def test_several_apps(self):
-        notifier = FakeNotifier()
+        notifier = create_autospec(Notifier, instance=True)
         StartingNotice(notifier).announce(["Main", "Review"])
-        self.assertEqual(notifier.sent, [("Starting 2 work apps", "Main, Review")])
+        notifier.notify.assert_called_once_with("Starting 2 work apps", "Main, Review")
 
 
 if __name__ == "__main__":

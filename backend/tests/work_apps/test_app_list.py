@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes.app_lists import app_list
+from tests.examples.app_lists import app_list
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.refusals import Blank, NothingThere, NumberTaken

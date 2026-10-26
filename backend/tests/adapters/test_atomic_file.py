@@ -1,58 +1,96 @@
-import os
-import stat
-import tempfile
 import unittest
-from pathlib import Path
 from unittest import mock
 
+from hiru_tsatsi.adapters.storage import atomic_file
 from hiru_tsatsi.adapters.storage.atomic_file import NotWritten, write_atomically
+
+OWNER = 1000
+KEPT_MODE = 0o100640
+
+
+def owner() -> int:
+    return OWNER
 
 
 def another_account() -> int:
-    return os.getuid() + 1
+    return OWNER + 1
+
+
+class AFileOnDisk:
+    def __init__(self, exists: bool = True, text: str = "original\n"):
+        self.path = mock.MagicMock(name="path")
+        self.target = self.path.resolve.return_value
+        self.folder = self.target.parent
+        self.folder.stat.return_value.st_uid = OWNER
+        self.target.exists.return_value = exists
+        self.target.stat.return_value.st_mode = KEPT_MODE
+        self.target.read_text.return_value = text
 
 
 class WritingAFileAtomically(unittest.TestCase):
     def setUp(self):
-        self.folder = Path(tempfile.mkdtemp())
-        self.file = self.folder / "example.conf"
+        self.os = mock.patch.object(atomic_file, "os").start()
+        self.tempfile = mock.patch.object(atomic_file, "tempfile").start()
+        self.copy_path = mock.patch.object(atomic_file, "Path").start()
+        self.tempfile.mkstemp.return_value = (7, "/home/sam/.config/.example.conf-x1")
+        self.addCleanup(mock.patch.stopall)
 
-    def test_a_write_that_fails_half_way_leaves_the_original_and_no_leftovers(self):
-        self.file.write_text("original\n")
-        with mock.patch("os.fsync", side_effect=OSError("power cut")), self.assertRaises(OSError):
-            write_atomically(self.file, "replacement\n")
-        self.assertEqual(self.file.read_text(), "original\n")
-        self.assertEqual([path.name for path in self.folder.iterdir()], ["example.conf"])
+    def copy(self):
+        return self.copy_path.return_value
 
-    def test_a_linked_file_stays_a_link_and_its_target_gets_the_text(self):
-        kept = self.folder / "dotfiles" / "example.conf"
-        kept.parent.mkdir()
-        kept.write_text("original\n")
-        self.file.symlink_to(kept)
-        write_atomically(self.file, "replacement\n")
-        self.assertTrue(self.file.is_symlink())
-        self.assertEqual(kept.read_text(), "replacement\n")
+    def test_writes_a_new_copy_beside_the_real_file_and_swaps_it_in_once(self):
+        disk = AFileOnDisk()
+        write_atomically(disk.path, "replacement\n", account=owner)
+        self.tempfile.mkstemp.assert_called_once_with(dir=disk.folder, prefix=f".{disk.target.name}-")
+        self.os.fdopen.return_value.__enter__.return_value.write.assert_called_once_with("replacement\n")
+        self.os.replace.assert_called_once_with(self.copy(), disk.target)
 
-    def test_keeps_the_files_permissions(self):
-        self.file.write_text("original\n")
-        self.file.chmod(0o640)
-        write_atomically(self.file, "replacement\n")
-        self.assertEqual(stat.S_IMODE(self.file.stat().st_mode), 0o640)
+    def test_follows_a_link_so_the_link_itself_is_kept(self):
+        disk = AFileOnDisk()
+        write_atomically(disk.path, "replacement\n", account=owner)
+        disk.path.resolve.assert_called_once_with()
+        self.assertIs(self.os.replace.call_args.args[1], disk.target)
 
-    def test_a_new_file_is_readable_by_its_owner_only(self):
-        write_atomically(self.file, "new\n")
-        self.assertEqual(stat.S_IMODE(self.file.stat().st_mode), 0o600)
+    def test_keeps_the_permissions_of_the_file_it_replaces(self):
+        disk = AFileOnDisk()
+        write_atomically(disk.path, "replacement\n", account=owner)
+        written = self.os.fdopen.return_value.__enter__.return_value
+        self.os.fchmod.assert_called_once_with(written.fileno.return_value, 0o640)
 
-    def test_refuses_when_the_file_changed_since_it_was_read(self):
-        self.file.write_text("edited by hand meanwhile\n")
+    def test_a_new_file_is_for_its_owner_only(self):
+        disk = AFileOnDisk(exists=False)
+        write_atomically(disk.path, "new\n", account=owner)
+        written = self.os.fdopen.return_value.__enter__.return_value
+        self.os.fchmod.assert_called_once_with(written.fileno.return_value, 0o600)
+
+    def test_flushes_the_copy_and_then_the_folder_to_disk(self):
+        disk = AFileOnDisk()
+        write_atomically(disk.path, "replacement\n", account=owner)
+        self.assertEqual(self.os.fsync.call_count, 2)
+        self.os.open.assert_called_once_with(disk.folder, self.os.O_RDONLY | self.os.O_DIRECTORY)
+        self.os.close.assert_called_once_with(self.os.open.return_value)
+
+    def test_refuses_when_the_file_changed_since_it_was_read_and_removes_the_copy(self):
+        disk = AFileOnDisk(text="edited by hand meanwhile\n")
         with self.assertRaises(NotWritten):
-            write_atomically(self.file, "replacement\n", read_before="original\n")
-        self.assertEqual(self.file.read_text(), "edited by hand meanwhile\n")
+            write_atomically(disk.path, "replacement\n", read_before="original\n", account=owner)
+        self.os.replace.assert_not_called()
+        self.copy().unlink.assert_called_once_with(missing_ok=True)
 
-    def test_refuses_a_folder_that_belongs_to_another_account(self):
+    def test_a_write_that_fails_half_way_never_swaps_and_removes_the_copy(self):
+        disk = AFileOnDisk()
+        self.os.fsync.side_effect = OSError("power cut")
+        with self.assertRaises(OSError):
+            write_atomically(disk.path, "replacement\n", account=owner)
+        self.os.replace.assert_not_called()
+        self.copy().unlink.assert_called_with(missing_ok=True)
+
+    def test_refuses_a_folder_that_belongs_to_another_account_before_writing_anything(self):
+        disk = AFileOnDisk()
         with self.assertRaises(NotWritten):
-            write_atomically(self.file, "new\n", account=another_account)
-        self.assertFalse(self.file.exists())
+            write_atomically(disk.path, "new\n", account=another_account)
+        self.tempfile.mkstemp.assert_not_called()
+        self.os.replace.assert_not_called()
 
 
 if __name__ == "__main__":

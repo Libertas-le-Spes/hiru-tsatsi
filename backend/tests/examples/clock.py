@@ -1,4 +1,4 @@
-class FakeClock:
+class TickingClock:
     def __init__(self):
         self.now = 0.0
 

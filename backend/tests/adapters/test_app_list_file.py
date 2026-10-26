@@ -1,54 +1,59 @@
 import json
-import tempfile
 import unittest
 from pathlib import Path
 
+from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved, to_saved
+from hiru_tsatsi.adapters.storage.json_object import json_text
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.workspace import Workspace
 
-OMASTART = {"workspaces": [{"id": 2, "label": "Rider Main",
-                            "apps": [{"name": "Rider Main", "cmd": "rider ~/RiderProjects/harbour", "window": None}]}]}
-FROM_OMASTART = AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/RiderProjects/harbour"),)),))
+LIST = Path("/home/sam/.config/hiru-tsatsi/apps.json")
+WORKBENCH = Path("/home/sam/.config/workbench/apps.json")
+OMASTART = Path("/home/sam/.local/state/omarchy/settings/omastart.json")
+OMASTART_CONTENT = {"workspaces": [{"id": 2, "label": "Rider Main",
+                                    "apps": [{"name": "Rider Main", "cmd": "rider ~/code/harbour", "window": None}]}]}
+FROM_OMASTART = AppList((Workspace(2, "Rider Main", (App("Rider Main", "rider ~/code/harbour"),)),))
 FROM_WORKBENCH = AppList((Workspace(1, "Browser", (App("Chat", "chat-app", "chrome-chat"),)),))
 
 
+def app_list_file(files) -> AppListFile:
+    return AppListFile(LIST, [(WORKBENCH, from_saved), (OMASTART, from_omastart)], files)
+
+
 class KeepingTheAppList(unittest.TestCase):
-    def setUp(self):
-        folder = Path(tempfile.mkdtemp())
-        self.omastart = folder / "omastart.json"
-        self.workbench = folder / "workbench" / "apps.json"
-        self.file = AppListFile(folder / "hiru-tsatsi" / "apps.json",
-                                [(self.workbench, from_saved), (self.omastart, from_omastart)])
+    def test_nothing_saved_anywhere_is_an_empty_list_and_nothing_is_written(self):
+        files = files_holding({})
+        self.assertEqual(app_list_file(files).load(), AppList())
+        files.write.assert_not_called()
 
-    def test_nothing_saved_anywhere_is_an_empty_list(self):
-        self.assertEqual(self.file.load(), AppList())
-
-    def test_the_omastart_list_is_imported_once_and_kept(self):
-        self.omastart.write_text(json.dumps(OMASTART))
-        self.assertEqual(self.file.load(), FROM_OMASTART)
-        self.omastart.write_text(json.dumps({"workspaces": []}))
-        self.assertEqual(self.file.load(), FROM_OMASTART)
+    def test_the_omastart_list_is_imported_and_saved_once(self):
+        files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT)})
+        self.assertEqual(app_list_file(files).load(), FROM_OMASTART)
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_OMASTART)))
 
     def test_the_list_kept_under_the_old_name_comes_before_omastart(self):
-        self.omastart.write_text(json.dumps(OMASTART))
-        self.workbench.parent.mkdir()
-        self.workbench.write_text(json.dumps(to_saved(FROM_WORKBENCH)))
-        self.assertEqual(self.file.load(), FROM_WORKBENCH)
-        self.assertTrue(self.file.path.exists())
+        files = files_holding({OMASTART: json.dumps(OMASTART_CONTENT), WORKBENCH: json.dumps(to_saved(FROM_WORKBENCH))})
+        self.assertEqual(app_list_file(files).load(), FROM_WORKBENCH)
 
-    def test_what_is_saved_comes_back_and_wins_over_earlier_lists(self):
-        self.omastart.write_text(json.dumps(OMASTART))
+    def test_a_saved_list_wins_over_earlier_lists_and_is_not_written_again(self):
         saved = AppList((Workspace(4, "Comms", (App("Chat", "chat-app", "chat"),)),))
-        self.file.save(saved)
-        self.assertEqual(self.file.load(), saved)
+        files = files_holding({LIST: json.dumps(to_saved(saved)), OMASTART: json.dumps(OMASTART_CONTENT)})
+        self.assertEqual(app_list_file(files).load(), saved)
+        files.write.assert_not_called()
 
-    def test_an_app_that_opens_in_a_terminal_is_remembered(self):
+    def test_saving_writes_the_list_once(self):
+        files = files_holding({})
+        app_list_file(files).save(FROM_WORKBENCH)
+        files.write.assert_called_once_with(LIST, json_text(to_saved(FROM_WORKBENCH)))
+
+
+class TheSavedFormat(unittest.TestCase):
+    def test_an_app_that_opens_in_a_terminal_comes_back_as_one(self):
         saved = AppList((Workspace(2, "Code", (App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", True),)),))
-        self.file.save(saved)
-        self.assertEqual(self.file.load(), saved)
+        self.assertEqual(from_saved(to_saved(saved)), saved)
 
     def test_only_a_real_true_means_a_terminal(self):
         content = {"workspaces": [{"number": 2, "label": "Code", "apps": [

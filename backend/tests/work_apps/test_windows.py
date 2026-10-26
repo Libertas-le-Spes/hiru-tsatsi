@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes.desktop import window
+from tests.examples.windows import window
 from hiru_tsatsi.work_apps.window_guessing import guess_window
 from hiru_tsatsi.work_apps.window_naming import name_for
 from hiru_tsatsi.work_apps.windows import belongs_to

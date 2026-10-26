@@ -1,7 +1,7 @@
 import unittest
 
-from tests.fakes.desktop import window
-from tests.fakes.recognising import RECOGNISING
+from tests.examples.windows import window
+from tests.examples.home import RECOGNISING
 from hiru_tsatsi.work_apps.app import App
 
 HARBOUR = App("Harbour", "cd code/harbour && helper")

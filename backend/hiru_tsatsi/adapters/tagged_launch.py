@@ -1,17 +1,15 @@
 import secrets
-from pathlib import Path
+
+from hiru_tsatsi.adapters.proc_files import ProcFiles
 
 TAG = "HIRU_TSATSI_LAUNCH"
-
-
-def _new_tag() -> str:
-    return secrets.token_hex(16)
+TAG_BYTES = 16
 
 
 class TaggedLaunch:
-    def __init__(self, processes: Path = Path("/proc"), tag: str | None = None):
+    def __init__(self, processes: ProcFiles = ProcFiles(), tag: str | None = None):
         if tag is None:
-            tag = _new_tag()
+            tag = secrets.token_hex(TAG_BYTES)
         self.processes = processes
         self.entry = f"{TAG}={tag}"
 
@@ -19,18 +17,10 @@ class TaggedLaunch:
         return f"export {self.entry}\n{command}"
 
     def stopped(self) -> bool:
-        try:
-            listed = list(self.processes.iterdir())
-        except OSError:
+        pids = self.processes.pids()
+        if pids is None:
             return False
-        for place in listed:
-            if place.name.isdigit() and self._carries_tag(place):
+        for pid in pids:
+            if self.entry in self.processes.environment(pid):
                 return False
         return True
-
-    def _carries_tag(self, place: Path) -> bool:
-        try:
-            environment = (place / "environ").read_bytes()
-        except OSError:
-            return False
-        return self.entry.encode() in environment.split(b"\0")

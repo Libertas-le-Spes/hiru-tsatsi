@@ -1,7 +1,7 @@
 import unittest
 
-from tests.fakes.desktop import window
-from tests.fakes.recognising import HOME
+from tests.examples.windows import window
+from tests.examples.home import HOME
 from hiru_tsatsi.work_apps.program_in_folder import ProgramInFolder
 
 
