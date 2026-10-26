@@ -181,6 +181,7 @@ Panel {
           spacing: Style.space(8)
 
           Text {
+            textFormat: Text.PlainText
             text: root.s.title
             color: root.bar.foreground
             font.family: root.bar.fontFamily
@@ -189,6 +190,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             text: root.s.subtitle
             color: Qt.darker(root.bar.foreground, 1.5)
             font.family: root.bar.fontFamily
@@ -242,6 +244,7 @@ Panel {
               spacing: Style.space(8)
 
               Text {
+                textFormat: Text.PlainText
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.s.workspaceLabel + " " + wsBlock.modelData.id + " — " + wsBlock.modelData.label
                 color: root.bar.foreground
@@ -275,6 +278,7 @@ Panel {
                   spacing: Style.space(8)
 
                   Text {
+                    textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
                     text: "• " + appBlock.modelData.name + "  (" + appBlock.modelData.cmd + ")"
                     color: Qt.darker(root.bar.foreground, 1.3)
@@ -302,6 +306,7 @@ Panel {
                   leftPadding: Style.space(12)
 
                   Text {
+                    textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
                     text: appBlock.modelData.status
                     color: Qt.darker(root.bar.foreground, 1.6)
@@ -425,6 +430,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: root.newWorkspaceIdTaken
           text: root.s.workspaceTaken.arg(root.newWorkspaceId)
           color: Qt.darker(root.bar.foreground, 1.3)
@@ -433,6 +439,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: root.editProblem !== ""
           text: root.editProblem
           color: root.bar.foreground
