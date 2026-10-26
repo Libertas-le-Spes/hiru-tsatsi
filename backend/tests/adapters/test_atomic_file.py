@@ -2,10 +2,13 @@ import unittest
 from unittest import mock
 
 from hiru_tsatsi.adapters.storage import atomic_file
-from hiru_tsatsi.adapters.storage.atomic_file import NotWritten, write_atomically
+from hiru_tsatsi.adapters.storage.atomic_file import write_atomically
+from hiru_tsatsi.use_cases.ports import NotSaved
 
 OWNER = 1000
 KEPT_MODE = 0o100640
+OWNERS_FOLDER = 0o40755
+SHARED_FOLDER = 0o40777
 
 
 def owner() -> int:
@@ -19,9 +22,12 @@ def another_account() -> int:
 class AFileOnDisk:
     def __init__(self, exists: bool = True, text: str = "original\n"):
         self.path = mock.MagicMock(name="path")
-        self.target = self.path.resolve.return_value
+        self.target = self.path
         self.folder = self.target.parent
-        self.folder.stat.return_value.st_uid = OWNER
+        self.link_folder = self.path.parent
+        for folder in (self.folder, self.link_folder):
+            folder.stat.return_value.st_uid = OWNER
+            folder.stat.return_value.st_mode = OWNERS_FOLDER
         self.target.exists.return_value = exists
         self.target.stat.return_value.st_mode = KEPT_MODE
         self.target.read_text.return_value = text
@@ -45,11 +51,37 @@ class WritingAFileAtomically(unittest.TestCase):
         self.os.fdopen.return_value.__enter__.return_value.write.assert_called_once_with("replacement\n")
         self.os.replace.assert_called_once_with(self.copy(), disk.target)
 
-    def test_follows_a_link_so_the_link_itself_is_kept(self):
+    def test_by_default_replaces_a_link_instead_of_following_it(self):
         disk = AFileOnDisk()
         write_atomically(disk.path, "replacement\n", account=owner)
-        disk.path.resolve.assert_called_once_with()
-        self.assertIs(self.os.replace.call_args.args[1], disk.target)
+        disk.path.resolve.assert_not_called()
+        self.os.replace.assert_called_once_with(self.copy(), disk.path)
+
+    def test_follows_a_link_only_when_asked_so_a_linked_dotfile_stays_a_link(self):
+        disk = AFileOnDisk()
+        resolved = disk.path.resolve.return_value
+        resolved.parent.stat.return_value.st_uid = OWNER
+        resolved.parent.stat.return_value.st_mode = OWNERS_FOLDER
+        resolved.exists.return_value = False
+        write_atomically(disk.path, "replacement\n", follow_link=True, account=owner)
+        self.os.replace.assert_called_once_with(self.copy(), resolved)
+
+    def test_refuses_a_folder_other_accounts_can_write_to(self):
+        disk = AFileOnDisk()
+        disk.folder.stat.return_value.st_mode = SHARED_FOLDER
+        with self.assertRaises(NotSaved):
+            write_atomically(disk.path, "replacement\n", account=owner)
+        self.tempfile.mkstemp.assert_not_called()
+
+    def test_refuses_to_follow_a_link_planted_in_a_folder_other_accounts_can_write_to(self):
+        disk = AFileOnDisk()
+        resolved = disk.path.resolve.return_value
+        resolved.parent.stat.return_value.st_uid = OWNER
+        resolved.parent.stat.return_value.st_mode = OWNERS_FOLDER
+        disk.link_folder.stat.return_value.st_mode = SHARED_FOLDER
+        with self.assertRaises(NotSaved):
+            write_atomically(disk.path, "replacement\n", follow_link=True, account=owner)
+        self.os.replace.assert_not_called()
 
     def test_keeps_the_permissions_of_the_file_it_replaces(self):
         disk = AFileOnDisk()
@@ -72,7 +104,7 @@ class WritingAFileAtomically(unittest.TestCase):
 
     def test_refuses_when_the_file_changed_since_it_was_read_and_removes_the_copy(self):
         disk = AFileOnDisk(text="edited by hand meanwhile\n")
-        with self.assertRaises(NotWritten):
+        with self.assertRaises(NotSaved):
             write_atomically(disk.path, "replacement\n", read_before="original\n", account=owner)
         self.os.replace.assert_not_called()
         self.copy().unlink.assert_called_once_with(missing_ok=True)
@@ -87,7 +119,7 @@ class WritingAFileAtomically(unittest.TestCase):
 
     def test_refuses_a_folder_that_belongs_to_another_account_before_writing_anything(self):
         disk = AFileOnDisk()
-        with self.assertRaises(NotWritten):
+        with self.assertRaises(NotSaved):
             write_atomically(disk.path, "new\n", account=another_account)
         self.tempfile.mkstemp.assert_not_called()
         self.os.replace.assert_not_called()

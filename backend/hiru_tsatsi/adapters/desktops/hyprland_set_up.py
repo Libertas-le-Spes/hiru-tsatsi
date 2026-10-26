@@ -6,7 +6,7 @@ from hiru_tsatsi.adapters.desktops.hyprctl import Run, inside_hyprland, run_hypr
 from hiru_tsatsi.adapters.desktops.hyprland_binds import taken_keys
 from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.adapters.storage.files import Disk, Files
-from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, NotSaved, SetUpFailed
+from hiru_tsatsi.use_cases.ports import SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
 BOUND_KEYS = re.compile(r'hl\.bind\("([^"]+)"')
@@ -54,11 +54,8 @@ class HyprlandSetUp:
         return taken_keys(self.run)
 
     def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None:
-        try:
-            self.files.write(self.own_file, self._own_config(keys, start_command, ask_command))
-            self._load_from_main_file()
-        except NotSaved as refused:
-            raise ConfigLeftAlone(str(refused)) from refused
+        self.files.write(self.own_file, self._own_config(keys, start_command, ask_command), follow_link=True)
+        self._load_from_main_file()
         self.run(["reload"])
         errors = self.run(["configerrors"]).strip()
         if errors:
@@ -73,4 +70,4 @@ class HyprlandSetUp:
         current = self.files.read(self.main_file)
         if line in current:
             return
-        self.files.write(self.main_file, _with_line_added(current, line), read_before=current)
+        self.files.write(self.main_file, _with_line_added(current, line), read_before=current, follow_link=True)

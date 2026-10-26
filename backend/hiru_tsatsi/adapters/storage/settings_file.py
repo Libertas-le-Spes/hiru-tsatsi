@@ -2,6 +2,7 @@ from pathlib import Path
 
 from hiru_tsatsi.adapters.storage.files import Disk, Files
 from hiru_tsatsi.adapters.storage.json_object import json_object, json_text
+from hiru_tsatsi.use_cases.ports import NotReadable
 
 WINDOW_TITLES = "window_titles"
 
@@ -14,7 +15,10 @@ class SettingsFile:
         self.files = files
 
     def window_titles(self) -> bool | None:
-        chosen = self._settings().get(WINDOW_TITLES)
+        try:
+            chosen = self._settings().get(WINDOW_TITLES)
+        except NotReadable:
+            return None
         if not isinstance(chosen, bool):
             return None
         return chosen
@@ -25,4 +29,4 @@ class SettingsFile:
         self.files.write(self.path, json_text(settings))
 
     def _settings(self) -> dict:
-        return json_object(self.files.read(self.path))
+        return json_object(self.files.read(self.path), self.path)
