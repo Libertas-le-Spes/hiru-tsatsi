@@ -1,7 +1,7 @@
 import unittest
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
-from hiru_tsatsi.use_cases.ports import NotSaved, SetUpFailed
+from hiru_tsatsi.use_cases.failures import NotSaved, SetUpFailed
 from hiru_tsatsi.use_cases.setting_up import SetUp
 from hiru_tsatsi.work_apps.shortcut import Keys
 
@@ -39,13 +39,13 @@ class TheSetUpCommand(unittest.TestCase):
         services.set_up.run.side_effect = SetUpFailed("hiru-tsatsi.lua:1: bad")
         typed = Typed(["set-up"], services)
         self.assertEqual(typed.exit_code, 1)
-        self.assertIn("hiru-tsatsi.lua:1: bad", typed.printed)
+        self.assertIn("hiru-tsatsi.lua:1: bad", typed.errors)
 
-    def test_a_config_left_alone_fails_and_says_nothing_was_set_up(self):
+    def test_a_config_that_was_not_saved_fails_and_says_nothing_was_set_up(self):
         services = mocked_services()
         services.set_up.run.side_effect = NotSaved("hyprland.lua changed meanwhile")
         typed = Typed(["set-up"], services)
-        self.assertEqual((typed.exit_code, typed.printed), (1, "Nothing was set up: hyprland.lua changed meanwhile.\n"))
+        self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was set up: hyprland.lua changed meanwhile.\n"))
 
 
 if __name__ == "__main__":

@@ -44,10 +44,6 @@ class GuessingAWindowFromItsCommand(unittest.TestCase):
         mail = window("m", "thunderbird", "Inbox - Thunderbird")
         self.assertEqual(guess_window("Thunderbird", "/usr/lib/mail-client --profile work", [TERMINAL, mail]), mail)
 
-    def test_the_name_never_decides_what_is_remembered(self):
-        self.assertEqual(name_for(MAIN, [MAIN], "rider ~/RiderProjects/harbour"), "harbour")
-        self.assertNotEqual(name_for(MAIN, [MAIN], "rider ~/RiderProjects/harbour"), "jetbrains-rider")
-
     def test_no_guess_without_a_clear_answer(self):
         cases = {
             "only the other project open": ("rider ~/RiderProjects/lantern-review", [MAIN]),

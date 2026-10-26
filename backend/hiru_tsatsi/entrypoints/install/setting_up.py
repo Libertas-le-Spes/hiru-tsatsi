@@ -1,8 +1,8 @@
 from typing import Callable
 
 from hiru_tsatsi.entrypoints.set_up_report import report_set_up
-from hiru_tsatsi.use_cases.ports import DesktopNotSupported
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported
+from hiru_tsatsi.use_cases.services import Services
 
 
 def set_up_desktop(opening: Callable[[], Services]) -> int:

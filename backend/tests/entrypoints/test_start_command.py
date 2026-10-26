@@ -4,8 +4,8 @@ from contextlib import redirect_stdout
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
 from hiru_tsatsi.entrypoints.cli.main import main
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported
 from hiru_tsatsi.use_cases.outcome import Outcome
-from hiru_tsatsi.use_cases.ports import DesktopNotSupported
 
 OUTCOME = Outcome(already_open=["Rider Main"], moved=["Rider Main"])
 SUMMARY = "Started 0, 1 already open"
@@ -26,8 +26,8 @@ class TheStartCommand(unittest.TestCase):
             raise DesktopNotSupported("GNOME")
         printed = io.StringIO()
         with redirect_stdout(printed):
-            self.assertEqual(main(["start"], opening=refuse), 2)
-        self.assertIn("can't place windows on GNOME yet, so it started nothing", printed.getvalue())
+            self.assertEqual(main(["start"], refuse), 2)
+        self.assertIn("can't place windows on GNOME yet, so it did nothing", printed.getvalue())
 
 
 class TheAskCommand(unittest.TestCase):

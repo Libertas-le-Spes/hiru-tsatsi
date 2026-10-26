@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 
 
 def json_object(text: str, path: Path) -> dict:

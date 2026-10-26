@@ -1,4 +1,3 @@
-import shlex
 from dataclasses import dataclass
 
 from hiru_tsatsi.use_cases.ports import DesktopSetUp
@@ -21,6 +20,5 @@ class SetUpDesktop:
         keys = kept
         if keys is None:
             keys = first_free(PREFERRED, self.desktop.taken_keys())
-        command = shlex.quote(self.command)
-        self.desktop.install(keys, f"{command} start", f"{command} ask")
+        self.desktop.install(keys, self.command)
         return SetUp(keys, kept is not None)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
-from hiru_tsatsi.use_cases.ports import NotReadable
+from hiru_tsatsi.use_cases.failures import NotReadable
 
 SETTINGS = Path("/home/sam/.config/hiru-tsatsi/settings.json")
 

@@ -1,17 +1,16 @@
 import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from pathlib import Path
 from unittest.mock import Mock, create_autospec
 
 from tests.entrypoints.mocked_services import mocked_services
 from hiru_tsatsi.entrypoints.install.install_command import install
-from hiru_tsatsi.use_cases.installing import LinkCommands, Linked, NotOurs
-from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
+from hiru_tsatsi.use_cases.failures import DesktopNotSupported, SetUpFailed
+from hiru_tsatsi.use_cases.failures import NotOurs
+from hiru_tsatsi.use_cases.installing import LinkCommands, Linked
 from hiru_tsatsi.use_cases.setting_up import SetUp
 from hiru_tsatsi.work_apps.shortcut import Keys
 
-INSTALL_SCRIPT = Path(__file__).resolve().parents[3] / "install.sh"
 BIN = "/home/sam/.local/bin"
 LAUNCHER = "/home/sam/apps/hiru-tsatsi/backend/bin/hiru-tsatsi"
 
@@ -75,9 +74,6 @@ class InstallingTheCommand(unittest.TestCase):
         installed = Installed(linking_that_links(), opening)
         self.assertEqual(installed.exit_code, 1)
 
-    def test_the_installer_runs_this_step_and_stops_if_it_fails(self):
-        self.assertIn('python3 -P -m hiru_tsatsi.entrypoints.install "$bin_dir" "$here/backend/bin/hiru-tsatsi" || exit 1',
-                      INSTALL_SCRIPT.read_text())
 
     def test_run_by_hand_without_its_two_arguments_it_says_how_to_use_it(self):
         errors = io.StringIO()

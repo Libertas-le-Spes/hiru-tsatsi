@@ -1,16 +1,14 @@
 import re
 from pathlib import Path
 
-from hiru_tsatsi.adapters.storage.files import Disk, Files
+from hiru_tsatsi.adapters.storage.files import Files
 from hiru_tsatsi.work_apps.windows import Window
 
 WINDOW_ADDRESS = re.compile(r"0x[0-9a-f]+")
 
 
 class WindowNameFiles:
-    def __init__(self, folder: Path, files: Files | None = None):
-        if files is None:
-            files = Disk()
+    def __init__(self, folder: Path, files: Files):
         self.folder = folder
         self.files = files
 

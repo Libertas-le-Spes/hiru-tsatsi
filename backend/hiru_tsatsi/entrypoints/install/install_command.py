@@ -4,7 +4,7 @@ from typing import Callable
 from hiru_tsatsi.entrypoints.install.linking import link_commands
 from hiru_tsatsi.entrypoints.install.setting_up import set_up_desktop
 from hiru_tsatsi.use_cases.installing import LinkCommands
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.use_cases.services import Services
 
 
 def install(argv: list[str], linking_for: Callable[[str, str], LinkCommands], opening: Callable[[], Services]) -> int:

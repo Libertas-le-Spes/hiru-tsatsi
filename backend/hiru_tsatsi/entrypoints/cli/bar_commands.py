@@ -2,7 +2,7 @@ import argparse
 import json
 
 from hiru_tsatsi.presenters.bar_state import bar_state, window_choices
-from hiru_tsatsi.wiring import Services
+from hiru_tsatsi.use_cases.services import Services
 
 
 def overview(services: Services, chosen: argparse.Namespace) -> int:

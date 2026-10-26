@@ -67,7 +67,8 @@ Panel {
 
   function runNextEdit() {
     if (hiruTsatsiEdit.running || root.pendingEdits.length === 0) return
-    hiruTsatsiEdit.command = [root.hiruTsatsiCommand].concat(root.pendingEdits[0])
+    var edit = root.pendingEdits[0]
+    hiruTsatsiEdit.command = [root.hiruTsatsiCommand, edit[0], "--"].concat(edit.slice(1))
     root.pendingEdits = root.pendingEdits.slice(1)
     root.editProblem = ""
     hiruTsatsiEdit.running = true
@@ -119,6 +120,10 @@ Panel {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: if (text.trim() !== "") root.config = Model.parseConfig(text)
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
     }
   }
 
