@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 
 from hiru_tsatsi.use_cases.app_start import AppStart
-from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.ports import Launch
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
-from hiru_tsatsi.work_apps.windows import Window
 
 GIVE_UP_AFTER_SECONDS = 10.0
 
@@ -21,7 +19,9 @@ class WatchedStart:
 
     @staticmethod
     def fits(app: App, recognising: Recognising) -> bool:
-        return recognising.recognised_by_what_runs(app) and not app.terminal_ruled_out
+        if app.opens_in_terminal or app.terminal_ruled_out:
+            return False
+        return recognising.has_program_in_folder(app)
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "WatchedStart":
@@ -36,9 +36,6 @@ class WatchedStart:
         waited_long_enough = now - self.since >= GIVE_UP_AFTER_SECONDS
         return waited_long_enough and self.launch.stopped()
 
-    def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None:
-        return None
-
 
 @dataclass(frozen=True)
 class StoppedWithoutWindow:
@@ -47,6 +44,3 @@ class StoppedWithoutWindow:
 
     def next(self, now: float) -> AppStart:
         return self
-
-    def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None:
-        return None

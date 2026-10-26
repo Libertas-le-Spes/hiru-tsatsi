@@ -57,9 +57,9 @@ def a_folder(name: str, files: dict[str, mock.Mock]) -> mock.Mock:
     return folder
 
 
-def proc_with(processes: dict[str, mock.Mock], files: dict[str, mock.Mock] | None = None) -> mock.Mock:
+def proc_with(processes: dict[str, mock.Mock], files: dict[str, mock.Mock]) -> mock.Mock:
     everything = dict(processes)
-    everything.update(files or {})
+    everything.update(files)
     root = a_folder("proc", everything)
     root.iterdir.return_value = list(processes.values())
     return root
@@ -76,24 +76,24 @@ class ReadingProcessFiles(unittest.TestCase):
     def test_own_processes_are_chosen_by_their_real_user(self):
         root = proc_with({"100": a_process("100", {"status": a_file(STATUS)}),
                           "200": a_process("200", {"status": a_file(STATUS.replace("1000", "1001"))}),
-                          "self": a_process("self", {"status": a_file(STATUS)})})
+                          "self": a_process("self", {"status": a_file(STATUS)})}, {})
         self.assertEqual(ProcFiles(root).own_pids(1000), [100])
 
     def test_processes_that_cannot_be_listed_are_unknown(self):
-        root = proc_with({})
+        root = proc_with({}, {})
         root.iterdir.side_effect = PermissionError()
         self.assertIsNone(ProcFiles(root).own_pids(1000))
 
     def test_a_process_that_is_gone_carries_nothing(self):
-        root = proc_with({"100": a_process("100", {"environ": an_unreadable_file(FileNotFoundError())})})
+        root = proc_with({"100": a_process("100", {"environ": an_unreadable_file(FileNotFoundError())})}, {})
         self.assertEqual(ProcFiles(root).environment(100), [])
 
     def test_a_process_whose_environment_is_hidden_cannot_be_told(self):
-        root = proc_with({"100": a_process("100", {"environ": an_unreadable_file(PermissionError())})})
+        root = proc_with({"100": a_process("100", {"environ": an_unreadable_file(PermissionError())})}, {})
         self.assertIsNone(ProcFiles(root).environment(100))
 
     def test_a_process_whose_start_cannot_be_read_has_no_start(self):
-        root = proc_with({"100": a_process("100", {"stat": an_unreadable_file(PermissionError())})})
+        root = proc_with({"100": a_process("100", {"stat": an_unreadable_file(PermissionError())})}, {})
         self.assertIsNone(ProcFiles(root).started(100))
 
     def test_the_time_since_boot_is_the_first_number_of_uptime(self):
@@ -105,11 +105,11 @@ class ReadingProcessFiles(unittest.TestCase):
         self.assertIsNone(ProcFiles(root).seconds_since_boot())
 
     def test_the_children_are_the_numbers_listed_for_its_main_thread(self):
-        root = proc_with({"100": a_process("100", {"task/100/children": a_file("101 102 ")})})
+        root = proc_with({"100": a_process("100", {"task/100/children": a_file("101 102 ")})}, {})
         self.assertEqual(ProcFiles(root).children(100), [101, 102])
 
     def test_a_folder_that_cannot_be_read_is_empty(self):
-        root = proc_with({"100": a_process("100", {"cwd": an_unreadable_file(PermissionError())})})
+        root = proc_with({"100": a_process("100", {"cwd": an_unreadable_file(PermissionError())})}, {})
         self.assertEqual(ProcFiles(root).folder(100), "")
 
 

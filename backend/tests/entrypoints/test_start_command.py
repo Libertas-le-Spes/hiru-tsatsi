@@ -5,7 +5,7 @@ from unittest.mock import Mock, call
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
 from hiru_tsatsi.entrypoints.cli.main import main
-from hiru_tsatsi.use_cases.failures import DesktopNotSupported
+from hiru_tsatsi.use_cases.failures import AlreadyStarting, DesktopNotSupported
 from hiru_tsatsi.use_cases.offering_terminals import TerminalOffer
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.work_apps.app import App
@@ -42,6 +42,13 @@ class TheStartCommand(unittest.TestCase):
         services.offer.run.return_value = TerminalOffer(now_opens_in_terminal=["Helper"])
         Typed(["start"], services)
         services.notifier.notify.assert_called_with("Work apps in a terminal", "Now opens in a terminal: Helper")
+
+    def test_a_refused_start_says_so_on_screen_too(self):
+        services = mocked_services()
+        services.start.run.side_effect = AlreadyStarting()
+        typed = Typed(["start"], services)
+        services.notifier.notify.assert_called_once_with("Work apps not started", AlreadyStarting().explained())
+        self.assertEqual(typed.exit_code, 1)
 
     def test_starts_nothing_on_a_desktop_it_cannot_place_windows_on(self):
         def refuse():

@@ -1,27 +1,19 @@
 import unittest
 
 from tests.examples.app_lists import app_list
-from tests.examples.home import RECOGNISING
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, saved_once
 from tests.use_cases.starting_scene import CHAT, HELPER, HELPERS_TERMINAL, STEAM, Start, appearing_once_launched
-from hiru_tsatsi.use_cases.offering_terminals import ACTION, EXPLANATION, QUESTION_SECONDS, OfferTerminals
-from hiru_tsatsi.use_cases.trying_terminals import TryingTerminals
+from hiru_tsatsi.use_cases.failures import AlreadyStarting
+from hiru_tsatsi.use_cases.offering_terminals import ACTION, EXPLANATION, QUESTION_SECONDS, TerminalOffer
 from hiru_tsatsi.work_apps.app import App
-from hiru_tsatsi.work_apps.placement import Placement
+from hiru_tsatsi.work_apps.placement import names_of
 from hiru_tsatsi.work_apps.windows import Window
 
 KNOWN_HELPER = App("Helper", "cd code && helper", HELPERS_TERMINAL, opens_in_terminal=True)
 EDITOR = App("Editor", "cd code && editor .")
 RULED_OUT = App("Editor", "cd code && editor .", terminal_ruled_out=True)
 FAILING = App("Failing", "chromiun --app=https://example.org/")
-
-
-def _names(placements: list[Placement]) -> list[str]:
-    names = []
-    for placement in placements:
-        names.append(placement.app.name)
-    return names
 
 
 def helper_running_in(window_class: str, workspace: int) -> Window:
@@ -46,9 +38,8 @@ class OfferingATerminal(unittest.TestCase):
         start = Start(desktop_showing([]), app_list((2, [HELPER]), (6, [STEAM])), stops=True)
         appearing_once_launched(start.desktop, [], [window("s", "steam", "Steam", 6)])
         outcome = start.run()
-        start.notifier.ask_within.assert_not_called()
         self.assertEqual(saved_once(start.store).placements()[1].app.learned_window, "steam")
-        self.assertEqual(_names(outcome.stopped_without_window), ["Helper"])
+        self.assertEqual(names_of(outcome.stopped_without_window), ["Helper"])
 
     def test_needing_a_terminal_is_saved_once_the_program_is_seen_running_in_it(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
@@ -97,23 +88,37 @@ class OfferingATerminal(unittest.TestCase):
         self.assertTrue(saved_once(start.store).placements()[0].app.terminal_ruled_out)
         self.assertEqual(offer.not_offered_again, ["Helper"])
 
-    def test_an_app_changed_while_the_question_was_up_is_not_asked_about(self):
-        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
-        outcome = start.run()
-        start.store.load.return_value = app_list((2, [App("Helper", "cd code && other-helper")]))
-        trying = TryingTerminals(start.desktop, start.names, start.launcher, RECOGNISING, start.watching, start.clock)
-        OfferTerminals(start.notifier, start.store, trying).run(outcome.stopped_without_window)
-        start.notifier.ask_within.assert_not_called()
-        self.assertEqual(start.opened_in_terminal(), [])
-
-    def test_a_window_that_arrives_just_before_ten_seconds_is_placed_without_asking(self):
+    def test_an_app_changed_while_its_question_was_up_is_not_opened_in_a_terminal(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
-        start.window_appearing_after(9.8, helper_running_in("foot", 2))
         outcome = start.run()
-        start.notifier.ask_within.assert_not_called()
-        self.assertEqual((outcome.started, outcome.unseen), (["Helper"], []))
 
-    def test_a_window_that_arrives_after_its_launcher_stopped_is_still_placed_without_asking(self):
+        def changed_then_clicked(summary: str, body: str, action: str, seconds: float) -> bool:
+            start.store.load.return_value = app_list((2, [App("Helper", "cd code && other-helper")]))
+            return True
+
+        start.notifier.ask_within.side_effect = changed_then_clicked
+        offer = start.offering().run(outcome.stopped_without_window)
+        self.assertEqual(start.opened_in_terminal(), [])
+        start.store.save.assert_not_called()
+        self.assertEqual(offer, TerminalOffer())
+
+    def test_the_offer_asks_nothing_while_another_start_holds_the_lock(self):
+        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
+        outcome = start.run()
+        start.one_at_a_time.claimed.return_value = False
+        with self.assertRaises(AlreadyStarting):
+            start.offering().run(outcome.stopped_without_window)
+        start.notifier.ask_within.assert_not_called()
+
+    def test_a_window_that_arrives_just_before_ten_seconds_is_placed(self):
+        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
+        arriving = helper_running_in("foot", 2)
+        start.window_appearing_after(9.8, arriving)
+        outcome = start.run()
+        start.names.record.assert_called_once_with(arriving, "Helper")
+        self.assertEqual((outcome.stopped_without_window, outcome.unseen), ([], []))
+
+    def test_a_window_that_arrives_after_its_launcher_stopped_is_still_placed(self):
         late_editor = window("e", "code", "harbour - Editor", 2)
         start = Start(desktop_showing([]), app_list((2, [EDITOR]), (6, [STEAM])), stops=True)
 
@@ -127,18 +132,17 @@ class OfferingATerminal(unittest.TestCase):
 
         start.desktop.windows.side_effect = editor_at_fifteen_seconds_steam_at_twenty
         outcome = start.run()
-        start.notifier.ask_within.assert_not_called()
-        self.assertEqual(start.opened_in_terminal(), [])
-        self.assertEqual(outcome.unseen, [])
+        start.names.record.assert_any_call(late_editor, "Editor")
+        self.assertEqual((outcome.stopped_without_window, outcome.unseen), ([], []))
 
 
 class AfterATerminalWasRuledOut(unittest.TestCase):
     def test_the_app_starts_plainly_without_being_watched_or_asked_about(self):
         start = Start(desktop_showing([]), app_list((2, [RULED_OUT])), stops=True, answers_yes=True)
-        start.run()
+        outcome = start.run()
         start.launches.new.assert_not_called()
-        start.notifier.ask_within.assert_not_called()
         start.desktop.launch.assert_called_once_with(RULED_OUT.command, 2)
+        self.assertEqual((outcome.stopped_without_window, outcome.unseen), ([], ["Editor"]))
 
     def test_a_window_that_takes_half_a_minute_is_still_placed(self):
         start = Start(desktop_showing([]), app_list((2, [RULED_OUT])))

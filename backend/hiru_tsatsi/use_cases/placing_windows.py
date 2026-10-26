@@ -1,5 +1,5 @@
+from hiru_tsatsi.use_cases.learned_apps import LearnedApps
 from hiru_tsatsi.use_cases.ports import Desktop, WindowNames
-from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.window_guessing import guess_window
@@ -8,11 +8,11 @@ from hiru_tsatsi.work_apps.windows import Window
 
 
 class PlacingWindows:
-    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str],
+    def __init__(self, desktop: Desktop, names: WindowNames, learned: LearnedApps, known_before: set[str],
                  recognising: Recognising):
         self.desktop = desktop
         self.names = names
-        self.apps = apps
+        self.learned = learned
         self.known_before = known_before
         self.recognising = recognising
         self.claimed: set[str] = set()
@@ -29,12 +29,6 @@ class PlacingWindows:
 
     def window_given_to(self, placement: Placement) -> Window:
         return self.windows_given[(placement.workspace, placement.index)]
-
-    def remember_terminal(self, placement: Placement) -> None:
-        self.apps = self.apps.with_terminal(placement)
-
-    def rule_out_terminal(self, placement: Placement) -> None:
-        self.apps = self.apps.with_terminal_ruled_out(placement)
 
     @staticmethod
     def _known_ones_first(placements: list[Placement]) -> list[Placement]:
@@ -63,7 +57,7 @@ class PlacingWindows:
         app = placement.app
         if app.knows_window or self.recognising.runs_inside(app, window):
             return
-        self.apps = self.apps.with_learned_window(placement, name_for(window, windows, app.command))
+        self.learned.learn_window(placement, name_for(window, windows, app.command))
 
     def _move_to_its_workspace(self, placement: Placement, window: Window) -> None:
         if window.workspace == placement.workspace:

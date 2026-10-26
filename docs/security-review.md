@@ -73,17 +73,20 @@ recorded here with what each choice fails to stop.
   "stopped without a window". Once the start is over, saved and reported, a notification asks
   "Open <app> in a terminal?" for each such app, one at a time; only a click runs it again,
   inside `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. The
-  question waits a minute and is then taken off the screen. Anything but a click (a dismissal,
-  that minute passing, no notification service) is a no, and the no is saved with the app, so it
-  is never asked about again until its command changes. An app whose entry changed while the
-  question was coming is not asked about.
+  question waits a minute and is then taken off the screen with `gdbus`, which comes with the
+  same library `notify-send` needs. Anything but a click (a dismissal, that minute passing, no
+  notification service) is a no, and the no is saved with the app, so it is never asked about
+  again until its command changes. The list is read again after the answers, and an app whose
+  entry changed in the meantime is neither opened nor saved as a no.
   Only one start runs at a time: each holds an owner-only lock in `XDG_RUNTIME_DIR`, opened
-  without following links and refused if another account owns it, until it has finished,
-  questions included. A second start while one runs starts nothing. If the lock can't be made
-  sure of, nothing starts.
+  without following links and refused if another account owns it, until it has finished. The
+  start and the questions each claim it themselves. A second start while one runs starts
+  nothing, and says so in a notification. If the lock can't be made sure of, nothing starts.
   Under the question sit three limits:
   - Only a command of the shape `cd <folder> && <program>` (or `;`) is ever watched or offered,
-    with a plain folder (no `$`, backtick or `~user`), no `NAME=value` in front of the program,
+    with a plain folder (no `$`, backtick or `~user`; a relative one is taken from the home
+    folder, where Hyprland starts commands), a program written as a plain word (only letters,
+    digits and `_ . / + @ : , -`, so no `NAME=value`, `$EDITOR`, backtick, bracket or wildcard),
     and a program that is neither a shell nor one of the launchers known to run another
     (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `pkexec`, `command`, `builtin`, `nice`,
     `ionice`, `chrt`, `taskset`, `time`, `timeout`, `stdbuf`, `uwsm`, `uwsm-app`, `systemd-run`,

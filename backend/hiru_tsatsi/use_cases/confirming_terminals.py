@@ -1,38 +1,37 @@
+from hiru_tsatsi.use_cases.ports import Clock, Desktop
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.windows import Window
 
+POLL_SECONDS = 0.5
+Trial = tuple[Placement, Window]
+
 
 class ConfirmingTerminals:
-    def __init__(self, recognising: Recognising):
+    def __init__(self, desktop: Desktop, clock: Clock, recognising: Recognising, confirm_seconds: float):
+        self.desktop = desktop
+        self.clock = clock
         self.recognising = recognising
-        self.on_trial: list[tuple[Placement, str]] = []
-        self.confirmed: list[Placement] = []
+        self.confirm_seconds = confirm_seconds
 
-    def try_out(self, placement: Placement, window: Window) -> None:
-        self.on_trial.append((placement, window.address))
+    def confirmed_among(self, trials: list[Trial]) -> list[Placement]:
+        deadline = self.clock.now() + self.confirm_seconds
+        confirmed = []
+        waiting = self._newly_confirmed(trials, confirmed)
+        while waiting and self.clock.now() < deadline:
+            self.clock.wait(POLL_SECONDS)
+            waiting = self._newly_confirmed(waiting, confirmed)
+        return confirmed
 
-    @property
-    def waiting(self) -> bool:
-        return len(self.on_trial) > 0
-
-    def unconfirmed(self) -> list[Placement]:
-        placements = []
-        for placement, _ in self.on_trial:
-            placements.append(placement)
-        return placements
-
-    def newly_confirmed(self, windows: list[Window]) -> list[Placement]:
-        confirmed_now = []
-        still_on_trial = []
-        for placement, address in self.on_trial:
-            if self._runs_in_window_at(placement, address, windows):
-                confirmed_now.append(placement)
+    def _newly_confirmed(self, trials: list[Trial], confirmed: list[Placement]) -> list[Trial]:
+        windows = self.desktop.windows()
+        waiting = []
+        for placement, window in trials:
+            if self._runs_in_window_at(placement, window.address, windows):
+                confirmed.append(placement)
             else:
-                still_on_trial.append((placement, address))
-        self.on_trial = still_on_trial
-        self.confirmed += confirmed_now
-        return confirmed_now
+                waiting.append((placement, window))
+        return waiting
 
     def _runs_in_window_at(self, placement: Placement, address: str, windows: list[Window]) -> bool:
         for window in windows:

@@ -18,6 +18,7 @@ class Recognising:
     def __init__(self, home: str, real_folder: Callable[[str], str]):
         self.home = home
         self.real_folder = real_folder
+        self.read_commands: dict[str, ProgramInFolder | None] = {}
 
     def known_window(self, app: App, windows: list[Window], claimed: set[str]) -> Window | None:
         running = self._window_running(app, windows, claimed)
@@ -42,7 +43,7 @@ class Recognising:
             return True
         return not inside.runs_elsewhere_in(window)
 
-    def recognised_by_what_runs(self, app: App) -> bool:
+    def has_program_in_folder(self, app: App) -> bool:
         return self._program_in_folder(app) is not None
 
     def runs_inside(self, app: App, window: Window) -> bool:
@@ -58,7 +59,12 @@ class Recognising:
         return None
 
     def _program_in_folder(self, app: App) -> ProgramInFolder | None:
-        inside = ProgramInFolder.of(app.command, self.home)
+        if app.command not in self.read_commands:
+            self.read_commands[app.command] = self._read(app.command)
+        return self.read_commands[app.command]
+
+    def _read(self, command: str) -> ProgramInFolder | None:
+        inside = ProgramInFolder.of(command, self.home)
         if inside is None:
             return None
         return inside.leading_to(self.real_folder)

@@ -3,6 +3,7 @@ from unittest.mock import Mock, call, create_autospec
 from tests.examples.clock import TickingClock
 from tests.examples.home import RECOGNISING
 from tests.use_cases.mocked_list import store_holding
+from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.offering_terminals import OfferTerminals, TerminalOffer
@@ -63,10 +64,15 @@ class Start:
         return StartApps(self.desktop, self.launcher, self.store, self.names, self.announcer, RECOGNISING,
                          self.watching, self.clock, self.one_at_a_time).run()
 
+    def offering(self) -> OfferTerminals:
+        confirming = ConfirmingTerminals(self.desktop, self.clock, RECOGNISING, WATCH_SECONDS)
+        trying = TryingTerminals(self.desktop, self.names, self.launcher, RECOGNISING, self.watching, confirming,
+                                 self.clock)
+        return OfferTerminals(self.notifier, self.store, trying, self.one_at_a_time)
+
     def run_and_offer(self) -> tuple[Outcome, TerminalOffer]:
         outcome = self.run()
-        trying = TryingTerminals(self.desktop, self.names, self.launcher, RECOGNISING, self.watching, self.clock)
-        return outcome, OfferTerminals(self.notifier, self.store, trying).run(outcome.stopped_without_window)
+        return outcome, self.offering().run(outcome.stopped_without_window)
 
     def window_appearing_after(self, seconds: float, window: Window) -> None:
         def windows() -> list[Window]:
