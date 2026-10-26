@@ -55,7 +55,7 @@ class TryingTerminals:
     def try_out(self, apps: AppList, placements: list[Placement]) -> Tried:
         learned = LearnedApps(apps)
         placing = PlacingWindows(self.desktop, self.names, learned, addresses_of(self.desktop.windows()),
-                                 self.recognising)
+                                 self.recognising, set())
         trials = self._begin_all(placements)
         unseen = placements_of(self.watching.until_placed(placing, trials))
         confirmed = self.confirming.confirmed_among(self._seen(placing, trials, unseen))

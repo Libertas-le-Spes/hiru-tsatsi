@@ -4,6 +4,7 @@ from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, WindowNames
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
+from hiru_tsatsi.work_apps.windows import Window
 
 
 class LateWindows:
@@ -13,12 +14,12 @@ class LateWindows:
         self.store = store
         self.recognising = recognising
 
-    def placed(self, placement: Placement, known_before: set[str]) -> bool:
+    def placed(self, placement: Placement, known_before: set[str], taken: set[str]) -> Window | None:
         apps = self.store.load()
         learned = LearnedApps(apps)
-        placing = PlacingWindows(self.desktop, self.names, learned, known_before, self.recognising)
+        placing = PlacingWindows(self.desktop, self.names, learned, known_before, self.recognising, taken)
         unplaced = placing.place([placement], self.desktop.windows())
         if unplaced:
-            return False
+            return None
         save_learned(self.store, apps, learned.apps)
-        return True
+        return placing.window_given_to(placement)
