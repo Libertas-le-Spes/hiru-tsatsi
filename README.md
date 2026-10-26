@@ -73,6 +73,11 @@ open the app. A few examples:
 | Herdr | `omarchy-launch-terminal-herdr` |
 | An app needing a specific GTK theme | `env GTK_THEME=Adwaita:light dbeaver` |
 
+Never put a password or token in the **Command** field. While an app
+starts, its command is in the process list, which every account on the
+machine can read. Point the command at a script that fetches the secret
+from a password manager instead.
+
 ## Dependencies
 
 Hiru Tsatsi, installed with `./install.sh` (Python 3.11 or newer, nothing
