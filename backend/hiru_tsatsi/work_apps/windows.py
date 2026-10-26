@@ -35,3 +35,10 @@ def window_of_class(window_class: str, windows: list[Window], claimed: set[str])
         if window.address not in claimed and window.window_class == window_class:
             return window
     return None
+
+
+def addresses_of(windows: list[Window]) -> set[str]:
+    addresses = set()
+    for window in windows:
+        addresses.add(window.address)
+    return addresses

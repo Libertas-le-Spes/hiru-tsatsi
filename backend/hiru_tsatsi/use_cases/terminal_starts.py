@@ -37,7 +37,7 @@ class TrialTerminalStart:
     waits_for_window = True
 
     @classmethod
-    def begin(cls, launcher: Launcher, placement: Placement) -> "TrialTerminalStart":
+    def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "TrialTerminalStart":
         trial = Placement(placement.workspace, placement.index, as_terminal_app(placement.app))
         launcher.launch_in_terminal(trial)
         return cls(trial)

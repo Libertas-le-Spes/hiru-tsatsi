@@ -8,6 +8,15 @@ WAIT_FOR_SERVICE_SECONDS = 60
 RETRY_SECONDS = 2
 
 
+def _close(shown: str) -> None:
+    if not shown.isdigit() or not shutil.which("gdbus"):
+        return
+    subprocess.run(["gdbus", "call", "--session", "--dest", "org.freedesktop.Notifications",
+                    "--object-path", "/org/freedesktop/Notifications",
+                    "--method", "org.freedesktop.Notifications.CloseNotification", shown],
+                   capture_output=True, check=False)
+
+
 class NotifySend:
     def notify(self, summary: str, body: str) -> None:
         if shutil.which("notify-send"):
@@ -24,3 +33,19 @@ class NotifySend:
             time.sleep(RETRY_SECONDS)
             answered = subprocess.run(question, capture_output=True, text=True, check=False)
         return answered.stdout.strip() in ANSWERS
+
+    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> bool:
+        if not shutil.which("notify-send"):
+            return False
+        question = ["notify-send", "-a", APP_NAME, "--urgency=critical", "--print-id", f"--action=default={action}",
+                    f"--action=start={action}", summary, body]
+        asking = subprocess.Popen(question, stdout=subprocess.PIPE, text=True)
+        shown = asking.stdout.readline().strip()
+        try:
+            answered, _ = asking.communicate(timeout=seconds)
+        except subprocess.TimeoutExpired:
+            asking.kill()
+            asking.wait()
+            _close(shown)
+            return False
+        return answered.strip() in ANSWERS

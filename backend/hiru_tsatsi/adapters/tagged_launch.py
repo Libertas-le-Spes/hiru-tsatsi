@@ -19,6 +19,8 @@ class TaggedLaunch:
         return f"export {self.entry}\n{command}"
 
     def stopped(self) -> bool:
+        if self.since is None:
+            return False
         pids = self.processes.own_pids(self.account)
         if pids is None:
             return False
@@ -28,7 +30,10 @@ class TaggedLaunch:
         return True
 
     def _could_carry_the_tag(self, pid: int) -> bool:
-        return self.processes.started(pid) >= self.since
+        started = self.processes.started(pid)
+        if started is None:
+            return True
+        return started >= self.since
 
     def _known_not_to_carry_the_tag(self, pid: int) -> bool:
         environment = self.processes.environment(pid)

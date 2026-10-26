@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from hiru_tsatsi.work_apps.placement import Placement
+
 
 @dataclass
 class Outcome:
@@ -7,4 +9,4 @@ class Outcome:
     started: list[str] = field(default_factory=list)
     moved: list[str] = field(default_factory=list)
     unseen: list[str] = field(default_factory=list)
-    now_opens_in_terminal: list[str] = field(default_factory=list)
+    stopped_without_window: list[Placement] = field(default_factory=list)

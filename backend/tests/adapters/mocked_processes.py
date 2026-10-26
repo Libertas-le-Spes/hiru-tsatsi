@@ -12,7 +12,7 @@ class Running:
     front: int = 0
     group: int = 0
     environment: list[str] | None = field(default_factory=list)
-    started: float = 100.0
+    started: float | None = 100.0
 
 
 NOTHING = Running("", "")
