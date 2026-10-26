@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Protocol
 
 from hiru_tsatsi.work_apps.app_list import AppList
@@ -57,12 +58,18 @@ class SettingsStore(Protocol):
     def set_window_titles(self, on: bool) -> None: ...
 
 
+class Answer(Enum):
+    YES = "yes"
+    NO = "no"
+    NOT_SHOWN = "not shown"
+
+
 class Notifier(Protocol):
     def notify(self, summary: str, body: str) -> None: ...
 
     def ask(self, summary: str, body: str, action: str) -> bool: ...
 
-    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> bool | None: ...
+    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> Answer: ...
 
 
 class DesktopSetUp(Protocol):

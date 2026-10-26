@@ -5,8 +5,10 @@ from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.ports import Desktop, Launches, Terminal
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 
-HELPER = Placement(2, 0, App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True))
+HELPER = Placement(2, 0, App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d",
+                             terminal=TerminalUse.OPENS_IN_ONE))
 
 
 class LaunchingAnApp(unittest.TestCase):

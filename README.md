@@ -51,12 +51,15 @@ Hiru Tsatsi asks with a notification whether to start your work apps.
   terminal. Click it within a minute, and it opens in a terminal on its
   workspace; once the program is seen running there, it is remembered, and
   from then on it opens in a terminal at once. If it fails, the terminal
-  stays open to show why, and it is not tried again. Without a click, it
-  is never asked about again. Giving the app a new command starts this
-  over; forgetting its window, or choosing one for it, only undoes a
-  terminal it was remembered to need. A session you opened yourself counts as open when the same program
-  runs in the same folder, whatever its title says, so a second one is
-  never started. Questions come one at a time, each for up to a minute.
+  stays open to show why, and it is not tried again. If you dismiss the
+  question or let the minute pass, it is never asked about again; if the
+  question couldn't be shown at all, it is asked again next time. If the
+  app's own window turns up before its question, it is placed instead and
+  not asked about. Giving the app a new command starts this over;
+  forgetting its window, or choosing one for it, only undoes a terminal it
+  was remembered to need. A session you opened yourself counts as open
+  when the same program runs in the same folder, whatever its title says,
+  so a second one is never started. Questions come one at a time, each for up to a minute.
   Pressing the shortcut again while a start or its questions are still
   going starts nothing, and a notification says so.
 - **Add an app** — inside a workspace block, fill in a **Name** (just a

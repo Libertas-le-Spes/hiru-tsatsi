@@ -1,6 +1,7 @@
 from hiru_tsatsi.use_cases import choosing_how_to_start
 from hiru_tsatsi.use_cases.app_start import AppStart, placements_of, still_waiting, stopped_without_window
 from hiru_tsatsi.use_cases.failures import AlreadyStarting
+from hiru_tsatsi.use_cases.handover import Handover
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.learned_apps import LearnedApps
 from hiru_tsatsi.use_cases.learned_during_start import save_learned
@@ -39,9 +40,11 @@ class StartApps:
         self._announce(missing)
         left = self.watching.until_placed(placing, self._begin_all(missing))
         save_learned(self.store, apps, learned.apps)
+        stopped = placements_of(stopped_without_window(left))
         return Outcome(already_open=names_of(already_open), started=names_of(missing), moved=names_of(placing.moved),
                        unseen=names_of(placements_of(still_waiting(left))),
-                       stopped_without_window=placements_of(stopped_without_window(left)))
+                       stopped_without_window=names_of(stopped),
+                       for_the_offer=Handover(stopped, addresses_of(windows)))
 
     def _announce(self, missing: list[Placement]) -> None:
         if missing:

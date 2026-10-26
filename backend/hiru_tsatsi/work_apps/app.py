@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 
 from hiru_tsatsi.work_apps.refusals import required
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 
 
 @dataclass(frozen=True)
@@ -8,8 +9,15 @@ class App:
     name: str
     command: str
     learned_window: str = ""
-    opens_in_terminal: bool = False
-    terminal_ruled_out: bool = False
+    terminal: TerminalUse = TerminalUse.NOT_KNOWN
+
+    @property
+    def opens_in_terminal(self) -> bool:
+        return self.terminal == TerminalUse.OPENS_IN_ONE
+
+    @property
+    def terminal_ruled_out(self) -> bool:
+        return self.terminal == TerminalUse.RULED_OUT
 
     @property
     def knows_window(self) -> bool:
@@ -25,10 +33,12 @@ class App:
         return App(changed.name, changed.command)
 
     def knowing_window(self, window: str) -> "App":
-        return replace(self, learned_window=window, opens_in_terminal=False)
+        if self.opens_in_terminal:
+            return replace(self, learned_window=window, terminal=TerminalUse.NOT_KNOWN)
+        return replace(self, learned_window=window)
 
     def opening_in_terminal(self, window: str) -> "App":
-        return replace(self, learned_window=window, opens_in_terminal=True)
+        return replace(self, learned_window=window, terminal=TerminalUse.OPENS_IN_ONE)
 
     def never_in_terminal(self) -> "App":
-        return replace(self, terminal_ruled_out=True)
+        return replace(self, terminal=TerminalUse.RULED_OUT)

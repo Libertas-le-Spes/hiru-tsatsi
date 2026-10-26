@@ -1,6 +1,5 @@
 from hiru_tsatsi.presenters.report_lines import line
 from hiru_tsatsi.use_cases.outcome import Outcome
-from hiru_tsatsi.work_apps.placement import names_of
 
 
 def summary(outcome: Outcome) -> str:
@@ -13,5 +12,5 @@ def details(outcome: Outcome) -> str:
     lines = (line("Started", outcome.started) + line("Already open", outcome.already_open)
              + line("Moved to their workspace", outcome.moved)
              + line("No window seen within a minute", outcome.unseen)
-             + line("Stopped without a window", names_of(outcome.stopped_without_window)))
+             + line("Stopped without a window", outcome.stopped_without_window))
     return "\n".join(lines)

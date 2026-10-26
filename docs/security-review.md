@@ -55,7 +55,9 @@ recorded here with what each choice fails to stop.
   Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`.
   Whether a launch stopped is judged only from the owner's own processes, chosen by the real user
   in `/proc/<pid>/status` (readable by anyone), so a process of the owner's that Linux hides behind
-  a root-owned `/proc/<pid>` is still counted, and its unreadable environment means "can't tell". What runs inside a window is read from that window's own process tree. It
+  a root-owned `/proc/<pid>` is still counted, and its unreadable environment means "can't tell".
+  A process whose `status` can't be read at all, which happens when it exits while being read,
+  is left out. What runs inside a window is read from that window's own process tree. It
   reads, never writes, and stores nothing.
   *Fails to stop:* nothing new; the owner's own processes can already read the same.
 - **The launch tag.** Only a launch that may need a terminal (see below) exports
@@ -102,7 +104,8 @@ recorded here with what each choice fails to stop.
   A launch that stopped keeps its place while other apps are still being waited for, so a window
   that arrives late is still placed and learned, and the app is not asked about. The question
   therefore comes once every other app has its window, or after the minute's wait, whichever is
-  first.
+  first, and right before each question the open windows are looked at once more: an app whose
+  window has come by then is placed and learned instead of asked about.
   *Fails to stop:* a click on yes for a command whose launcher exited while its window was still
   coming runs it twice, once. A program whose folder Linux hides from its owner (one given extra
   privileges, such as `btop`) is never confirmed, so it is saved as a no after its one trial. A

@@ -23,6 +23,7 @@ from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.installing import LinkCommands
 from hiru_tsatsi.use_cases.launching import Launcher
+from hiru_tsatsi.use_cases.late_windows import LateWindows
 from hiru_tsatsi.use_cases.offering_terminals import OfferTerminals
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.use_cases.services import Services
@@ -55,7 +56,7 @@ def open_services() -> Services:
                       one_at_a_time)
     confirming = ConfirmingTerminals(desktop, clock, recognising, WATCH_SECONDS)
     trying = TryingTerminals(desktop, names, launcher, recognising, watching, confirming, clock)
-    offer = OfferTerminals(notifier, store, trying, one_at_a_time)
+    offer = OfferTerminals(notifier, store, LateWindows(desktop, names, store, recognising), trying, one_at_a_time)
     setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
     return Services(start, offer, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
                     Overview(store, desktop, recognising), titles, notifier)

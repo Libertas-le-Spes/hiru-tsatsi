@@ -36,7 +36,14 @@ class KnowingWhenALaunchHasStopped(unittest.TestCase):
     def test_a_process_started_before_the_launch_is_not_asked_even_if_unreadable(self):
         self.assertTrue(launch_among({1: Running("systemd", environment=None, started=17.0)}).stopped())
 
-    def test_a_process_whose_start_cannot_be_read_means_it_cannot_tell(self):
+    def test_a_process_whose_start_cannot_be_read_is_asked_and_counts_while_it_carries_the_tag(self):
+        self.assertFalse(launch_among({100: Running("helper", environment=[MINE], started=None)}).stopped())
+
+    def test_a_process_whose_start_cannot_be_read_is_asked_and_does_not_count_without_the_tag(self):
+        running = {100: Running("helper", environment=["HOME=/home/sam"], started=None)}
+        self.assertTrue(launch_among(running).stopped())
+
+    def test_a_process_whose_start_and_environment_cannot_be_read_means_it_cannot_tell(self):
         self.assertFalse(launch_among({100: Running("helper", environment=None, started=None)}).stopped())
 
     def test_when_the_time_since_boot_cannot_be_read_it_never_claims_the_launch_stopped(self):

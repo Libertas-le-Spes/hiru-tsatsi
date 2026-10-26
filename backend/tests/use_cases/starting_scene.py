@@ -4,10 +4,12 @@ from tests.examples.clock import TickingClock
 from tests.examples.home import RECOGNISING
 from tests.use_cases.mocked_list import store_holding
 from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
+from hiru_tsatsi.use_cases.late_windows import LateWindows
 from hiru_tsatsi.use_cases.launching import Launcher
-from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.offering_terminals import OfferTerminals, TerminalOffer
-from hiru_tsatsi.use_cases.ports import Announcer, Launch, Launches, Notifier, OneStartAtATime, Terminal, WindowNames
+from hiru_tsatsi.use_cases.outcome import Outcome
+from hiru_tsatsi.use_cases.ports import (Announcer, Answer, Launch, Launches, Notifier, OneStartAtATime, Terminal,
+                                         WindowNames)
 from hiru_tsatsi.use_cases.starting import StartApps
 from hiru_tsatsi.use_cases.trying_terminals import TryingTerminals
 from hiru_tsatsi.use_cases.watching_starts import WATCH_SECONDS, WatchingStarts
@@ -39,6 +41,12 @@ def appearing_once_launched(desktop: Mock, before: list[Window], after: list[Win
     desktop.windows.side_effect = windows
 
 
+def _answer(yes: bool) -> Answer:
+    if yes:
+        return Answer.YES
+    return Answer.NO
+
+
 class Start:
     def __init__(self, desktop: Mock, apps: AppList, stops: bool = False, answers_yes: bool = False):
         self.desktop = desktop
@@ -53,7 +61,7 @@ class Start:
         self.names = create_autospec(WindowNames, instance=True)
         self.announcer = create_autospec(Announcer, instance=True)
         self.notifier = create_autospec(Notifier, instance=True)
-        self.notifier.ask_within.return_value = answers_yes
+        self.notifier.ask_within.return_value = _answer(answers_yes)
         self.one_at_a_time = create_autospec(OneStartAtATime, instance=True)
         self.one_at_a_time.claimed.return_value = True
         self.clock = TickingClock()
@@ -68,11 +76,12 @@ class Start:
         confirming = ConfirmingTerminals(self.desktop, self.clock, RECOGNISING, WATCH_SECONDS)
         trying = TryingTerminals(self.desktop, self.names, self.launcher, RECOGNISING, self.watching, confirming,
                                  self.clock)
-        return OfferTerminals(self.notifier, self.store, trying, self.one_at_a_time)
+        late = LateWindows(self.desktop, self.names, self.store, RECOGNISING)
+        return OfferTerminals(self.notifier, self.store, late, trying, self.one_at_a_time)
 
     def run_and_offer(self) -> tuple[Outcome, TerminalOffer]:
         outcome = self.run()
-        return outcome, self.offering().run(outcome.stopped_without_window)
+        return outcome, self.offering().run(outcome.for_the_offer)
 
     def window_appearing_after(self, seconds: float, window: Window) -> None:
         def windows() -> list[Window]:

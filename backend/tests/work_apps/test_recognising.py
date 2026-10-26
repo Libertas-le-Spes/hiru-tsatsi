@@ -4,6 +4,7 @@ from tests.examples.windows import window
 from tests.examples.home import HOME, RECOGNISING
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.recognising import Recognising
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 
 HARBOUR = App("Harbour", "cd code/harbour && helper")
 LANTERN_WINDOW = window("a", "foot", "✳ Some talk", 3, "helper", "/home/sam/code/lantern")
@@ -31,7 +32,7 @@ class RecognisingAnAppsWindow(unittest.TestCase):
         self.assertIsNone(RECOGNISING.known_window(App("Steam", "steam"), [window("s", "steam", "Steam")], set()))
 
     def test_a_terminal_app_finds_only_the_window_with_exactly_its_name(self):
-        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
+        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
         longer_name = window("x", "hiru-tsatsi.helper-1a2b3c4d5e", "foot")
         page_titled_like_it = window("p", "chromium", "hiru-tsatsi.helper-1a2b3c4d")
         exact = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot")
@@ -39,7 +40,7 @@ class RecognisingAnAppsWindow(unittest.TestCase):
         self.assertEqual(found.address, "t")
 
     def test_a_terminal_apps_window_with_only_a_shell_left_waiting_is_not_it(self):
-        helper = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
+        helper = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
         finished = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot", 2, "sh", "/home/sam/code")
         self.assertIsNone(RECOGNISING.known_window(helper, [finished], set()))
 

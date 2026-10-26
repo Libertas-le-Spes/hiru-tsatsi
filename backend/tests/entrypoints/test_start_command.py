@@ -6,6 +6,7 @@ from unittest.mock import Mock, call
 from tests.entrypoints.mocked_services import Typed, mocked_services
 from hiru_tsatsi.entrypoints.cli.main import main
 from hiru_tsatsi.use_cases.failures import AlreadyStarting, DesktopNotSupported
+from hiru_tsatsi.use_cases.handover import Handover
 from hiru_tsatsi.use_cases.offering_terminals import TerminalOffer
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.work_apps.app import App
@@ -28,12 +29,13 @@ class TheStartCommand(unittest.TestCase):
 
     def test_reports_the_start_before_offering_a_terminal_for_what_stopped(self):
         services = mocked_services()
-        services.start.run.return_value = Outcome(started=["Helper"], stopped_without_window=[HELPER])
+        services.start.run.return_value = Outcome(started=["Helper"], stopped_without_window=["Helper"],
+                                                  for_the_offer=Handover([HELPER], {"0xa"}))
         in_order = Mock()
         in_order.attach_mock(services.notifier.notify, "notify")
         in_order.attach_mock(services.offer.run, "offer")
         Typed(["start"], services)
-        self.assertEqual(in_order.mock_calls[1], call.offer([HELPER]))
+        self.assertEqual(in_order.mock_calls[1], call.offer(Handover([HELPER], {"0xa"})))
         self.assertEqual(in_order.mock_calls[0].args[0], "Started 1, 0 already open")
 
     def test_reports_what_the_terminal_offer_settled(self):
