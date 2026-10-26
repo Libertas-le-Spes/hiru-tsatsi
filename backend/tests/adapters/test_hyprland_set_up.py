@@ -2,9 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from hiru_tsatsi.adapters.desktops.hyprland_set_up import HyprlandSetUp
-from hiru_tsatsi.use_cases.ports import SetUpFailed
+from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
 BINDS = [{"modmask": 68, "key": "U", "submap": ""}, {"modmask": 64, "key": "return", "submap": ""},
@@ -52,6 +53,23 @@ class SettingUpHyprland(unittest.TestCase):
         own = (self.folder / "hiru-tsatsi.lua").read_text()
         self.assertNotIn("hl.bind", own)
         self.assertIsNone(self.set_up.installed_keys())
+
+    def test_a_linked_main_config_stays_a_link(self):
+        kept = self.folder / "dotfiles" / "hyprland.lua"
+        kept.parent.mkdir()
+        (self.folder / "hyprland.lua").rename(kept)
+        (self.folder / "hyprland.lua").symlink_to(kept)
+        self.set_up.install(None, "w start", "w ask")
+        self.assertTrue((self.folder / "hyprland.lua").is_symlink())
+        self.assertIn("dofile(", kept.read_text())
+
+    def test_a_main_config_edited_while_setting_up_is_left_alone(self):
+        stale = "what set-up read before the owner saved an edit\n"
+        with mock.patch("hiru_tsatsi.adapters.desktops.hyprland_set_up.text_or_nothing", return_value=stale), \
+                self.assertRaises(ConfigLeftAlone):
+            self.set_up.install(None, "w start", "w ask")
+        self.assertEqual((self.folder / "hyprland.lua").read_text(), 'require("hypr.bindings")\n')
+        self.assertNotIn(["reload"], self.hyprctl.calls)
 
     def test_config_errors_after_reloading_are_reported(self):
         failing = HyprlandSetUp(self.folder, FakeHyprctl(errors="hiru-tsatsi.lua:1: bad"))

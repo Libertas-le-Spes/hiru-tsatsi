@@ -6,7 +6,7 @@ from typing import Callable
 
 from hiru_tsatsi.presenters.outcome_text import details, not_supported, set_up_text, summary, window_titles_text
 from hiru_tsatsi.presenters.bar_state import bar_state, window_choices
-from hiru_tsatsi.use_cases.ports import DesktopNotSupported, SetUpFailed
+from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, DesktopNotSupported, SetUpFailed
 from hiru_tsatsi.use_cases.starting import Outcome
 from hiru_tsatsi.wiring import App, open_app
 from hiru_tsatsi.work_apps.app_list import Refused
@@ -49,6 +49,9 @@ def set_up(app: App, chosen: argparse.Namespace) -> int:
         print(set_up_text(app.set_up.run()))
     except SetUpFailed as failed:
         print(f"The desktop reported a problem after setting up, so check its config:\n{failed}")
+        return 1
+    except ConfigLeftAlone as refused:
+        print(f"Nothing was set up: {refused}.")
         return 1
     return 0
 

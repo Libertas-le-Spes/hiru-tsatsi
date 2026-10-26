@@ -15,6 +15,10 @@ class SetUpFailed(Exception):
     pass
 
 
+class ConfigLeftAlone(Exception):
+    pass
+
+
 class Desktop(Protocol):
     def windows(self) -> list[Window]: ...
 

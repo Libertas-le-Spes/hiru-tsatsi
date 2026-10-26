@@ -1,7 +1,7 @@
 import json
-import os
-import tempfile
 from pathlib import Path
+
+from hiru_tsatsi.adapters.storage.atomic_file import write_atomically
 
 WINDOW_TITLES = "window_titles"
 
@@ -24,9 +24,4 @@ class SettingsFile:
     def set_window_titles(self, on: bool) -> None:
         settings = self._read()
         settings[WINDOW_TITLES] = on
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        handle, temporary = tempfile.mkstemp(dir=self.path.parent, prefix=".settings-")
-        with os.fdopen(handle, "w") as file:
-            json.dump(settings, file, indent=2)
-            file.write("\n")
-        os.replace(temporary, self.path)
+        write_atomically(self.path, json.dumps(settings, indent=2) + "\n")
