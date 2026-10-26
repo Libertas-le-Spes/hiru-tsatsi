@@ -31,7 +31,7 @@ def open_services() -> Services:
     notifier = NotifySend()
     desktop = this_machine.desktop()
     start = StartApps(desktop, store, names, time.monotonic, time.sleep)
-    setting_up = SetUpDesktop(this_machine.set_up(), str(locations.installed_command()))
+    setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
     return Services(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop),
                     Overview(store, desktop), titles, notifier)
 

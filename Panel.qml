@@ -111,6 +111,10 @@ Panel {
   Process {
     id: hiruTsatsiStart
     command: [root.hiruTsatsiCommand, "start"]
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
+    }
     onExited: root.refresh()
   }
 
@@ -138,6 +142,10 @@ Panel {
           root.windowChoices = []
         }
       }
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
     }
   }
 

@@ -6,7 +6,7 @@ from typing import Mapping
 from hiru_tsatsi.adapters.desktops.hyprctl import Run, inside_hyprland, run_hyprctl
 from hiru_tsatsi.adapters.desktops.hyprland_binds import taken_keys
 from hiru_tsatsi.adapters.desktops.lua import lua_string
-from hiru_tsatsi.adapters.storage.files import Disk, Files
+from hiru_tsatsi.adapters.storage.files import Files
 from hiru_tsatsi.use_cases.failures import SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
@@ -38,10 +38,10 @@ class HyprlandSetUp:
         self.files = files
 
     @classmethod
-    def found(cls, env: Mapping[str, str], config_home: Path) -> "HyprlandSetUp | None":
+    def found(cls, env: Mapping[str, str], config_home: Path, files: Files) -> "HyprlandSetUp | None":
         if not inside_hyprland(env):
             return None
-        return cls(config_home / "hypr", Disk())
+        return cls(config_home / "hypr", files)
 
     def installed_keys(self) -> Keys | None:
         bound = BOUND_KEYS.search(self.files.read(self.own_file))

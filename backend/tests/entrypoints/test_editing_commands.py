@@ -44,5 +44,6 @@ class EditingFromTheCommandLine(unittest.TestCase):
         typed = Typed(["add-workspace", "4", "Comms"], services)
         self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was changed: apps.json is not valid JSON.\n"))
 
+
 if __name__ == "__main__":
     unittest.main()

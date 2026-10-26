@@ -5,10 +5,16 @@ from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.work_apps.windows import Window
 
 
+def _workspace_number(client: dict) -> int:
+    workspace = client.get("workspace")
+    if not isinstance(workspace, dict):
+        return 0
+    return int(workspace.get("id", 0))
+
+
 def _window(client: dict) -> Window:
-    workspace = client.get("workspace") or {}
     return Window(str(client.get("address", "")), str(client.get("class", "")), str(client.get("title", "")),
-                  int(workspace.get("id", 0)))
+                  _workspace_number(client))
 
 
 class Hyprland:

@@ -3,7 +3,6 @@ import unittest
 from tests.examples.app_lists import app_list
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, store_holding
-from hiru_tsatsi.presenters.status_lines import status_line
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.work_apps.app import App
 
@@ -13,24 +12,23 @@ RIDER_WINDOW = window("m", "jetbrains-rider", "harbour – /address-comments", 2
 GITLAB_WINDOW = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_1234567-Default", "Issue Boards", 1)
 
 
-def status_lines(open_windows, apps) -> list[str]:
-    lines = []
+def windows_given(open_windows, apps) -> list[str | None]:
+    given = []
     for space in Overview(store_holding(apps), desktop_showing(open_windows)).run():
         for view in space.apps:
-            lines.append(status_line(view))
-    return lines
+            if view.window is None:
+                given.append(None)
+            else:
+                given.append(view.window.address)
+    return given
 
 
 class TheOverview(unittest.TestCase):
-    def test_each_app_shows_where_its_window_is(self):
+    def test_each_app_gets_the_open_window_it_learned_and_no_other(self):
         moved = window("m", "jetbrains-rider", "harbour – x", 4)
         apps = app_list((1, [App("GitLab", GITLAB_COMMAND, "chrome-gitlab.com"), App("Chat", "chat", "chrome-chat")]),
                         (2, [RIDER_MAIN, App("Steam", "steam")]))
-        self.assertEqual(status_lines([GITLAB_WINDOW, moved], apps),
-                         ["✓ Issue Boards, open on workspace 1",
-                          "Recognised when it opens",
-                          "✓ harbour – x, open on workspace 4 (moved to 2 when you start)",
-                          "Will be recognised the first time Hiru Tsatsi starts it"])
+        self.assertEqual(windows_given([GITLAB_WINDOW, moved], apps), ["g", None, "m", None])
 
     def test_the_windows_to_choose_from_put_the_likeliest_first_and_leave_out_owned_ones(self):
         terminal = window("t", "foot", "~")

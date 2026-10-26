@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 from hiru_tsatsi.adapters.storage.reading import read_text
-from hiru_tsatsi.use_cases.failures import NotSaved
+from hiru_tsatsi.use_cases.failures import ChangedMeanwhile, NotSaved
 
 OWNER_ONLY_FILE = 0o600
 OWNER_ONLY_FOLDER = 0o700
@@ -42,9 +42,15 @@ def _make_missing_folders(folder: Path) -> None:
 
 def _target(path: Path, follow_link: bool, account: Account) -> Path:
     if not follow_link:
+        _refuse_a_link(path)
         return path
     _refuse_unsafe_links(path, account)
     return path.resolve()
+
+
+def _refuse_a_link(path: Path) -> None:
+    if path.is_symlink():
+        raise NotSaved(f"{path} is a link, and Hiru Tsatsi won't replace a link with a file, so it was left as it was")
 
 
 def _refuse_unsafe_links(path: Path, account: Account) -> None:
@@ -91,7 +97,7 @@ def _refuse_if_changed_meanwhile(target: Path, path: Path, read_before: str | No
     if read_before is None:
         return
     if read_text(target) != read_before:
-        raise NotSaved(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
+        raise ChangedMeanwhile(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
 
 
 def _settle(folder: Path) -> None:

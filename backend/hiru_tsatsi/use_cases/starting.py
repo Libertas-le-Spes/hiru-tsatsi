@@ -1,6 +1,6 @@
 from typing import Callable
 
-from hiru_tsatsi.use_cases.failures import NotSaved
+from hiru_tsatsi.use_cases.failures import ChangedMeanwhile
 from hiru_tsatsi.use_cases.learned_during_start import applied_to, learned_between
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
@@ -56,5 +56,5 @@ class StartApps:
             return
         try:
             self.store.save(after)
-        except NotSaved:
+        except ChangedMeanwhile:
             self.store.save(applied_to(self.store.load(), learned_between(before, after)))

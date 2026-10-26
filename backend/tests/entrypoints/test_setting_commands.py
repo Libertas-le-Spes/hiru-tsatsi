@@ -41,11 +41,11 @@ class TheSetUpCommand(unittest.TestCase):
         self.assertEqual(typed.exit_code, 1)
         self.assertIn("hiru-tsatsi.lua:1: bad", typed.errors)
 
-    def test_a_config_that_was_not_saved_fails_and_says_nothing_was_set_up(self):
+    def test_a_config_that_was_not_saved_fails_and_says_nothing_was_saved(self):
         services = mocked_services()
         services.set_up.run.side_effect = NotSaved("hyprland.lua changed meanwhile")
         typed = Typed(["set-up"], services)
-        self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was set up: hyprland.lua changed meanwhile.\n"))
+        self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was saved: hyprland.lua changed meanwhile.\n"))
 
 
 if __name__ == "__main__":

@@ -36,9 +36,7 @@ and L2, which were about the same page. Each other finding was fixed as its sect
 sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes. The
 short command the findings call `hiru` is now `tsatsi`.
 
-"Checked and found sound" and the step plan describe commit `8372a7c` as it was reviewed. Since
-then the page, its server and its rendering are gone, so the items about them no longer apply;
-steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Every write now
+Since the review, the page, its server and its rendering are gone. Every write now
 refuses a folder that belongs to another account or that other accounts can write to. A write
 replaces a link rather than following it, except for the two Hyprland config files, where a
 linked dotfile is expected; there the folder holding the link must pass the same check. A file
@@ -321,59 +319,6 @@ that the **Command** field is not a place for passwords or tokens; put those in 
 them from a secret store.
 
 ---
-
-## Checked and found sound
-
-- **No hidden shell.** No `shell=True`, `os.system`, `os.popen` or `eval` in the backend. Every
-  subprocess is an argument list. The bar's `Process` items are argument lists too, and Quickshell
-  documents that `Process` "does not run command in a shell".
-- **Launching is the only shell, by design.** An app's **Command** goes to Hyprland's `exec_cmd`,
-  which runs it with `sh -c`; that is the feature. Lua quoting holds (I1 table). The trust boundary
-  is who can write the list, and only the owner can, apart from H1.
-- **Window addresses.** Moving a window uses the address Hyprland reported, Lua-quoted. Choosing a
-  window from the page or CLI is checked against the currently open windows before it is saved.
-  Window-name files are written only for addresses matching `[\w.-]+`, so a crafted address can't
-  escape the folder.
-- **Saved state.** `apps.json` and `settings.json` are written through `mkstemp` and `os.replace`
-  in the same folder, owner-only (`-rw-------` in a test run), and replacing a symlink replaces the
-  link rather than writing through it. Nothing is written under `/tmp`.
-- **The editing page's own rendering (page since removed).** `page.js` builds every element with `textContent`; no
-  `innerHTML`. A hostile window title shows as text on the page.
-- **Browser attacks on the server (server since removed).** It binds 127.0.0.1 only; the `Host` check stops DNS
-  rebinding; the token is compared in constant time; cross-site pages can't add the custom header
-  without a CORS preflight that is never answered. Reasoned from code; not demonstrated in a browser.
-- **Bar IPC.** The panel's IPC target exposes only open, close, show, hide and toggle.
-- **Desktop entries.** The repository ships no `.desktop` files, so `Exec` field-code quoting does
-  not apply.
-- **Supply chain.** No third-party dependencies (Python standard library only), no
-  `curl | sh`, and no GitHub Actions workflows to review.
-- **Tests.** The existing 80 tests pass with every external command stubbed, and none of them
-  tried to open a browser or notification.
-
-## Step plan
-
-Each step is small, ships on its own, and leaves the project safer than before. Order is by
-safety, not ease.
-
-1. **Refuse other accounts at the door (H1, option B).** Add a `Peers` interface and its
-   `/proc/net/tcp` implementation in its own file under `adapters/`; make it a required argument of
-   `PageServer`; refuse unknown owners. Tests from H1's seal. This alone closes H1.
-2. **Random port, fail closed (M2, H1 option D).** Bind port 0; open the browser only on a port
-   this process bound; drop the "already open" path. Test from M2's seal.
-3. **Safe launcher (M1).** `python3 -P -m`, Python 3.11 minimum in `install.sh` and both READMEs.
-   Planted-module test.
-4. **Stop handing out the token (H1, option C).** Forwarding file in `$XDG_RUNTIME_DIR`, token in
-   the fragment, never in a response. The file writer is its own class; the page reads and clears
-   the fragment. Tests from H1's seal.
-5. **Response headers (L2).** In the single send method. Header test.
-6. **Plain text in the bar (L1).** `textFormat: Text.PlainText` on every `Text`; QML scan test.
-7. **Atomic config writes (L3).** One atomic writer shared by all storage; failure and symlink
-   tests.
-8. **Quoting and install tidy-ups (I1, I2, I3).** Shell-quote the path, escape control characters,
-   protect an existing `hiru`, and a README line on secrets.
-
-If the editing page turns out to be rarely used, replace steps 1, 2, 4 and 5 with one step that
-removes it (option A).
 
 ## Sources
 
