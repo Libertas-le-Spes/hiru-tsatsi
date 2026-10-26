@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 PLUGIN = Path(__file__).resolve().parents[2]
-TEXT_ITEM = re.compile(r"^[ \t]*Text[ \t]*\{", re.MULTILINE)
+TEXT_ITEM = re.compile(r"^[ \t]*(Text|Label|TextEdit|TextArea)[ \t]*\{", re.MULTILINE)
 PLAIN = "textFormat: Text.PlainText"
 
 

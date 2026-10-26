@@ -6,6 +6,7 @@ from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.app_list_file import AppListFile
 from hiru_tsatsi.adapters.storage.app_list_format import from_omastart, from_saved, to_saved
 from hiru_tsatsi.adapters.storage.json_object import json_text
+from hiru_tsatsi.use_cases.ports import NotReadable
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.workspace import Workspace
@@ -71,6 +72,17 @@ class TheSavedFormat(unittest.TestCase):
         saved = AppList((Workspace(4, "Comms", (App("Chat", "chat-app", "chrome-chat"),)),))
         self.assertEqual(from_saved(to_saved(saved)), saved)
 
+
+class AListThatCannotBeRead(unittest.TestCase):
+    def test_a_list_with_a_stray_comma_is_refused_and_nothing_is_written(self):
+        files = files_holding({LIST: '{"workspaces": [],}'})
+        with self.assertRaises(NotReadable):
+            app_list_file(files).load()
+        files.write.assert_not_called()
+
+    def test_a_list_that_is_not_an_object_is_refused(self):
+        with self.assertRaises(NotReadable):
+            app_list_file(files_holding({LIST: "[]"})).load()
 
 if __name__ == "__main__":
     unittest.main()

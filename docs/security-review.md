@@ -38,9 +38,15 @@ short command the findings call `hiru` is now `tsatsi`.
 
 "Checked and found sound" and the step plan describe commit `8372a7c` as it was reviewed. Since
 then the page, its server and its rendering are gone, so the items about them no longer apply;
-steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Saved files now
-replace the real file behind a linked dotfile instead of the link, and window-name files are
-written only for Hyprland addresses (`0x` followed by hex digits).
+steps 1, 2, 4 and 5 of the plan became the single step of removing the page. Every write now
+refuses a folder that belongs to another account or that other accounts can write to. A write
+replaces a link rather than following it, except for the two Hyprland config files, where a
+linked dotfile is expected; there the folder holding the link must pass the same check. A file
+that exists but can't be read or parsed is refused rather than treated as empty, so a typo in
+`apps.json` never wipes the list. Window-name files are written only for Hyprland addresses (`0x`
+followed by hex digits). The panel's window-choice buttons show web-page titles through Omarchy's
+own `Button`, which sets `Text.PlainText` (`/usr/share/omarchy/shell/Ui/Button.qml`); that safety
+lives outside this repository.
 
 ## Terminal apps and recognition (added later, branch `terminal-apps-hiru`)
 

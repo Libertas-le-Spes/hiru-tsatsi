@@ -4,11 +4,10 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
+from hiru_tsatsi.use_cases.ports import NotSaved
+
 OWNER_ONLY = 0o600
-
-
-class NotWritten(Exception):
-    pass
+WRITABLE_BY_OTHERS = stat.S_IWGRP | stat.S_IWOTH
 
 
 def text_or_nothing(path: Path) -> str:
@@ -18,12 +17,13 @@ def text_or_nothing(path: Path) -> str:
         return ""
 
 
-def write_atomically(path: Path, text: str, read_before: str | None = None,
+def write_atomically(path: Path, text: str, read_before: str | None = None, follow_link: bool = False,
                      account: Callable[[], int] = os.getuid) -> None:
-    target = path.resolve()
+    target = _target(path, follow_link)
     folder = target.parent
     folder.mkdir(parents=True, exist_ok=True)
-    _refuse_another_accounts_folder(folder, path, account)
+    _refuse_unsafe_folder(folder, path, account)
+    _refuse_unsafe_folder(path.parent, path, account)
     copy = _new_copy(target, text)
     try:
         _refuse_if_changed_meanwhile(target, path, read_before)
@@ -34,9 +34,18 @@ def write_atomically(path: Path, text: str, read_before: str | None = None,
     _settle(folder)
 
 
-def _refuse_another_accounts_folder(folder: Path, path: Path, account: Callable[[], int]) -> None:
-    if folder.stat().st_uid != account():
-        raise NotWritten(f"{folder} belongs to another account, so {path} was left as it was")
+def _target(path: Path, follow_link: bool) -> Path:
+    if follow_link:
+        return path.resolve()
+    return path
+
+
+def _refuse_unsafe_folder(folder: Path, path: Path, account: Callable[[], int]) -> None:
+    details = folder.stat()
+    if details.st_uid != account():
+        raise NotSaved(f"{folder} belongs to another account, so {path} was left as it was")
+    if details.st_mode & WRITABLE_BY_OTHERS:
+        raise NotSaved(f"other accounts can write to {folder}, so {path} was left as it was")
 
 
 def _mode_to_keep(target: Path) -> int:
@@ -65,7 +74,7 @@ def _refuse_if_changed_meanwhile(target: Path, path: Path, read_before: str | No
     if read_before is None:
         return
     if text_or_nothing(target) != read_before:
-        raise NotWritten(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
+        raise NotSaved(f"{path} changed while Hiru Tsatsi was writing it, so it was left as it was")
 
 
 def _settle(folder: Path) -> None:

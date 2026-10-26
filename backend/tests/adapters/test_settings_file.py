@@ -3,6 +3,7 @@ from pathlib import Path
 
 from tests.adapters.mocked_files import files_holding
 from hiru_tsatsi.adapters.storage.settings_file import SettingsFile
+from hiru_tsatsi.use_cases.ports import NotReadable
 
 SETTINGS = Path("/home/sam/.config/hiru-tsatsi/settings.json")
 
@@ -25,6 +26,11 @@ class KeepingSettings(unittest.TestCase):
     def test_a_value_that_is_not_yes_or_no_means_nothing_chosen(self):
         self.assertIsNone(SettingsFile(SETTINGS, files_holding({SETTINGS: '{"window_titles": "yes"}'})).window_titles())
 
+    def test_a_choice_is_refused_rather_than_overwrite_settings_that_cannot_be_read(self):
+        files = files_holding({SETTINGS: "{broken"})
+        with self.assertRaises(NotReadable):
+            SettingsFile(SETTINGS, files).set_window_titles(True)
+        files.write.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

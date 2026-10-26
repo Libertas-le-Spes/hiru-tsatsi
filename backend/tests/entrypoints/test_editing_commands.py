@@ -1,16 +1,16 @@
 import unittest
 
 from tests.entrypoints.mocked_services import Typed, mocked_services
-from hiru_tsatsi.use_cases.ports import NotSaved
+from hiru_tsatsi.use_cases.ports import NotReadable, NotSaved
 from hiru_tsatsi.work_apps.refusals import NumberTaken
 
 TYPED_AND_CALLED = [
     (["add-workspace", "4", "Comms"], "add_workspace", (4, "Comms")),
     (["change-workspace", "4", "5", "Talk"], "change_workspace", (4, 5, "Talk")),
     (["remove-workspace", "4"], "remove_workspace", (4,)),
-    (["add-services", "1", "Chat", "chat-services --new"], "add_app", (1, "Chat", "chat-services --new")),
-    (["change-services", "1", "0", "Talk", "talk-services"], "change_app", (1, 0, "Talk", "talk-services")),
-    (["remove-services", "1", "0"], "remove_app", (1, 0)),
+    (["add-app", "1", "Chat", "chat-app --new"], "add_app", (1, "Chat", "chat-app --new")),
+    (["change-app", "1", "0", "Talk", "talk-app"], "change_app", (1, 0, "Talk", "talk-app")),
+    (["remove-app", "1", "0"], "remove_app", (1, 0)),
     (["choose-window", "1", "0", "0xg"], "choose_window", (1, 0, "0xg")),
     (["forget-window", "1", "0"], "forget_window", (1, 0)),
 ]
@@ -31,7 +31,6 @@ class EditingFromTheCommandLine(unittest.TestCase):
         typed = Typed(["add-workspace", "1", "Again"], services)
         self.assertEqual((typed.exit_code, typed.errors), (1, "Workspace 1 is already in use\n"))
 
-
     def test_a_list_that_could_not_be_saved_fails_in_words_not_a_crash(self):
         services = mocked_services()
         services.edit.add_workspace.side_effect = NotSaved("/home/sam/.config belongs to another account")
@@ -39,6 +38,11 @@ class EditingFromTheCommandLine(unittest.TestCase):
         self.assertEqual((typed.exit_code, typed.errors),
                          (1, "Nothing was saved: /home/sam/.config belongs to another account.\n"))
 
+    def test_a_list_that_cannot_be_read_changes_nothing_and_says_why(self):
+        services = mocked_services()
+        services.edit.add_workspace.side_effect = NotReadable("apps.json is not valid JSON")
+        typed = Typed(["add-workspace", "4", "Comms"], services)
+        self.assertEqual((typed.exit_code, typed.errors), (1, "Nothing was changed: apps.json is not valid JSON.\n"))
 
 if __name__ == "__main__":
     unittest.main()
