@@ -17,6 +17,8 @@ class SetUpDesktop:
 
     def run(self) -> SetUp:
         kept = self.desktop.installed_keys()
-        keys = kept or first_free(PREFERRED, self.desktop.taken_keys())
-        self.desktop.install(keys, f"{self.command} start", f"{self.command} ask")
+        keys = kept
+        if keys is None:
+            keys = first_free(PREFERRED, self.desktop.taken_keys())
+        self.desktop.install(keys, self.command)
         return SetUp(keys, kept is not None)

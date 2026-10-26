@@ -3,7 +3,10 @@ from pathlib import Path
 
 
 def _home(variable: str, fallback: str) -> Path:
-    return Path(os.environ.get(variable) or Path.home() / fallback)
+    chosen = os.environ.get(variable)
+    if chosen:
+        return Path(chosen)
+    return Path.home() / fallback
 
 
 def config_home() -> Path:
@@ -12,10 +15,6 @@ def config_home() -> Path:
 
 def app_list_file() -> Path:
     return config_home() / "hiru-tsatsi" / "apps.json"
-
-
-def page_folder() -> Path:
-    return Path(__file__).resolve().parents[3] / "page"
 
 
 def installed_command() -> Path:

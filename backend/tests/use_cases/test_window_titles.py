@@ -1,37 +1,51 @@
 import unittest
+from unittest.mock import Mock, create_autospec
 
-from tests.fakes import FakeNames, FakeSettings, window
+from tests.examples.windows import window
+from hiru_tsatsi.use_cases.failures import NotSaved
+from hiru_tsatsi.use_cases.ports import SettingsStore, WindowNames
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 
 
-def titles(chosen=None, installed=True):
-    return WindowTitles(FakeSettings(chosen), lambda: installed)
+def titles(chosen: bool | None, installed: bool) -> WindowTitles:
+    settings = create_autospec(SettingsStore, instance=True)
+    settings.window_titles.return_value = chosen
+    return WindowTitles(settings, Mock(return_value=installed))
 
 
 class ChoosingWhetherToNameWindows(unittest.TestCase):
     def test_with_nothing_chosen_it_follows_whether_window_names_is_installed(self):
-        self.assertTrue(titles(installed=True).wanted())
-        self.assertFalse(titles(installed=False).wanted())
+        self.assertTrue(titles(chosen=None, installed=True).wanted())
+        self.assertFalse(titles(chosen=None, installed=False).wanted())
 
-    def test_a_choice_wins_over_what_is_installed(self):
-        self.assertFalse(titles(chosen=False, installed=True).wanted())
-        self.assertTrue(titles(chosen=True, installed=False).wanted())
+    def test_a_choice_wins_without_asking_what_is_installed(self):
+        chosen = titles(chosen=False, installed=True)
+        self.assertFalse(chosen.wanted())
+        chosen.namer_installed.assert_not_called()
 
-    def test_turning_it_off_is_remembered(self):
-        chosen = titles(installed=True)
+    def test_turning_it_off_saves_the_choice_once(self):
+        chosen = titles(chosen=None, installed=True)
         chosen.turn(False)
-        self.assertEqual((chosen.wanted(), chosen.chosen()), (False, True))
+        chosen.settings.set_window_titles.assert_called_once_with(False)
 
+
+class NamingOnlyWhenWanted(unittest.TestCase):
     def test_nothing_is_written_while_it_is_off(self):
-        names = FakeNames()
-        recording = NamesWhenWanted(titles(chosen=False), names)
-        recording.record(window("0xa", "steam"), "Steam")
-        self.assertEqual(names.recorded, {})
+        names = create_autospec(WindowNames, instance=True)
+        NamesWhenWanted(titles(chosen=False, installed=True), names).record(window("0xa", "steam"), "Steam")
+        names.record.assert_not_called()
 
     def test_names_are_written_while_it_is_on(self):
-        names = FakeNames()
-        NamesWhenWanted(titles(installed=True), names).record(window("0xa", "steam"), "Steam")
-        self.assertEqual(names.recorded, {"0xa": "Steam"})
+        names = create_autospec(WindowNames, instance=True)
+        steam = window("0xa", "steam")
+        NamesWhenWanted(titles(chosen=None, installed=True), names).record(steam, "Steam")
+        names.record.assert_called_once_with(steam, "Steam")
+
+    def test_a_name_that_cannot_be_saved_does_not_stop_the_start(self):
+        names = create_autospec(WindowNames, instance=True)
+        names.record.side_effect = NotSaved("other accounts can write to window-names")
+        NamesWhenWanted(titles(chosen=None, installed=True), names).record(window("0xa", "steam"), "Steam")
+        names.record.assert_called_once()
 
 
 if __name__ == "__main__":

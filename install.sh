@@ -3,8 +3,6 @@ set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
-command_path="$bin_dir/hiru-tsatsi"
-short_path="$bin_dir/hiru"
 
 say() {
     printf '%s\n' "$1"
@@ -16,18 +14,15 @@ fail() {
 }
 
 require_python() {
-    command -v python3 >/dev/null 2>&1 || fail "Python 3.10 or newer is needed; install python3 with your package manager"
-    python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' || fail "Python 3.10 or newer is needed; this machine has $(python3 --version)"
+    command -v python3 >/dev/null 2>&1 || fail "Python 3.11 or newer is needed; install python3 with your package manager"
+    python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || fail "Python 3.11 or newer is needed; this machine has $(python3 --version)"
 }
 
-link_command() {
-    mkdir -p "$bin_dir"
-    ln -sfn "$here/backend/bin/hiru-tsatsi" "$command_path"
-    ln -sfn "$here/backend/bin/hiru-tsatsi" "$short_path"
-    say "command:  $command_path, and $short_path for short"
+install_commands() {
+    PYTHONPATH="$here/backend" python3 -P -m hiru_tsatsi.entrypoints.install "$bin_dir" "$here/backend/bin/hiru-tsatsi" || exit 1
     case ":$PATH:" in
         *":$bin_dir:"*) ;;
-        *) say "          $bin_dir is not on your PATH; add it to type 'hiru' anywhere" ;;
+        *) say "          $bin_dir is not on your PATH; add it to type 'tsatsi' anywhere" ;;
     esac
 }
 
@@ -36,6 +31,5 @@ mention_missing_tools() {
 }
 
 require_python
-link_command
-"$command_path" set-up
+install_commands
 mention_missing_tools

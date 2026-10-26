@@ -2,6 +2,7 @@ import json
 import unittest
 
 from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.work_apps.windows import Window
 
 CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}}]
@@ -13,7 +14,9 @@ class FakeHyprctl:
 
     def __call__(self, arguments: list[str]) -> str:
         self.calls.append(arguments)
-        return json.dumps(CLIENTS) if arguments[:2] == ["clients", "-j"] else "ok"
+        if arguments[:2] == ["clients", "-j"]:
+            return json.dumps(CLIENTS)
+        return "ok"
 
 
 class TalkingToHyprland(unittest.TestCase):
@@ -35,7 +38,26 @@ class TalkingToHyprland(unittest.TestCase):
         ])
 
     def test_unreadable_output_means_no_windows(self):
-        self.assertEqual(Hyprland(lambda arguments: "not json").windows(), [])
+        def garbled(arguments: list[str]) -> str:
+            return "not json"
+
+        self.assertEqual(Hyprland(garbled).windows(), [])
+
+
+class QuotingForLua(unittest.TestCase):
+    def test_every_character_that_could_end_or_break_the_string_is_escaped(self):
+        cases = {
+            'say "hi"': '"say \\"hi\\""',
+            "ends with \\": '"ends with \\\\"',
+            "line one\nline two": '"line one\\010line two"',
+            "a\rb": '"a\\013b"',
+            "a\x00b": '"a\\000b"',
+            "a\n7": '"a\\0107"',
+            "a\x7fb": '"a\\127b"',
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(lua_string(text), expected)
 
 
 if __name__ == "__main__":

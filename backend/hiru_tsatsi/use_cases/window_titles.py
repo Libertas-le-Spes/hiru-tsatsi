@@ -1,5 +1,6 @@
 from typing import Callable
 
+from hiru_tsatsi.use_cases.failures import NotSaved
 from hiru_tsatsi.use_cases.ports import SettingsStore, WindowNames
 from hiru_tsatsi.work_apps.windows import Window
 
@@ -11,7 +12,9 @@ class WindowTitles:
 
     def wanted(self) -> bool:
         chosen = self.settings.window_titles()
-        return self.namer_installed() if chosen is None else chosen
+        if chosen is None:
+            return self.namer_installed()
+        return chosen
 
     def chosen(self) -> bool:
         return self.settings.window_titles() is not None
@@ -26,5 +29,9 @@ class NamesWhenWanted:
         self.names = names
 
     def record(self, window: Window, name: str) -> None:
-        if self.titles.wanted():
+        if not self.titles.wanted():
+            return
+        try:
             self.names.record(window, name)
+        except NotSaved:
+            return
