@@ -19,7 +19,7 @@ starting each app on its own workspace.
 recognising apps that are already open, starting them all at once and
 placing each window as it appears, finding each app's window by itself, the
 `hiru-tsatsi` command that does all of this on any Linux desktop
-(`backend/`), the page for editing the app list, window names for title
+(`backend/`), a page for editing the app list (since removed for security), window names for title
 bars, and the rename to Hiru Tsatsi.
 
 Both parts are MIT licensed. `LICENSE` names both copyright holders with the
@@ -73,9 +73,14 @@ open the app. A few examples:
 | Herdr | `omarchy-launch-terminal-herdr` |
 | An app needing a specific GTK theme | `env GTK_THEME=Adwaita:light dbeaver` |
 
+Never put a password or token in the **Command** field. While an app
+starts, its command is in the process list, which every account on the
+machine can read. Point the command at a script that fetches the secret
+from a password manager instead.
+
 ## Dependencies
 
-Hiru Tsatsi, installed with `./install.sh` (Python 3.10 or newer, nothing
+Hiru Tsatsi, installed with `./install.sh` (Python 3.11 or newer, nothing
 else). Whatever you put in
 a workspace's **Command** field needs to already be installed, same as
 running it in a terminal.

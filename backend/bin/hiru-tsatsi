@@ -1,2 +1,2 @@
 #!/bin/sh
-PYTHONPATH="$(dirname "$(readlink -f "$0")")/.." exec python3 -m hiru_tsatsi "$@"
+PYTHONPATH="$(dirname "$(readlink -f "$0")")/.." exec python3 -P -m hiru_tsatsi "$@"

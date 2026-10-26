@@ -1,64 +1,46 @@
-import json
-import os
-import tempfile
 from pathlib import Path
 from typing import Callable, Sequence
 
-from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
-
-
-def _read(path: Path) -> dict:
-    try:
-        content = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return content if isinstance(content, dict) else {}
-
-
-def from_saved(content: dict) -> AppList:
-    return AppList(tuple(
-        Workspace(int(space["number"]), str(space.get("label", "")),
-                  tuple(App(str(app["name"]), str(app["command"]), str(app.get("learned_window") or "")) for app in space.get("apps", [])))
-        for space in content.get("workspaces", [])))
-
-
-def from_omastart(content: dict) -> AppList:
-    return AppList(tuple(
-        Workspace(int(space["id"]), str(space.get("label", "")),
-                  tuple(App(str(app["name"]), str(app["cmd"]), str(app.get("window") or "")) for app in space.get("apps", [])))
-        for space in content.get("workspaces", [])))
-
-
-def to_saved(apps: AppList) -> dict:
-    return {"workspaces": [
-        {"number": space.number, "label": space.label,
-         "apps": [{"name": app.name, "command": app.command, "learned_window": app.learned_window} for app in space.apps]}
-        for space in apps.workspaces]}
-
+from hiru_tsatsi.adapters.storage.app_list_format import from_saved, to_saved
+from hiru_tsatsi.adapters.storage.files import Files
+from hiru_tsatsi.adapters.storage.json_object import json_object, json_text
+from hiru_tsatsi.use_cases.failures import NotReadable
+from hiru_tsatsi.work_apps.app_list import AppList
 
 EarlierList = tuple[Path, Callable[[dict], AppList]]
 
 
 class AppListFile:
-    def __init__(self, path: Path, earlier: Sequence[EarlierList] = ()):
+    def __init__(self, path: Path, files: Files, earlier: Sequence[EarlierList] = ()):
         self.path = path
         self.earlier = earlier
+        self.files = files
+        self.read_before: str | None = None
 
     def load(self) -> AppList:
-        if self.path.exists():
-            return from_saved(_read(self.path))
-        found = next(((place, reader) for place, reader in self.earlier if place.exists()), None)
-        if found is None:
-            return AppList()
-        place, reader = found
-        imported = reader(_read(place))
-        self.save(imported)
-        return imported
+        if self.files.exists(self.path):
+            self.read_before = self.files.read(self.path)
+            return self._app_list(self.read_before, self.path, from_saved)
+        self.read_before = ""
+        return self._imported_from_earlier()
 
     def save(self, apps: AppList) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        handle, temporary = tempfile.mkstemp(dir=self.path.parent, prefix=".apps-")
-        with os.fdopen(handle, "w") as file:
-            json.dump(to_saved(apps), file, indent=2)
-            file.write("\n")
-        os.replace(temporary, self.path)
+        text = json_text(to_saved(apps))
+        self.files.write(self.path, text, read_before=self.read_before)
+        self.read_before = text
+
+    @staticmethod
+    def _app_list(text: str, path: Path, reader: Callable[[dict], AppList]) -> AppList:
+        content = json_object(text, path)
+        try:
+            return reader(content)
+        except (KeyError, TypeError, ValueError, AttributeError) as wrong_shape:
+            raise NotReadable(f"{path} is not an app list ({wrong_shape!r})") from wrong_shape
+
+    def _imported_from_earlier(self) -> AppList:
+        for place, reader in self.earlier:
+            if self.files.exists(place):
+                imported = self._app_list(self.files.read(place), place, reader)
+                self.save(imported)
+                return imported
+        return AppList()

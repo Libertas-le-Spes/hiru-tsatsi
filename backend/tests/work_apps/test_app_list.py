@@ -1,7 +1,8 @@
 import unittest
 
-from tests.fakes import app_list
-from hiru_tsatsi.work_apps.app_list import App, AppList, Blank, NothingThere, NumberTaken
+from tests.examples.app_lists import app_list
+from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.refusals import Blank, NothingThere, NumberTaken
 
 CHAT = App("Chat", "chat-app")
 
@@ -35,14 +36,22 @@ class EditingTheList(unittest.TestCase):
         self.assertEqual([a.name for a in apps.workspace(1).apps], ["Google Chat", "Mail"])
         self.assertEqual([a.name for a in apps.without_app(1, 0).workspace(1).apps], ["Mail"])
 
-    def test_changing_an_app_keeps_the_window_it_learned(self):
-        apps = app_list((1, [App("Chat", "chat-app", "chat")])).with_app_changed(1, 0, "Chat", "chat-app --new")
+    def test_renaming_an_app_keeps_the_window_it_learned(self):
+        apps = app_list((1, [App("Chat", "chat-app", "chat")])).with_app_changed(1, 0, "Talk", "chat-app")
         self.assertEqual(apps.workspace(1).apps[0].learned_window, "chat")
 
+    def test_a_new_command_forgets_the_window_learned_for_the_old_one(self):
+        apps = app_list((1, [App("Chat", "chat-app", "chat")])).with_app_changed(1, 0, "Chat", "other-chat-app")
+        self.assertEqual(apps.workspace(1).apps[0].learned_window, "")
+
     def test_something_that_is_not_there_is_refused(self):
-        for change in (lambda a: a.without_workspace(9), lambda a: a.without_app(1, 3), lambda a: a.with_app(9, CHAT)):
-            with self.assertRaises(NothingThere):
-                change(app_list((1, [CHAT])))
+        apps = app_list((1, [CHAT]))
+        with self.assertRaises(NothingThere):
+            apps.without_workspace(9)
+        with self.assertRaises(NothingThere):
+            apps.without_app(1, 3)
+        with self.assertRaises(NothingThere):
+            apps.with_app(9, CHAT)
 
 
 if __name__ == "__main__":

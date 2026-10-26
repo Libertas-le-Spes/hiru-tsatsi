@@ -5,16 +5,6 @@ from hiru_tsatsi.work_apps.shortcut import Keys
 from hiru_tsatsi.work_apps.windows import Window
 
 
-class DesktopNotSupported(Exception):
-    def __init__(self, desktop: str):
-        super().__init__(desktop)
-        self.desktop = desktop
-
-
-class SetUpFailed(Exception):
-    pass
-
-
 class Desktop(Protocol):
     def windows(self) -> list[Window]: ...
 
@@ -50,4 +40,14 @@ class DesktopSetUp(Protocol):
 
     def taken_keys(self) -> set[Keys]: ...
 
-    def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None: ...
+    def install(self, keys: Keys | None, command: str) -> None: ...
+
+
+class CommandLinks(Protocol):
+    def present(self, path: str) -> bool: ...
+
+    def is_ours(self, path: str) -> bool: ...
+
+    def link(self, path: str, target: str) -> None: ...
+
+    def remove(self, path: str) -> None: ...

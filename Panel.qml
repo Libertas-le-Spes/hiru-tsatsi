@@ -67,7 +67,8 @@ Panel {
 
   function runNextEdit() {
     if (hiruTsatsiEdit.running || root.pendingEdits.length === 0) return
-    hiruTsatsiEdit.command = [root.hiruTsatsiCommand].concat(root.pendingEdits[0])
+    var edit = root.pendingEdits[0]
+    hiruTsatsiEdit.command = [root.hiruTsatsiCommand, edit[0], "--"].concat(edit.slice(1))
     root.pendingEdits = root.pendingEdits.slice(1)
     root.editProblem = ""
     hiruTsatsiEdit.running = true
@@ -110,6 +111,10 @@ Panel {
   Process {
     id: hiruTsatsiStart
     command: [root.hiruTsatsiCommand, "start"]
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
+    }
     onExited: root.refresh()
   }
 
@@ -119,6 +124,10 @@ Panel {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: if (text.trim() !== "") root.config = Model.parseConfig(text)
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
     }
   }
 
@@ -133,6 +142,10 @@ Panel {
           root.windowChoices = []
         }
       }
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: if (text.trim() !== "") root.editProblem = text.trim()
     }
   }
 
@@ -181,6 +194,7 @@ Panel {
           spacing: Style.space(8)
 
           Text {
+            textFormat: Text.PlainText
             text: root.s.title
             color: root.bar.foreground
             font.family: root.bar.fontFamily
@@ -189,6 +203,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             text: root.s.subtitle
             color: Qt.darker(root.bar.foreground, 1.5)
             font.family: root.bar.fontFamily
@@ -242,6 +257,7 @@ Panel {
               spacing: Style.space(8)
 
               Text {
+                textFormat: Text.PlainText
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.s.workspaceLabel + " " + wsBlock.modelData.id + " — " + wsBlock.modelData.label
                 color: root.bar.foreground
@@ -275,6 +291,7 @@ Panel {
                   spacing: Style.space(8)
 
                   Text {
+                    textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
                     text: "• " + appBlock.modelData.name + "  (" + appBlock.modelData.cmd + ")"
                     color: Qt.darker(root.bar.foreground, 1.3)
@@ -302,6 +319,7 @@ Panel {
                   leftPadding: Style.space(12)
 
                   Text {
+                    textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
                     text: appBlock.modelData.status
                     color: Qt.darker(root.bar.foreground, 1.6)
@@ -425,6 +443,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: root.newWorkspaceIdTaken
           text: root.s.workspaceTaken.arg(root.newWorkspaceId)
           color: Qt.darker(root.bar.foreground, 1.3)
@@ -433,6 +452,7 @@ Panel {
         }
 
         Text {
+          textFormat: Text.PlainText
           visible: root.editProblem !== ""
           text: root.editProblem
           color: root.bar.foreground

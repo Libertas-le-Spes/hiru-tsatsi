@@ -10,15 +10,28 @@ class Keys:
 
     @classmethod
     def parse(cls, text: str) -> "Keys":
-        parts = [part.strip().upper() for part in text.split("+") if part.strip()]
-        return cls(frozenset(parts[:-1]), parts[-1])
+        parts = []
+        for part in text.split("+"):
+            if part.strip():
+                parts.append(part.strip().upper())
+        key = parts[-1]
+        modifiers = parts[:-1]
+        return cls(frozenset(modifiers), key)
 
     def text(self) -> str:
-        return " + ".join([m for m in MODIFIER_ORDER if m in self.modifiers] + [self.key])
+        ordered = []
+        for modifier in MODIFIER_ORDER:
+            if modifier in self.modifiers:
+                ordered.append(modifier)
+        ordered.append(self.key)
+        return " + ".join(ordered)
 
 
 PREFERRED = [Keys.parse("SUPER + CTRL + U"), Keys.parse("SUPER + ALT + U"), Keys.parse("SUPER + SHIFT + U")]
 
 
 def first_free(preferred: list[Keys], taken: set[Keys]) -> Keys | None:
-    return next((keys for keys in preferred if keys not in taken), None)
+    for keys in preferred:
+        if keys not in taken:
+            return keys
+    return None

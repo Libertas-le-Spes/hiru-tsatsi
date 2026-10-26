@@ -46,4 +46,7 @@ STATUS_LINES = [OpenInPlace, OpenElsewhere, KnownButClosed, NotYetKnown]
 
 
 def status_line(view: AppView) -> str:
-    return next(line for line in STATUS_LINES if line.fits(view)).text(view)
+    for line in STATUS_LINES:
+        if line.fits(view):
+            return line.text(view)
+    return NotYetKnown.text(view)
