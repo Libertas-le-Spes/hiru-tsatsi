@@ -16,8 +16,8 @@ fail() {
 }
 
 require_python() {
-    command -v python3 >/dev/null 2>&1 || fail "Python 3.10 or newer is needed; install python3 with your package manager"
-    python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' || fail "Python 3.10 or newer is needed; this machine has $(python3 --version)"
+    command -v python3 >/dev/null 2>&1 || fail "Python 3.11 or newer is needed; install python3 with your package manager"
+    python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || fail "Python 3.11 or newer is needed; this machine has $(python3 --version)"
 }
 
 link_command() {
