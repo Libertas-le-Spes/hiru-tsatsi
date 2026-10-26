@@ -1,9 +1,8 @@
 import json
-import os
-import tempfile
 from pathlib import Path
 from typing import Callable, Sequence
 
+from hiru_tsatsi.adapters.storage.atomic_file import write_atomically
 from hiru_tsatsi.work_apps.app_list import App, AppList, Workspace
 
 
@@ -56,9 +55,4 @@ class AppListFile:
         return imported
 
     def save(self, apps: AppList) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        handle, temporary = tempfile.mkstemp(dir=self.path.parent, prefix=".apps-")
-        with os.fdopen(handle, "w") as file:
-            json.dump(to_saved(apps), file, indent=2)
-            file.write("\n")
-        os.replace(temporary, self.path)
+        write_atomically(self.path, json.dumps(to_saved(apps), indent=2) + "\n")

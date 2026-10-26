@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Mapping
 
 from hiru_tsatsi.adapters.desktops.hyprland import Run, lua_string, run_hyprctl
-from hiru_tsatsi.use_cases.ports import SetUpFailed
+from hiru_tsatsi.adapters.storage.atomic_file import NotWritten, text_or_nothing, write_atomically
+from hiru_tsatsi.use_cases.ports import ConfigLeftAlone, SetUpFailed
 from hiru_tsatsi.work_apps.shortcut import Keys
 
 MODIFIER_BITS = {"SHIFT": 1, "CTRL": 4, "ALT": 8, "SUPER": 64}
@@ -38,8 +39,11 @@ class HyprlandSetUp:
         return {keys_from_bind(bind) for bind in binds if isinstance(bind, dict) and not bind.get("submap")}
 
     def install(self, keys: Keys | None, start_command: str, ask_command: str) -> None:
-        self.own_file.write_text(self._own_config(keys, start_command, ask_command))
-        self._load_from_main_file()
+        try:
+            write_atomically(self.own_file, self._own_config(keys, start_command, ask_command))
+            self._load_from_main_file()
+        except NotWritten as refused:
+            raise ConfigLeftAlone(str(refused)) from refused
         self.run(["reload"])
         errors = self.run(["configerrors"]).strip()
         if errors:
@@ -53,6 +57,7 @@ class HyprlandSetUp:
 
     def _load_from_main_file(self) -> None:
         line = f"dofile({lua_string(str(self.own_file))})"
-        current = self.main_file.read_text() if self.main_file.exists() else ""
+        current = text_or_nothing(self.main_file)
         if line not in current:
-            self.main_file.write_text(current + ("" if current.endswith("\n") or not current else "\n") + line + "\n")
+            write_atomically(self.main_file, current + ("" if current.endswith("\n") or not current else "\n") + line + "\n",
+                             read_before=current)
