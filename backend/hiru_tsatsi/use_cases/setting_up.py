@@ -18,7 +18,9 @@ class SetUpDesktop:
 
     def run(self) -> SetUp:
         kept = self.desktop.installed_keys()
-        keys = kept or first_free(PREFERRED, self.desktop.taken_keys())
+        keys = kept
+        if keys is None:
+            keys = first_free(PREFERRED, self.desktop.taken_keys())
         command = shlex.quote(self.command)
         self.desktop.install(keys, f"{command} start", f"{command} ask")
         return SetUp(keys, kept is not None)

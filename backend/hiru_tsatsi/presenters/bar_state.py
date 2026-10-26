@@ -1,21 +1,35 @@
 from hiru_tsatsi.presenters.status_lines import status_line
-from hiru_tsatsi.use_cases.overview import WorkspaceView
+from hiru_tsatsi.use_cases.overview import AppView, WorkspaceView
 from hiru_tsatsi.work_apps.windows import Window
 
 
-def bar_state(workspaces: list[WorkspaceView], window_titles: bool) -> dict:
-    return {
-        "windowTitles": window_titles,
-        "nextNumber": max((space.number for space in workspaces), default=0) + 1,
-        "workspaces": [{
-            "number": space.number,
-            "label": space.label,
-            "apps": [{"name": view.placement.app.name, "command": view.placement.app.command,
-                      "status": status_line(view), "knowsWindow": view.placement.app.knows_window}
-                     for view in space.apps],
-        } for space in workspaces],
-    }
+def _app_state(view: AppView) -> dict:
+    app = view.placement.app
+    return {"name": app.name, "command": app.command, "status": status_line(view)}
+
+
+def _workspace_state(space: WorkspaceView) -> dict:
+    apps = []
+    for view in space.apps:
+        apps.append(_app_state(view))
+    return {"number": space.number, "label": space.label, "apps": apps}
+
+
+def bar_state(workspaces: list[WorkspaceView]) -> dict:
+    spaces = []
+    for space in workspaces:
+        spaces.append(_workspace_state(space))
+    return {"workspaces": spaces}
+
+
+def _shown_title(window: Window) -> str:
+    if window.title:
+        return window.title
+    return window.window_class
 
 
 def window_choices(windows: list[Window]) -> list[dict]:
-    return [{"address": w.address, "title": w.title or w.window_class, "workspace": w.workspace} for w in windows]
+    choices = []
+    for window in windows:
+        choices.append({"address": window.address, "title": _shown_title(window), "workspace": window.workspace})
+    return choices

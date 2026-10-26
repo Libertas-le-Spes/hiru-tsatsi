@@ -11,7 +11,9 @@ class WindowTitles:
 
     def wanted(self) -> bool:
         chosen = self.settings.window_titles()
-        return self.namer_installed() if chosen is None else chosen
+        if chosen is None:
+            return self.namer_installed()
+        return chosen
 
     def chosen(self) -> bool:
         return self.settings.window_titles() is not None
