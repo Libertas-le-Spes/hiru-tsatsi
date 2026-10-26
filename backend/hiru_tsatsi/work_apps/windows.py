@@ -12,6 +12,8 @@ class Window:
     window_class: str
     title: str
     workspace: int
+    program: str = ""
+    folder: str = ""
 
 
 def _starts(text: str, prefix: str) -> bool:

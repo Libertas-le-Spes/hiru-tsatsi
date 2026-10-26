@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
+from hiru_tsatsi.use_cases.overview import known_window
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, Launched, WindowNames
 from hiru_tsatsi.work_apps.app_list import AppList, Placement
-from hiru_tsatsi.work_apps.windows import Window, guess_window, name_for, window_named
+from hiru_tsatsi.work_apps.inside import Inside
+from hiru_tsatsi.work_apps.windows import Window, guess_window, name_for
 
 WATCH_SECONDS = 60.0
 POLL_SECONDS = 0.5
@@ -50,8 +52,9 @@ Start = OwnWindowStart | TerminalStart
 
 
 class Run:
-    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str]):
+    def __init__(self, desktop: Desktop, names: WindowNames, apps: AppList, known_before: set[str], home: str):
         self.desktop = desktop
+        self.home = home
         self.names = names
         self.apps = apps
         self.known_before = known_before
@@ -77,16 +80,20 @@ class Run:
         self.claimed.add(window.address)
         self.found.append(placement)
         self.names.record(window, placement.app.name)
-        if not placement.app.knows_window:
+        if self._learns_a_name(placement):
             self.apps = self.apps.with_learned_window(placement, name_for(window, windows, placement.app.command))
         if window.workspace != placement.workspace:
             self.desktop.move(window, placement.workspace)
             self.moved.append(placement)
         return True
 
+    def _learns_a_name(self, placement: Placement) -> bool:
+        return not placement.app.knows_window and Inside.of(placement.app.command, self.home) is None
+
     def _find(self, placement: Placement, windows: list[Window]) -> Window | None:
-        if placement.app.knows_window:
-            return window_named(placement.app.learned_window, windows, self.claimed)
+        known = known_window(placement, self.home, windows, self.claimed)
+        if known or placement.app.knows_window:
+            return known
         fresh = [w for w in windows if w.address not in self.known_before and w.address not in self.claimed]
         return guess_window(placement.app.name, placement.app.command, fresh)
 
@@ -96,8 +103,9 @@ Announce = Callable[[list[str]], None]
 
 class StartApps:
     def __init__(self, desktop: Desktop, store: AppListStore, names: WindowNames, clock: Callable[[], float],
-                 wait: Callable[[float], None], announce: Announce, watch_seconds: float = WATCH_SECONDS):
+                 wait: Callable[[float], None], announce: Announce, home: str, watch_seconds: float = WATCH_SECONDS):
         self.desktop = desktop
+        self.home = home
         self.announce = announce
         self.names = names
         self.store = store
@@ -108,7 +116,7 @@ class StartApps:
     def run(self) -> Outcome:
         apps = self.store.load()
         windows = self.desktop.windows()
-        run = Run(self.desktop, self.names, apps, {w.address for w in windows})
+        run = Run(self.desktop, self.names, apps, {w.address for w in windows}, self.home)
         missing = run.place(apps.placements(), windows)
         already_open = list(run.found)
         if missing:

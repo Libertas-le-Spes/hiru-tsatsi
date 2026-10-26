@@ -43,6 +43,12 @@ class TalkingToHyprland(unittest.TestCase):
         self.assertIn('hl.dsp.exec_cmd("xdg-terminal-exec --app-id=hiru-tsatsi.2-0-helper -- sh -c ', hyprctl.calls[0][1])
         self.assertTrue(hyprctl.calls[0][1].endswith('{ workspace = "2 silent" })'))
 
+    def test_each_window_says_what_runs_inside_it(self):
+        hyprland = Hyprland(lambda arguments: json.dumps([{"address": "0xb", "class": "foot", "title": "t", "pid": 77,
+                                                            "workspace": {"id": 2}}]),
+                            front=lambda pid: ("helper", f"/home/sam/code-{pid}"))
+        self.assertEqual(hyprland.windows(), [Window("0xb", "foot", "t", 2, "helper", "/home/sam/code-77")])
+
     def test_unreadable_output_means_no_windows(self):
         self.assertEqual(Hyprland(lambda arguments: "not json").windows(), [])
 

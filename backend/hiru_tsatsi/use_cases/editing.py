@@ -7,9 +7,10 @@ from hiru_tsatsi.work_apps.windows import guess_window, name_for
 
 
 class EditAppList:
-    def __init__(self, store: AppListStore, desktop: Desktop):
+    def __init__(self, store: AppListStore, desktop: Desktop, home: str):
         self.store = store
         self.desktop = desktop
+        self.home = home
 
     def _change(self, change: Callable[[AppList], AppList]) -> AppList:
         changed = change(self.store.load())
@@ -46,5 +47,5 @@ class EditAppList:
 
     def _recognised(self, apps: AppList, name: str, command: str) -> str:
         windows = self.desktop.windows()
-        guessed = guess_window(name, command, unclaimed(apps, windows))
+        guessed = guess_window(name, command, unclaimed(apps, windows, self.home))
         return name_for(guessed, windows, command) if guessed else ""

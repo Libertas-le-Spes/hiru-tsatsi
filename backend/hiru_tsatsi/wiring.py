@@ -41,7 +41,8 @@ def open_app(desktop: Desktop | None = None, app_list: Path | None = None, earli
     names = NamesWhenWanted(titles, names or WindowNameFiles(locations.window_names_folder()))
     notifier = notifier or NotifySend()
     desktop = desktop or this_machine.desktop()
-    start = StartApps(desktop, store, names, time.monotonic, time.sleep, lambda apps: notifier.notify(*starting(apps)))
+    home = str(Path.home())
+    start = StartApps(desktop, store, names, time.monotonic, time.sleep, lambda apps: notifier.notify(*starting(apps)), home)
     setting_up = SetUpDesktop(set_up or this_machine.set_up(), str(locations.installed_command()))
-    return App(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop), Overview(store, desktop),
+    return App(start, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, home), Overview(store, desktop, home),
                titles, notifier)

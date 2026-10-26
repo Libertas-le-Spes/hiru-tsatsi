@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes import FakeClock, FakeDesktop, FakeNames, FakeStore, app_list, window
+from tests.fakes import HOME, FakeClock, FakeDesktop, FakeNames, FakeStore, app_list, window
 from hiru_tsatsi.use_cases.starting import OwnWindowStart, StartApps
 from hiru_tsatsi.work_apps.app_list import App
 
@@ -14,7 +14,7 @@ def start(desktop, apps, names=None, announced=None):
     store = FakeStore(apps)
     clock = FakeClock()
     announce = (announced if announced is not None else []).append
-    outcome = StartApps(desktop, store, names or FakeNames(), clock, clock.wait, announce).run()
+    outcome = StartApps(desktop, store, names or FakeNames(), clock, clock.wait, announce, HOME).run()
     return outcome, store, clock
 
 
@@ -117,6 +117,20 @@ class StartingAppsThatNeedATerminal(unittest.TestCase):
         desktop = FakeDesktop([], {CHAT.command: [handed_over]}, stopping={CHAT.command})
         outcome, _, _ = start(desktop, app_list((1, [CHAT])))
         self.assertEqual((desktop.in_terminal, outcome.started, outcome.unseen), ([], ["Chat"], []))
+
+    def test_a_session_opened_by_hand_in_the_right_folder_counts_as_open(self):
+        by_hand = window("h", "foot", "✳ Some talk", 4, "helper", "/home/sam/code")
+        desktop = FakeDesktop([by_hand])
+        outcome, store, _ = start(desktop, app_list((2, [HELPER])))
+        self.assertEqual((desktop.launched, desktop.in_terminal), ([], []))
+        self.assertEqual((outcome.already_open, desktop.moves), (["Helper"], [("h", 2)]))
+        self.assertEqual(store.apps.placements()[0].app.learned_window, "")
+
+    def test_a_terminal_app_finds_its_session_opened_by_hand(self):
+        known = App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", in_terminal=True)
+        desktop = FakeDesktop([window("h", "foot", "✳ Some talk", 2, "helper", "/home/sam/code")])
+        outcome, _, _ = start(desktop, app_list((2, [known])))
+        self.assertEqual((desktop.in_terminal, outcome.already_open), ([], ["Helper"]))
 
     def test_waits_ten_seconds_after_launching_before_deciding(self):
         class Stopped:

@@ -1,6 +1,6 @@
 import unittest
 
-from tests.fakes import FakeDesktop, FakeStore, app_list, window
+from tests.fakes import HOME, FakeDesktop, FakeStore, app_list, window
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.presenters.status_lines import status_line
@@ -15,7 +15,7 @@ GITLAB_WINDOW = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_123
 def editing(open_windows, apps):
     store = FakeStore(apps)
     desktop = FakeDesktop(open_windows)
-    return EditAppList(store, desktop), Overview(store, desktop), store
+    return EditAppList(store, desktop, HOME), Overview(store, desktop, HOME), store
 
 
 class AddingAnApp(unittest.TestCase):
@@ -48,6 +48,12 @@ class TheOverview(unittest.TestCase):
                                  "Recognised when it opens",
                                  "✓ harbour – x, open on workspace 4 (moved to 2 when you start)",
                                  "Will be recognised the first time Hiru Tsatsi starts it"])
+
+    def test_a_session_opened_by_hand_shows_as_open(self):
+        helper = App("Helper", "cd code && helper")
+        by_hand = window("h", "foot", "✳ Some talk", 2, "helper", "/home/sam/code")
+        _, overview, _ = editing([by_hand], app_list((2, [helper])))
+        self.assertEqual([status_line(view) for view in overview.run()[0].apps], ["✓ ✳ Some talk, open on workspace 2"])
 
     def test_an_app_that_opens_in_a_terminal_says_so(self):
         helper = App("Helper", "cd code && helper", "hiru-tsatsi.2-0-helper", in_terminal=True)

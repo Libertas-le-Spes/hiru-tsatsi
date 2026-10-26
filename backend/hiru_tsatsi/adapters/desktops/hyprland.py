@@ -3,6 +3,7 @@ import re
 import subprocess
 from typing import Callable, Mapping
 
+from hiru_tsatsi.adapters.front_process import FrontProcess
 from hiru_tsatsi.adapters.tagged_launch import TaggedLaunch
 from hiru_tsatsi.adapters.terminal import in_terminal
 from hiru_tsatsi.work_apps.windows import Window
@@ -21,15 +22,12 @@ def lua_string(text: str) -> str:
     return '"' + CONTROL_CHARACTER.sub(lambda found: f"\\{ord(found.group()):03d}", quoted) + '"'
 
 
-def _window(client: dict) -> Window:
-    return Window(str(client.get("address", "")), str(client.get("class", "")), str(client.get("title", "")),
-                  int((client.get("workspace") or {}).get("id", 0)))
-
-
 class Hyprland:
-    def __init__(self, run: Run = run_hyprctl, tag: Callable[[], TaggedLaunch] = TaggedLaunch):
+    def __init__(self, run: Run = run_hyprctl, tag: Callable[[], TaggedLaunch] = TaggedLaunch,
+                 front: Callable[[int], tuple[str, str]] = FrontProcess().of_window):
         self.run = run
         self.tag = tag
+        self.front = front
 
     @classmethod
     def found(cls, env: Mapping[str, str]) -> "Hyprland | None":
@@ -40,7 +38,12 @@ class Hyprland:
             clients = json.loads(self.run(["clients", "-j"]) or "[]")
         except json.JSONDecodeError:
             return []
-        return [_window(client) for client in clients if isinstance(client, dict)]
+        return [self._window(client) for client in clients if isinstance(client, dict)]
+
+    def _window(self, client: dict) -> Window:
+        program, folder = self.front(int(client.get("pid") or 0))
+        return Window(str(client.get("address", "")), str(client.get("class", "")), str(client.get("title", "")),
+                      int((client.get("workspace") or {}).get("id", 0)), program, folder)
 
     def launch(self, command: str, workspace: int) -> TaggedLaunch:
         launched = self.tag()
