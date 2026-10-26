@@ -4,7 +4,8 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
 command_path="$bin_dir/hiru-tsatsi"
-short_path="$bin_dir/hiru"
+short_path="$bin_dir/tsatsi"
+retired_path="$bin_dir/hiru"
 
 say() {
     printf '%s\n' "$1"
@@ -31,6 +32,12 @@ refuse_to_replace_another_tool() {
     done
 }
 
+retire_the_old_short_name() {
+    case "$(readlink "$retired_path" || true)" in
+        */backend/bin/hiru-tsatsi) rm "$retired_path" && say "removed:  $retired_path, the old short name; type 'tsatsi' now" ;;
+    esac
+}
+
 link_command() {
     mkdir -p "$bin_dir"
     ln -sfn "$here/backend/bin/hiru-tsatsi" "$command_path"
@@ -38,7 +45,7 @@ link_command() {
     say "command:  $command_path, and $short_path for short"
     case ":$PATH:" in
         *":$bin_dir:"*) ;;
-        *) say "          $bin_dir is not on your PATH; add it to type 'hiru' anywhere" ;;
+        *) say "          $bin_dir is not on your PATH; add it to type 'tsatsi' anywhere" ;;
     esac
 }
 
@@ -48,6 +55,7 @@ mention_missing_tools() {
 
 require_python
 refuse_to_replace_another_tool
+retire_the_old_short_name
 link_command
 "$command_path" set-up
 mention_missing_tools
