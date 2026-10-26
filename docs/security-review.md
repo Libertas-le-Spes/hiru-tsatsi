@@ -27,19 +27,27 @@ On a machine with one person and no services running under other accounts, the H
 nobody to exploit it. On a shared machine, or one running containers or services under their own
 accounts, it is a real path to the owner's session.
 
+## Status
+
+Every finding below is dealt with on the branch `security-review-hiru`. The owner chose option A
+for H1: the editing page is gone, so Hiru Tsatsi no longer listens for connections at all, and a
+test fails if any module imports a web server, a socket or a browser opener. That also removes M2
+and L2, which were about the same page. Each other finding was fixed as its section proposes and
+sealed by the test it names. The line numbers below describe commit `8372a7c`, before the fixes.
+
 ## Findings
 
-| Id | Severity | Title | Location |
-|---|---|---|---|
-| H1 | High | The editing page gives its key to anyone who asks, so any local account can add and start commands as the owner | `backend/hiru_tsatsi/entrypoints/web/server.py:65-67, 87-94`; `backend/page/index.html:6` |
-| M1 | Medium | `hiru` runs Python files from whichever folder it is started in | `backend/bin/hiru-tsatsi:2` |
-| M2 | Medium | `hiru edit` sends the browser to whatever program already holds port 47640 | `backend/hiru_tsatsi/entrypoints/web/server.py:15, 55-59` |
-| L1 | Low | The bar panel renders window titles as rich text, so any web page's title can make the bar fetch a URL | `Panel.qml:304-306` (and every other bare `Text`) |
-| L2 | Low | The editing page can be framed by another site (no framing or content-security headers) | `backend/hiru_tsatsi/entrypoints/web/server.py:137-143` |
-| L3 | Low | `set-up` rewrites the main Hyprland config in place, so a crash mid-write can empty it | `backend/hiru_tsatsi/adapters/desktops/hyprland_set_up.py:41, 54-58` |
-| I1 | Info | The command path written into the Hyprland config is not shell-quoted, and newlines are not escaped for Lua | `backend/hiru_tsatsi/adapters/desktops/hyprland_set_up.py:49-52`; `hyprland.py:15-16` |
-| I2 | Info | `install.sh` silently replaces any existing `hiru` in `~/.local/bin` | `install.sh:25-26` |
-| I3 | Info | App commands are visible to every account in the process list while they launch | `backend/hiru_tsatsi/adapters/desktops/hyprland.py:40` |
+| Id | Severity | Title | Location | Status |
+|---|---|---|---|---|
+| H1 | High | The editing page gives its key to anyone who asks, so any local account can add and start commands as the owner | `backend/hiru_tsatsi/entrypoints/web/server.py:65-67, 87-94`; `backend/page/index.html:6` | Fixed: page removed (option A) |
+| M1 | Medium | `hiru` runs Python files from whichever folder it is started in | `backend/bin/hiru-tsatsi:2` | Fixed: `-P`, Python 3.11 |
+| M2 | Medium | `hiru edit` sends the browser to whatever program already holds port 47640 | `backend/hiru_tsatsi/entrypoints/web/server.py:15, 55-59` | Fixed: page removed |
+| L1 | Low | The bar panel renders window titles as rich text, so any web page's title can make the bar fetch a URL | `Panel.qml:304-306` (and every other bare `Text`) | Fixed: every `Text` plain |
+| L2 | Low | The editing page can be framed by another site (no framing or content-security headers) | `backend/hiru_tsatsi/entrypoints/web/server.py:137-143` | Fixed: page removed |
+| L3 | Low | `set-up` rewrites the main Hyprland config in place, so a crash mid-write can empty it | `backend/hiru_tsatsi/adapters/desktops/hyprland_set_up.py:41, 54-58` | Fixed: one atomic writer |
+| I1 | Info | The command path written into the Hyprland config is not shell-quoted, and newlines are not escaped for Lua | `backend/hiru_tsatsi/adapters/desktops/hyprland_set_up.py:49-52`; `hyprland.py:15-16` | Fixed |
+| I2 | Info | `install.sh` silently replaces any existing `hiru` in `~/.local/bin` | `install.sh:25-26` | Fixed |
+| I3 | Info | App commands are visible to every account in the process list while they launch | `backend/hiru_tsatsi/adapters/desktops/hyprland.py:40` | README says so |
 
 All examples and outputs below use made-up apps, names and folders.
 
