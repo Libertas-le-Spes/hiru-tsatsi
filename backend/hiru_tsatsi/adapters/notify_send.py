@@ -8,6 +8,18 @@ WAIT_FOR_SERVICE_SECONDS = 60
 RETRY_SECONDS = 2
 
 
+def _question(summary: str, body: str, action: str, *asking_for: str) -> list[str]:
+    return ["notify-send", "-a", APP_NAME, "--urgency=critical", *asking_for, f"--action=default={action}",
+            f"--action=start={action}", summary, body]
+
+
+def _line(printed: str, number: int) -> str:
+    lines = printed.splitlines()
+    if len(lines) <= number:
+        return ""
+    return lines[number].strip()
+
+
 def _close(shown: str) -> None:
     if not shown.isdigit() or not shutil.which("gdbus"):
         return
@@ -25,8 +37,7 @@ class NotifySend:
     def ask(self, summary: str, body: str, action: str) -> bool:
         if not shutil.which("notify-send"):
             return False
-        question = ["notify-send", "-a", APP_NAME, "--urgency=critical", f"--action=default={action}",
-                    f"--action=start={action}", summary, body]
+        question = _question(summary, body, action)
         deadline = time.monotonic() + WAIT_FOR_SERVICE_SECONDS
         answered = subprocess.run(question, capture_output=True, text=True, check=False)
         while answered.returncode != 0 and time.monotonic() < deadline:
@@ -37,15 +48,12 @@ class NotifySend:
     def ask_within(self, summary: str, body: str, action: str, seconds: float) -> bool:
         if not shutil.which("notify-send"):
             return False
-        question = ["notify-send", "-a", APP_NAME, "--urgency=critical", "--print-id", f"--action=default={action}",
-                    f"--action=start={action}", summary, body]
-        asking = subprocess.Popen(question, stdout=subprocess.PIPE, text=True)
-        shown = asking.stdout.readline().strip()
+        asking = subprocess.Popen(_question(summary, body, action, "--print-id"), stdout=subprocess.PIPE, text=True)
         try:
-            answered, _ = asking.communicate(timeout=seconds)
+            printed, _ = asking.communicate(timeout=seconds)
         except subprocess.TimeoutExpired:
             asking.kill()
-            asking.wait()
-            _close(shown)
+            printed, _ = asking.communicate()
+            _close(_line(printed, 0))
             return False
-        return answered.strip() in ANSWERS
+        return _line(printed, 1) in ANSWERS

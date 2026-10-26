@@ -1,4 +1,5 @@
 import posixpath
+import re
 import shlex
 from dataclasses import dataclass, replace
 from typing import Callable
@@ -12,7 +13,7 @@ RUNS_ANOTHER_PROGRAM = {"env", "exec", "nohup", "setsid", "sudo", "doas", "pkexe
                         "ionice", "chrt", "taskset", "time", "timeout", "stdbuf", "uwsm", "uwsm-app", "systemd-run",
                         "flatpak", "npx", "pnpx", "bunx", "xargs"}
 EXPANDED_BY_THE_SHELL = ("$", "`")
-SETS_A_VARIABLE = "="
+PLAIN_PROGRAM = re.compile(r"[A-Za-z0-9_./+@:,-]+")
 
 
 def _words(command: str) -> list[str]:
@@ -65,7 +66,7 @@ class ProgramInFolder:
         folder = words[1]
         program_word = words[3]
         program = posixpath.basename(program_word)
-        if not _folder_is_plain(folder) or SETS_A_VARIABLE in program_word:
+        if not _folder_is_plain(folder) or not PLAIN_PROGRAM.fullmatch(program_word):
             return None
         if program in RUNS_ANOTHER_PROGRAM or program in SHELLS:
             return None

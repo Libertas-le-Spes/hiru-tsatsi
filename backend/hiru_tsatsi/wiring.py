@@ -19,6 +19,7 @@ from hiru_tsatsi.adapters.tagged_launch import TaggedLaunches
 from hiru_tsatsi.adapters.terminal import XdgTerminal
 from hiru_tsatsi.presenters.starting_notice import StartingNotice
 from hiru_tsatsi.use_cases.asking import AskToStart
+from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.editing import EditAppList
 from hiru_tsatsi.use_cases.installing import LinkCommands
 from hiru_tsatsi.use_cases.launching import Launcher
@@ -52,7 +53,9 @@ def open_services() -> Services:
     one_at_a_time = StartLock(locations.start_lock_file(), os.getuid())
     start = StartApps(desktop, launcher, store, names, StartingNotice(notifier), recognising, watching, clock,
                       one_at_a_time)
-    offer = OfferTerminals(notifier, store, TryingTerminals(desktop, names, launcher, recognising, watching, clock))
+    confirming = ConfirmingTerminals(desktop, clock, recognising, WATCH_SECONDS)
+    trying = TryingTerminals(desktop, names, launcher, recognising, watching, confirming, clock)
+    offer = OfferTerminals(notifier, store, trying, one_at_a_time)
     setting_up = SetUpDesktop(this_machine.set_up(locations.config_home(), disk), str(locations.installed_command()))
     return Services(start, offer, AskToStart(notifier, start), setting_up, EditAppList(store, desktop, recognising),
                     Overview(store, desktop, recognising), titles, notifier)

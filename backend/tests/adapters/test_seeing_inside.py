@@ -25,13 +25,13 @@ class LookingInsideWindows(unittest.TestCase):
 
     def test_windows_that_share_one_program_say_nothing_rather_than_guess(self):
         shared = [Window("0xa", "kitty", "a", 1, pid=77), Window("0xb", "kitty", "b", 2, pid=77)]
-        what_runs = Mock(side_effect=helper_in_code)
+        what_runs = create_autospec(helper_in_code, side_effect=helper_in_code)
         for seen in SeeingInside(desktop_with(shared), what_runs).windows():
             self.assertEqual((seen.program, seen.folder), ("", ""))
         what_runs.assert_not_called()
 
     def test_a_window_without_a_known_program_says_nothing(self):
-        what_runs = Mock(side_effect=helper_in_code)
+        what_runs = create_autospec(helper_in_code, side_effect=helper_in_code)
         seen = SeeingInside(desktop_with([Window("0xc", "steam", "Steam", 6, pid=0)]), what_runs).windows()[0]
         self.assertEqual((seen.program, seen.folder), ("", ""))
         what_runs.assert_not_called()

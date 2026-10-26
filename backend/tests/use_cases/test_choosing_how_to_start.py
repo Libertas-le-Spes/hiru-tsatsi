@@ -30,6 +30,9 @@ class ChoosingHowToStartAnApp(unittest.TestCase):
     def test_a_folder_and_program_command_whose_terminal_was_ruled_out_starts_with_its_own_window(self):
         self.assertIs(kind_for(App("Helper", "cd code && helper", terminal_ruled_out=True)), OwnWindowStart)
 
+    def test_an_app_known_to_need_a_terminal_is_never_also_watched(self):
+        self.assertFalse(WatchedStart.fits(KNOWN_HELPER, RECOGNISING))
+
     def test_any_other_command_starts_with_its_own_window(self):
         self.assertIs(kind_for(MAIN), OwnWindowStart)
 

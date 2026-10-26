@@ -27,7 +27,9 @@ class ReadingWhatACommandRunsAndWhere(unittest.TestCase):
                     "cd code; exec helper", "cd code && nohup helper", "cd code && sudo helper",
                     "cd code && bash", "cd code && sh run.sh", "cd code && A=1 helper",
                     "cd code && npx helper", "cd code && systemd-run --user helper", "cd code && timeout 9 helper",
-                    "cd code && uwsm app -- helper", "cd code && flatpak run org.example.Helper"]
+                    "cd code && uwsm app -- helper", "cd code && flatpak run org.example.Helper",
+                    "cd code && $EDITOR", "cd code && `which helper`", "cd code && ( helper )",
+                    "cd code && { helper; }", "cd code && *", "cd code && help*"]
         for command in commands:
             with self.subTest(command=command):
                 self.assertIsNone(ProgramInFolder.of(command, HOME))
