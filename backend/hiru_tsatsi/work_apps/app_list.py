@@ -87,6 +87,10 @@ class AppList:
         current = self.placement(placement.workspace, placement.index)
         return self._with_app_at(current, as_terminal_app(current.app))
 
+    def with_terminal_ruled_out(self, placement: Placement) -> "AppList":
+        current = self.placement(placement.workspace, placement.index)
+        return self._with_app_at(current, current.app.never_in_terminal())
+
     def _refuse_taken_number(self, number: int) -> None:
         if number < 1 or self.has_workspace(number):
             raise NumberTaken(number)

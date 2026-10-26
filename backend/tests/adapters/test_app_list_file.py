@@ -72,6 +72,12 @@ class TheSavedFormat(unittest.TestCase):
         saved = AppList((Workspace(4, "Comms", (App("Chat", "chat-app", "chrome-chat"),)),))
         self.assertEqual(from_saved(to_saved(saved)), saved)
 
+    def test_an_app_that_opens_in_a_terminal_or_never_does_comes_back_unchanged(self):
+        apps = (App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True),
+                App("Editor", "cd code && editor .", terminal_ruled_out=True))
+        saved = AppList((Workspace(2, "Code", apps),))
+        self.assertEqual(from_saved(to_saved(saved)), saved)
+
 
 class AListThatCannotBeRead(unittest.TestCase):
     def test_a_list_with_a_stray_comma_is_refused_and_nothing_is_written(self):

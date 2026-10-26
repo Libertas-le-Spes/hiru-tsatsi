@@ -5,8 +5,10 @@ from tests.examples.home import RECOGNISING
 from tests.use_cases.mocked_list import store_holding
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.outcome import Outcome
-from hiru_tsatsi.use_cases.ports import Announcer, Launch, Launches, Terminal, WindowNames
+from hiru_tsatsi.use_cases.offering_terminals import OfferingTerminals
+from hiru_tsatsi.use_cases.ports import Announcer, Launch, Launches, Notifier, Terminal, WindowNames
 from hiru_tsatsi.use_cases.starting import StartApps
+from hiru_tsatsi.use_cases.watching_starts import WATCH_SECONDS, WatchingStarts
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.terminal_window import terminal_window_name
@@ -36,7 +38,7 @@ def appearing_once_launched(desktop: Mock, before: list[Window], after: list[Win
 
 
 class Start:
-    def __init__(self, desktop: Mock, apps: AppList, stops: bool = False):
+    def __init__(self, desktop: Mock, apps: AppList, stops: bool = False, answers_yes: bool = False):
         self.desktop = desktop
         self.launch = create_autospec(Launch, instance=True)
         self.launch.wrapped.side_effect = watched
@@ -48,12 +50,16 @@ class Start:
         self.store = store_holding(apps)
         self.names = create_autospec(WindowNames, instance=True)
         self.announcer = create_autospec(Announcer, instance=True)
+        self.notifier = create_autospec(Notifier, instance=True)
+        self.notifier.ask.return_value = answers_yes
         self.clock = TickingClock()
 
     def run(self) -> Outcome:
         launcher = Launcher(self.desktop, self.launches, self.terminal)
-        return StartApps(self.desktop, launcher, self.store, self.names, self.clock, self.clock.wait,
-                         self.announcer, RECOGNISING).run()
+        watching = WatchingStarts(self.desktop, self.clock, self.clock.wait, WATCH_SECONDS)
+        offering = OfferingTerminals(self.notifier, launcher, watching)
+        return StartApps(self.desktop, launcher, self.store, self.names, self.announcer, RECOGNISING, watching,
+                         offering).run()
 
     def window_appearing_after(self, seconds: float, window: Window) -> None:
         def windows() -> list[Window]:

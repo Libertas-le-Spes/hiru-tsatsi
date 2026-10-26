@@ -79,6 +79,16 @@ class OpeningInATerminal(unittest.TestCase):
         app = app.placement(2, 0).app
         self.assertEqual((app.opens_in_terminal, app.learned_window), (False, ""))
 
+    def test_a_terminal_ruled_out_stays_ruled_out_when_its_window_is_learned(self):
+        apps = self.apps.with_terminal_ruled_out(self.apps.placement(2, 0))
+        app = apps.with_learned_window(apps.placement(2, 0), "helper").placement(2, 0).app
+        self.assertTrue(app.terminal_ruled_out)
+
+    def test_a_new_command_may_be_offered_a_terminal_again(self):
+        apps = self.apps.with_terminal_ruled_out(self.apps.placement(2, 0))
+        app = apps.with_app_changed(2, 0, "Main Helper!", "cd code && other-helper").placement(2, 0).app
+        self.assertFalse(app.terminal_ruled_out)
+
     def test_a_rename_keeps_the_terminal_and_its_window(self):
         app = self.in_a_terminal().with_app_changed(2, 0, "Helper", "cd code && helper").placement(2, 0).app
         self.assertEqual((app.opens_in_terminal, app.learned_window), (True, terminal_window_name(self.app)))

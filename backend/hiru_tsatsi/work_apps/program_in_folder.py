@@ -7,8 +7,11 @@ from hiru_tsatsi.work_apps.windows import Window
 
 THEN = {"&&", ";"}
 LINUX_KEEPS_OF_A_PROGRAM_NAME = 15
-RUNS_ANOTHER_PROGRAM = {"env", "exec", "nohup", "setsid", "sudo", "doas", "command", "nice", "time", "uwsm-app"}
+RUNS_ANOTHER_PROGRAM = {"env", "exec", "nohup", "setsid", "sudo", "doas", "pkexec", "command", "builtin", "nice",
+                        "ionice", "chrt", "taskset", "time", "timeout", "stdbuf", "uwsm", "uwsm-app", "systemd-run",
+                        "flatpak", "npx", "pnpx", "bunx", "xargs"}
 EXPANDED_BY_THE_SHELL = ("$", "`")
+SETS_A_VARIABLE = "="
 
 
 def _words(command: str) -> list[str]:
@@ -53,8 +56,11 @@ class ProgramInFolder:
         if not _goes_to_a_folder_first(words):
             return None
         folder = words[1]
-        program = posixpath.basename(words[3])
-        if not _folder_is_plain(folder) or program in RUNS_ANOTHER_PROGRAM or program in SHELLS:
+        program_word = words[3]
+        program = posixpath.basename(program_word)
+        if not _folder_is_plain(folder) or SETS_A_VARIABLE in program_word:
+            return None
+        if program in RUNS_ANOTHER_PROGRAM or program in SHELLS:
             return None
         return cls(program, _full_folder(folder, home))
 

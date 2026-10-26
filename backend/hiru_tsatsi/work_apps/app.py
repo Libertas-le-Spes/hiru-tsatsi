@@ -9,6 +9,7 @@ class App:
     command: str
     learned_window: str = ""
     opens_in_terminal: bool = False
+    terminal_ruled_out: bool = False
 
     @property
     def knows_window(self) -> bool:
@@ -21,10 +22,13 @@ class App:
         changed = replace(self, name=name, command=command).checked()
         if changed.command == self.command:
             return changed
-        return changed.knowing_window("")
+        return App(changed.name, changed.command)
 
     def knowing_window(self, window: str) -> "App":
         return replace(self, learned_window=window, opens_in_terminal=False)
 
     def opening_in_terminal(self, window: str) -> "App":
         return replace(self, learned_window=window, opens_in_terminal=True)
+
+    def never_in_terminal(self) -> "App":
+        return replace(self, terminal_ruled_out=True)

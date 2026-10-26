@@ -10,6 +10,7 @@ class Running:
     folder: str = "/home/sam"
     children: list[int] = field(default_factory=list)
     front: int = 0
+    group: int = 0
     environment: list[str] | None = field(default_factory=list)
     started: float = 100.0
 
@@ -36,6 +37,9 @@ class Table:
     def foreground_group(self, pid: int) -> int:
         return self.of(pid).front
 
+    def process_group(self, pid: int) -> int:
+        return self.of(pid).group
+
     def environment(self, pid: int) -> list[str] | None:
         return self.of(pid).environment
 
@@ -52,6 +56,7 @@ def processes_running(running: dict[int, Running]) -> Mock:
     processes.folder.side_effect = table.folder
     processes.children.side_effect = table.children
     processes.foreground_group.side_effect = table.foreground_group
+    processes.process_group.side_effect = table.process_group
     processes.environment.side_effect = table.environment
     processes.started.side_effect = table.started
     return processes

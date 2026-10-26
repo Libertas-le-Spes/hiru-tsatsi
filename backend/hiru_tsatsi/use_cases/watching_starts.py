@@ -8,6 +8,14 @@ from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.windows import Window
 
 POLL_SECONDS = 0.5
+WATCH_SECONDS = 60.0
+
+
+def _waiting_for_a_window(starts: list[AppStart]) -> bool:
+    for start in starts:
+        if start.waits_for_window:
+            return True
+    return False
 
 
 def _placements(starts: list[AppStart]) -> list[Placement]:
@@ -26,16 +34,19 @@ class WatchingStarts:
         self.watch_seconds = watch_seconds
 
     def until_placed(self, placing: PlacingWindows, confirming: ConfirmingTerminals,
-                     starts: list[AppStart]) -> list[Placement]:
+                     starts: list[AppStart]) -> list[AppStart]:
         deadline = self.clock() + self.watch_seconds
         awaiting = starts
-        while (awaiting or confirming.waiting) and self.clock() < deadline:
+        while (_waiting_for_a_window(awaiting) or confirming.waiting) and self.clock() < deadline:
             self.wait(POLL_SECONDS)
             windows = self.desktop.windows()
             awaiting = self._still_without_window(placing, confirming, awaiting, windows)
             self._remember_confirmed_terminals(placing, confirming, windows)
             awaiting = self._moved_on(awaiting)
-        return _placements(awaiting)
+        return awaiting
+
+    def now(self) -> float:
+        return self.clock()
 
     @staticmethod
     def _still_without_window(placing: PlacingWindows, confirming: ConfirmingTerminals, starts: list[AppStart],

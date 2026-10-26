@@ -1,11 +1,10 @@
-from typing import Callable
-
-from hiru_tsatsi.use_cases import app_starts
+from hiru_tsatsi.use_cases import choosing_how_to_start
 from hiru_tsatsi.use_cases.app_start import AppStart
 from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.failures import ChangedMeanwhile
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.learned_during_start import applied_to, learned_between
+from hiru_tsatsi.use_cases.offering_terminals import OfferingTerminals
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
 from hiru_tsatsi.use_cases.ports import Announcer, AppListStore, Desktop, WindowNames
@@ -14,8 +13,6 @@ from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.windows import Window
-
-WATCH_SECONDS = 60.0
 
 
 def _names(placements: list[Placement]) -> list[str]:
@@ -32,18 +29,34 @@ def _addresses(windows: list[Window]) -> set[str]:
     return addresses
 
 
+def _stopped(starts: list[AppStart]) -> list[Placement]:
+    stopped = []
+    for start in starts:
+        if not start.waits_for_window:
+            stopped.append(start.placement)
+    return stopped
+
+
+def _still_awaited(starts: list[AppStart]) -> list[Placement]:
+    awaited = []
+    for start in starts:
+        if start.waits_for_window:
+            awaited.append(start.placement)
+    return awaited
+
+
 class StartApps:
     def __init__(self, desktop: Desktop, launcher: Launcher, store: AppListStore, names: WindowNames,
-                 clock: Callable[[], float], wait: Callable[[float], None], announcer: Announcer,
-                 recognising: Recognising, watch_seconds: float = WATCH_SECONDS):
+                 announcer: Announcer, recognising: Recognising, watching: WatchingStarts,
+                 offering: OfferingTerminals):
         self.desktop = desktop
         self.launcher = launcher
         self.store = store
         self.names = names
-        self.clock = clock
         self.announcer = announcer
         self.recognising = recognising
-        self.watching = WatchingStarts(self.desktop, clock, wait, watch_seconds)
+        self.watching = watching
+        self.offering = offering
 
     def run(self) -> Outcome:
         apps = self.store.load()
@@ -53,7 +66,8 @@ class StartApps:
         already_open = list(placing.found)
         self._announce(missing)
         confirming = ConfirmingTerminals(self.recognising)
-        unseen = self.watching.until_placed(placing, confirming, self._begin_all(missing))
+        left = self.watching.until_placed(placing, confirming, self._begin_all(missing))
+        unseen = _still_awaited(left) + self.offering.offer(placing, confirming, _stopped(left))
         self._save_what_was_learned(apps, placing.apps)
         return Outcome(already_open=_names(already_open), started=_names(missing), moved=_names(placing.moved),
                        unseen=_names(unseen), now_opens_in_terminal=_names(confirming.confirmed))
@@ -65,7 +79,7 @@ class StartApps:
     def _begin_all(self, missing: list[Placement]) -> list[AppStart]:
         starts = []
         for placement in missing:
-            starts.append(app_starts.begin(self.launcher, placement, self.clock(), self.recognising))
+            starts.append(choosing_how_to_start.begin(self.launcher, placement, self.watching.now(), self.recognising))
         return starts
 
     def _save_what_was_learned(self, before: AppList, after: AppList) -> None:

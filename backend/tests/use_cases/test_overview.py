@@ -40,6 +40,16 @@ class TheOverview(unittest.TestCase):
             addresses.append(candidate.address)
         self.assertEqual(addresses, ["g", "t"])
 
+    def test_the_windows_to_choose_from_leave_out_its_program_running_in_another_folder(self):
+        here = window("h", "foot", "~", 2, "helper", "/home/sam/code")
+        elsewhere = window("e", "foot", "~", 2, "helper", "/home/sam/other")
+        apps = app_list((2, [App("Helper", "cd code && helper")]))
+        overview = Overview(store_holding(apps), desktop_showing([elsewhere, here]), RECOGNISING)
+        addresses = []
+        for candidate in overview.candidates(2, 0):
+            addresses.append(candidate.address)
+        self.assertEqual(addresses, ["h"])
+
     def test_a_session_opened_by_hand_is_that_apps_window(self):
         by_hand = window("h", "foot", "✳ Some talk", 2, "helper", "/home/sam/code")
         self.assertEqual(windows_given([by_hand], app_list((2, [App("Helper", "cd code && helper")]))), ["h"])

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call
+from unittest.mock import Mock, call
 
 from tests.examples.app_lists import app_list
 from tests.examples.windows import window
@@ -102,8 +102,12 @@ class StartingWorkApps(unittest.TestCase):
     def test_says_which_apps_are_starting_before_launching_them(self):
         start = Start(desktop_showing([window("c", "chrome-chat.google.com-Default", "Chat", 1)]),
                       app_list((1, [CHAT]), (2, [MAIN, STEAM])))
+        in_order = Mock()
+        in_order.attach_mock(start.announcer.announce, "announce")
+        in_order.attach_mock(start.desktop.launch, "launch")
         start.run()
-        start.announcer.announce.assert_called_once_with(["Rider Main", "Steam"])
+        self.assertEqual(in_order.mock_calls[0], call.announce(["Rider Main", "Steam"]))
+        self.assertEqual(len(in_order.mock_calls), 3)
 
     def test_says_nothing_up_front_when_every_app_is_already_open(self):
         start = Start(desktop_showing([window("c", "chrome-chat.google.com-Default", "Chat", 1)]), app_list((1, [CHAT])))

@@ -10,6 +10,7 @@ from hiru_tsatsi.work_apps.windows import Window
 @dataclass(frozen=True)
 class OwnWindowStart:
     placement: Placement
+    waits_for_window = True
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "OwnWindowStart":

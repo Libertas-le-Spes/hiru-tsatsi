@@ -16,6 +16,12 @@ class ConfirmingTerminals:
     def waiting(self) -> bool:
         return len(self.on_trial) > 0
 
+    def unconfirmed(self) -> list[Placement]:
+        placements = []
+        for placement, _ in self.on_trial:
+            placements.append(placement)
+        return placements
+
     def newly_confirmed(self, windows: list[Window]) -> list[Placement]:
         confirmed_now = []
         still_on_trial = []
