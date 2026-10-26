@@ -50,12 +50,12 @@ class AskingWithADeadline(unittest.TestCase):
 
     def test_without_notify_send_nothing_is_asked_and_there_is_no_answer(self):
         self.which.return_value = None
-        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_SHOWN)
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_ANSWERED)
         self.popen.assert_not_called()
 
     def test_a_question_no_service_could_show_has_no_answer(self):
         self.popen.return_value = asking_that_prints("", exit_code=1)
-        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_SHOWN)
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_ANSWERED)
 
     def test_a_click_landing_at_the_deadline_still_counts(self):
         asking = asking_that_prints("42\n")
@@ -64,11 +64,11 @@ class AskingWithADeadline(unittest.TestCase):
         self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.YES)
         self.run.assert_not_called()
 
-    def test_no_answer_in_time_is_a_no_and_the_question_is_taken_off_the_screen(self):
+    def test_no_answer_in_time_is_no_answer_and_the_question_is_taken_off_the_screen(self):
         asking = asking_that_prints("42\n")
         asking.communicate.side_effect = [subprocess.TimeoutExpired("notify-send", 60), ("42\n", None)]
         self.popen.return_value = asking
-        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NO)
+        self.assertEqual(NotifySend().ask_within("Open Helper?", "Why", "Open", 60), Answer.NOT_ANSWERED)
         asking.kill.assert_called_once_with()
         self.run.assert_called_once_with(CLOSING, capture_output=True, check=False)
 

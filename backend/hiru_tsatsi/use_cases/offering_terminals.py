@@ -11,7 +11,7 @@ from hiru_tsatsi.work_apps.placement import Placement, names_of
 
 QUESTION_SECONDS = 60.0
 EXPLANATION = ("It stopped without opening a window. Some apps only run inside a terminal. "
-               "Without a click within a minute it is left as it is, and you won't be asked again.")
+               "Close this to never be asked again; leave it, and you'll be asked next time.")
 ACTION = "Open in a terminal"
 
 
@@ -55,12 +55,15 @@ class OfferTerminals:
         if not self.one_at_a_time.claimed():
             raise AlreadyStarting()
         found_late = []
-        answers = {Answer.YES: [], Answer.NO: [], Answer.NOT_SHOWN: []}
+        taken = set(handover.taken)
+        answers = {Answer.YES: [], Answer.NO: [], Answer.NOT_ANSWERED: []}
         for placement in _still_there(self.store.load(), handover.stopped):
-            if self.late.placed(placement, handover.known_before):
-                found_late.append(placement)
-            else:
+            late_window = self.late.placed(placement, handover.known_before, taken)
+            if late_window is None:
                 answers[self._asked(placement)].append(placement)
+            else:
+                taken.add(late_window.address)
+                found_late.append(placement)
         return self._settled(answers[Answer.YES], answers[Answer.NO], found_late)
 
     def _asked(self, placement: Placement) -> Answer:

@@ -61,7 +61,7 @@ class SettingsStore(Protocol):
 class Answer(Enum):
     YES = "yes"
     NO = "no"
-    NOT_SHOWN = "not shown"
+    NOT_ANSWERED = "not answered"
 
 
 class Notifier(Protocol):

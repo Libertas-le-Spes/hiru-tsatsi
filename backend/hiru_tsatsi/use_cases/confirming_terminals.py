@@ -7,7 +7,6 @@ from hiru_tsatsi.work_apps.recognising import Recognising
 from hiru_tsatsi.work_apps.windows import Window
 
 
-
 @dataclass(frozen=True)
 class Trial:
     placement: Placement

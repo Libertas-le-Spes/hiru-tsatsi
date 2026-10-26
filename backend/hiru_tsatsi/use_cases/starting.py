@@ -34,7 +34,7 @@ class StartApps:
         apps = self.store.load()
         windows = self.desktop.windows()
         learned = LearnedApps(apps)
-        placing = PlacingWindows(self.desktop, self.names, learned, addresses_of(windows), self.recognising)
+        placing = PlacingWindows(self.desktop, self.names, learned, addresses_of(windows), self.recognising, set())
         missing = placing.place(apps.placements(), windows)
         already_open = list(placing.found)
         self._announce(missing)
@@ -44,7 +44,7 @@ class StartApps:
         return Outcome(already_open=names_of(already_open), started=names_of(missing), moved=names_of(placing.moved),
                        unseen=names_of(placements_of(still_waiting(left))),
                        stopped_without_window=names_of(stopped),
-                       for_the_offer=Handover(stopped, addresses_of(windows)))
+                       for_the_offer=Handover(stopped, addresses_of(windows), set(placing.claimed)))
 
     def _announce(self, missing: list[Placement]) -> None:
         if missing:

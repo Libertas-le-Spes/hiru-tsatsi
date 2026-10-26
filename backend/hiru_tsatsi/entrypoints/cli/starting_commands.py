@@ -1,4 +1,5 @@
 import argparse
+from typing import Callable
 
 from hiru_tsatsi.presenters import start_report, terminal_offer_report
 from hiru_tsatsi.use_cases.failures import StartRefused
@@ -22,25 +23,20 @@ def _report_and_offer(services: Services, outcome: Outcome) -> int:
     return 0
 
 
-def _refused_on_screen(services: Services, refused: StartRefused) -> None:
-    services.notifier.notify(NOT_STARTED, refused.explained())
+def _outcome_of(services: Services, starting: Callable[[], Outcome | None]) -> Outcome | None:
+    try:
+        return starting()
+    except StartRefused as refused:
+        services.notifier.notify(NOT_STARTED, refused.explained())
+        raise
 
 
 def start(services: Services, chosen: argparse.Namespace) -> int:
-    try:
-        outcome = services.start.run()
-    except StartRefused as refused:
-        _refused_on_screen(services, refused)
-        raise
-    return _report_and_offer(services, outcome)
+    return _report_and_offer(services, _outcome_of(services, services.start.run))
 
 
 def ask(services: Services, chosen: argparse.Namespace) -> int:
-    try:
-        outcome = services.ask.run()
-    except StartRefused as refused:
-        _refused_on_screen(services, refused)
-        raise
+    outcome = _outcome_of(services, services.ask.run)
     if outcome is None:
         return 0
     return _report_and_offer(services, outcome)

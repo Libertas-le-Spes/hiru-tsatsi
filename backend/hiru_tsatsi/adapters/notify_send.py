@@ -29,10 +29,10 @@ def _answer(printed: str) -> Answer:
 
 
 def _answer_at_the_deadline(printed: str) -> Answer:
-    answer = _answer(printed)
-    if answer == Answer.NO:
-        _close(_line(printed, 0))
-    return answer
+    if _line(printed, 1) in ANSWERS:
+        return Answer.YES
+    _close(_line(printed, 0))
+    return Answer.NOT_ANSWERED
 
 
 def _close(shown: str) -> None:
@@ -62,7 +62,7 @@ class NotifySend:
 
     def ask_within(self, summary: str, body: str, action: str, seconds: float) -> Answer:
         if not shutil.which("notify-send"):
-            return Answer.NOT_SHOWN
+            return Answer.NOT_ANSWERED
         asking = subprocess.Popen(_question(summary, body, action, "--print-id"), stdout=subprocess.PIPE, text=True)
         try:
             printed, _ = asking.communicate(timeout=seconds)
@@ -71,5 +71,5 @@ class NotifySend:
             printed, _ = asking.communicate()
             return _answer_at_the_deadline(printed)
         if asking.returncode != 0 and _line(printed, 0) == "":
-            return Answer.NOT_SHOWN
+            return Answer.NOT_ANSWERED
         return _answer(printed)

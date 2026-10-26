@@ -62,4 +62,6 @@ class EditAppList:
         guessed = guess_window(name, command, self.recognising.could_be_its_windows(App(name, command), free))
         if guessed is None:
             return ""
+        if self.recognising.runs_inside(App(name, command), guessed):
+            return ""
         return name_for(guessed, windows, command)

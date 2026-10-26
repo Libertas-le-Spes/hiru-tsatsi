@@ -9,13 +9,13 @@ from hiru_tsatsi.work_apps.windows import Window
 
 class PlacingWindows:
     def __init__(self, desktop: Desktop, names: WindowNames, learned: LearnedApps, known_before: set[str],
-                 recognising: Recognising):
+                 recognising: Recognising, taken: set[str]):
         self.desktop = desktop
         self.names = names
         self.learned = learned
         self.known_before = known_before
         self.recognising = recognising
-        self.claimed: set[str] = set()
+        self.claimed = set(taken)
         self.found: list[Placement] = []
         self.moved: list[Placement] = []
         self.windows_given: dict[tuple[int, int], Window] = {}

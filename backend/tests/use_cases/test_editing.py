@@ -55,6 +55,12 @@ class ChoosingAWindowByHand(unittest.TestCase):
         edit.add_app(1, "Claude Code", "cd code && claude")
         self.assertEqual(saved_once(store).workspace(1).apps[0].learned_window, "")
 
+    def test_a_folder_and_program_app_added_while_its_session_is_open_learns_no_title(self):
+        session = window("s", "foot", "✳ Claude Code: fixing the login page", 4, "claude", "/home/sam/code")
+        edit, store = editing([session], app_list((1, [])))
+        edit.add_app(1, "Claude Code", "cd code && claude")
+        self.assertEqual(saved_once(store).workspace(1).apps[0].learned_window, "")
+
 
 if __name__ == "__main__":
     unittest.main()

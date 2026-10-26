@@ -79,7 +79,6 @@ class TheSavedFormat(unittest.TestCase):
         saved = AppList((Workspace(2, "Code", apps),))
         self.assertEqual(from_saved(to_saved(saved)), saved)
 
-
     def test_the_terminal_mark_saved_before_it_had_three_values_is_still_read(self):
         saved = {"workspaces": [{"number": 2, "label": "Code", "apps": [
             {"name": "Helper", "command": "cd code && helper", "learned_window": "t", "in_terminal": True}]}]}

@@ -68,15 +68,19 @@ class ReadingWhenAProcessStarted(unittest.TestCase):
         stat = "31 (bash) S 30 31 31 34816 4242 4194304 0 0 0 0 0 0 0 0 20 0 1 0 1700 0 0"
         self.assertEqual(started_in(stat), 1700 / TICKS_PER_SECOND)
 
+
 class ReadingProcessFiles(unittest.TestCase):
     def test_the_real_user_is_the_first_number_on_the_uid_line(self):
         self.assertEqual(real_user_in(STATUS), 1000)
 
     def test_own_processes_are_chosen_by_their_real_user(self):
+        acting_as_the_owner = "Name:\thelper\nUid:\t1001\t1000\t1001\t1001\n"
+        owners_raised_up = "Name:\thelper\nUid:\t1000\t0\t0\t0\n"
         root = proc_with({"100": a_process("100", {"status": a_file(STATUS)}),
-                          "200": a_process("200", {"status": a_file(STATUS.replace("1000", "1001"))}),
+                          "200": a_process("200", {"status": a_file(acting_as_the_owner)}),
+                          "300": a_process("300", {"status": a_file(owners_raised_up)}),
                           "self": a_process("self", {"status": a_file(STATUS)})}, {})
-        self.assertEqual(ProcFiles(root).own_pids(1000), [100])
+        self.assertEqual(ProcFiles(root).own_pids(1000), [100, 300])
 
     def test_processes_that_cannot_be_listed_are_unknown(self):
         root = proc_with({}, {})
