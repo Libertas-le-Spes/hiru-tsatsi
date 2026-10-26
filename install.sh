@@ -20,6 +20,17 @@ require_python() {
     python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || fail "Python 3.11 or newer is needed; this machine has $(python3 --version)"
 }
 
+refuse_to_replace_another_tool() {
+    for path in "$command_path" "$short_path"; do
+        if [ -e "$path" ] || [ -L "$path" ]; then
+            case "$(readlink "$path" || true)" in
+                */backend/bin/hiru-tsatsi) ;;
+                *) fail "$path is already there and is not Hiru Tsatsi; move it away and run install.sh again" ;;
+            esac
+        fi
+    done
+}
+
 link_command() {
     mkdir -p "$bin_dir"
     ln -sfn "$here/backend/bin/hiru-tsatsi" "$command_path"
@@ -36,6 +47,7 @@ mention_missing_tools() {
 }
 
 require_python
+refuse_to_replace_another_tool
 link_command
 "$command_path" set-up
 mention_missing_tools
