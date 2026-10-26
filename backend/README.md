@@ -22,4 +22,4 @@ The app list is kept in `~/.config/hiru-tsatsi/apps.json`. `hiru-tsatsi add-work
 
 Desktops so far: Hyprland.
 
-Needs Python 3.10 or newer and nothing else.
+Needs Python 3.11 or newer and nothing else.

@@ -75,7 +75,7 @@ open the app. A few examples:
 
 ## Dependencies
 
-Hiru Tsatsi, installed with `./install.sh` (Python 3.10 or newer, nothing
+Hiru Tsatsi, installed with `./install.sh` (Python 3.11 or newer, nothing
 else). Whatever you put in
 a workspace's **Command** field needs to already be installed, same as
 running it in a terminal.
