@@ -3,11 +3,11 @@ import unittest
 from tests.examples.app_lists import app_list
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, saved_once
-from tests.use_cases.starting_scene import CHAT, HELPER, HELPERS_TERMINAL, MAIN, Start, appearing_once_launched
+from tests.use_cases.starting_scene import CHAT, HELPER, HELPERS_TERMINAL, Start, appearing_once_launched
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.windows import Window
 
-KNOWN_HELPER = App("Helper", "cd code && helper", HELPERS_TERMINAL, in_terminal=True)
+KNOWN_HELPER = App("Helper", "cd code && helper", HELPERS_TERMINAL, opens_in_terminal=True)
 EDITOR = App("Editor", "cd code && editor .")
 FAILING = App("Failing", "chromiun --app=https://example.org/")
 
@@ -26,14 +26,14 @@ class TryingATerminal(unittest.TestCase):
         start.window_appearing_in_its_terminal(helper_running_in(HELPERS_TERMINAL, 2))
         outcome = start.run()
         self.assertTrue(start.opened_in_its_terminal(HELPER, 2))
-        self.assertEqual((outcome.in_terminal, outcome.unseen), (["Helper"], []))
+        self.assertEqual((outcome.now_opens_in_terminal, outcome.unseen), (["Helper"], []))
 
     def test_needing_a_terminal_is_saved_once_the_program_is_seen_running_in_it(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         start.window_appearing_in_its_terminal(helper_running_in(HELPERS_TERMINAL, 2))
         start.run()
         remembered = saved_once(start.store).placements()[0].app
-        self.assertEqual((remembered.in_terminal, remembered.learned_window), (True, HELPERS_TERMINAL))
+        self.assertEqual((remembered.opens_in_terminal, remembered.learned_window), (True, HELPERS_TERMINAL))
 
     def test_needing_a_terminal_is_saved_when_the_program_starts_a_moment_after_its_window(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
@@ -47,22 +47,22 @@ class TryingATerminal(unittest.TestCase):
 
         start.desktop.windows.side_effect = shell_first_then_the_program
         outcome = start.run()
-        self.assertEqual(outcome.in_terminal, ["Helper"])
-        self.assertTrue(saved_once(start.store).placements()[0].app.in_terminal)
+        self.assertEqual(outcome.now_opens_in_terminal, ["Helper"])
+        self.assertTrue(saved_once(start.store).placements()[0].app.opens_in_terminal)
 
     def test_a_folder_and_program_command_with_a_typo_is_not_remembered_as_a_terminal_app(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         start.window_appearing_in_its_terminal(a_shell_waiting_in(HELPERS_TERMINAL, 2))
         outcome = start.run()
         start.store.save.assert_not_called()
-        self.assertEqual(outcome.in_terminal, [])
+        self.assertEqual(outcome.now_opens_in_terminal, [])
 
     def test_nothing_is_saved_when_the_terminal_window_never_appears(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         outcome = start.run()
         self.assertEqual(len(start.opened_in_terminal()), 1)
         start.store.save.assert_not_called()
-        self.assertEqual((outcome.in_terminal, outcome.unseen), ([], ["Helper"]))
+        self.assertEqual((outcome.now_opens_in_terminal, outcome.unseen), ([], ["Helper"]))
 
     def test_a_window_that_arrives_just_before_ten_seconds_wins_over_a_terminal(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
@@ -105,7 +105,8 @@ class NeverTryingATerminal(unittest.TestCase):
         outcome = start.run()
         self.assertTrue(start.opened_in_its_terminal(KNOWN_HELPER, 2))
         start.launches.new.assert_not_called()
-        self.assertEqual((outcome.unseen, start.clock.now), ([], 0.5))
+        self.assertEqual(outcome.unseen, [])
+        self.assertEqual(len(start.desktop.launch.call_args_list), 1)
 
 
 class FindingSessionsOpenedByHand(unittest.TestCase):
@@ -125,10 +126,30 @@ class FindingSessionsOpenedByHand(unittest.TestCase):
         start.desktop.launch.assert_not_called()
         self.assertEqual(outcome.already_open, ["Helper"])
 
-    def test_a_rider_window_is_not_mistaken_for_a_terminal_session(self):
-        start = Start(desktop_showing([window("m", "jetbrains-rider", "harbour – x", 2)]), app_list((2, [MAIN])))
+
+    def test_a_session_of_the_same_program_in_another_folder_is_never_taken_by_its_title(self):
+        other_project = window("o", "foot", "✳ Claude Code", 4, "helper", "/home/sam/other")
+        start = Start(desktop_showing([]), app_list((2, [App("Helper", "cd code && helper")])))
+        appearing_once_launched(start.desktop, [], [other_project])
+        outcome = start.run()
+        start.desktop.move.assert_not_called()
+        start.store.save.assert_not_called()
+        self.assertEqual(outcome.unseen, ["Helper"])
+
+    def test_a_hand_edited_terminal_mark_on_another_kind_of_command_starts_it_plainly(self):
+        marked = App("Chat", CHAT.command, "hiru-tsatsi.chat-1a2b3c4d", opens_in_terminal=True)
+        start = Start(desktop_showing([]), app_list((1, [marked])))
         start.run()
         self.assertEqual(start.opened_in_terminal(), [])
+        start.desktop.launch.assert_called_once_with(CHAT.command, 1)
+
+    def test_an_app_that_is_itself_a_terminal_learns_its_window_with_a_shell_inside(self):
+        own = window("f", "foot", "sam@desk:/tmp", 9, "bash", "/tmp")
+        start = Start(desktop_showing([]), app_list((9, [App("Own terminal", "cd /tmp && foot")])))
+        appearing_once_launched(start.desktop, [], [own])
+        outcome = start.run()
+        self.assertEqual(outcome.unseen, [])
+        self.assertEqual(saved_once(start.store).placements()[0].app.learned_window, "foot")
 
 
 if __name__ == "__main__":

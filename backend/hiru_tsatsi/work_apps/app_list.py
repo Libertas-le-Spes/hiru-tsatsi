@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.refusals import NothingThere, NumberTaken, required
-from hiru_tsatsi.work_apps.terminal_window import in_a_terminal
+from hiru_tsatsi.work_apps.terminal_window import as_terminal_app
 from hiru_tsatsi.work_apps.workspace import Workspace
 
 
@@ -85,7 +85,7 @@ class AppList:
 
     def with_terminal(self, placement: Placement) -> "AppList":
         current = self.placement(placement.workspace, placement.index)
-        return self._with_app_at(current, in_a_terminal(current.app))
+        return self._with_app_at(current, as_terminal_app(current.app))
 
     def _refuse_taken_number(self, number: int) -> None:
         if number < 1 or self.has_workspace(number):

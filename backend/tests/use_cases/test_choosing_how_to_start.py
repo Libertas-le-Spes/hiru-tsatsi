@@ -11,7 +11,7 @@ from hiru_tsatsi.use_cases.ports import Launch
 from hiru_tsatsi.use_cases.terminal_starts import MaybeTerminalStart, TerminalStart, TrialTerminalStart
 from hiru_tsatsi.work_apps.app import App
 
-KNOWN_HELPER = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", in_terminal=True)
+KNOWN_HELPER = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
 
 
 def kind_for(app: App) -> type:
@@ -40,17 +40,17 @@ class DecidingWhenAnAppNeedsATerminal(unittest.TestCase):
     def test_not_before_ten_seconds_even_if_it_stopped(self):
         self.launch.stopped.return_value = True
         self.assertIs(self.start.next(109.9), self.start)
-        self.launcher.in_terminal.assert_not_called()
+        self.launcher.launch_in_terminal.assert_not_called()
 
     def test_after_ten_seconds_when_it_stopped_it_tries_a_terminal_once(self):
         self.launch.stopped.return_value = True
         self.assertIsInstance(self.start.next(110.0), TrialTerminalStart)
-        self.launcher.in_terminal.assert_called_once()
+        self.launcher.launch_in_terminal.assert_called_once()
 
     def test_never_while_it_is_still_running(self):
         self.launch.stopped.return_value = False
         self.assertIs(self.start.next(500.0), self.start)
-        self.launcher.in_terminal.assert_not_called()
+        self.launcher.launch_in_terminal.assert_not_called()
 
 
 if __name__ == "__main__":

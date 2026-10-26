@@ -8,7 +8,7 @@ class App:
     name: str
     command: str
     learned_window: str = ""
-    in_terminal: bool = False
+    opens_in_terminal: bool = False
 
     @property
     def knows_window(self) -> bool:
@@ -24,7 +24,7 @@ class App:
         return changed.knowing_window("")
 
     def knowing_window(self, window: str) -> "App":
-        return replace(self, learned_window=window, in_terminal=False)
+        return replace(self, learned_window=window, opens_in_terminal=False)
 
     def opening_in_terminal(self, window: str) -> "App":
-        return replace(self, learned_window=window, in_terminal=True)
+        return replace(self, learned_window=window, opens_in_terminal=True)

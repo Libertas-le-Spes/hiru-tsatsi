@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
+from hiru_tsatsi.use_cases.app_start import AppStart
+from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.ports import Launch
-from hiru_tsatsi.use_cases.start_shape import AppStart, Remembering
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.placement import Placement
 from hiru_tsatsi.work_apps.recognising import Recognising
-from hiru_tsatsi.work_apps.terminal_window import in_a_terminal
+from hiru_tsatsi.work_apps.terminal_window import as_terminal_app
+from hiru_tsatsi.work_apps.windows import Window
 
 TERMINAL_AFTER_SECONDS = 10.0
 
@@ -17,17 +19,17 @@ class TerminalStart:
 
     @staticmethod
     def fits(app: App, recognising: Recognising) -> bool:
-        return app.in_terminal
+        return app.opens_in_terminal and recognising.recognised_by_what_runs(app)
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "TerminalStart":
-        launcher.in_terminal(placement)
+        launcher.launch_in_terminal(placement)
         return cls(placement)
 
     def next(self, now: float) -> AppStart:
         return self
 
-    def on_placed(self, remembering: Remembering) -> None:
+    def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None:
         return None
 
 
@@ -37,15 +39,15 @@ class TrialTerminalStart:
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement) -> "TrialTerminalStart":
-        trial = Placement(placement.workspace, placement.index, in_a_terminal(placement.app))
-        launcher.in_terminal(trial)
+        trial = Placement(placement.workspace, placement.index, as_terminal_app(placement.app))
+        launcher.launch_in_terminal(trial)
         return cls(trial)
 
     def next(self, now: float) -> AppStart:
         return self
 
-    def on_placed(self, remembering: Remembering) -> None:
-        remembering.remember_terminal(self.placement)
+    def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None:
+        confirming.try_out(self.placement, window)
 
 
 @dataclass(frozen=True)
@@ -61,7 +63,7 @@ class MaybeTerminalStart:
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "MaybeTerminalStart":
-        return cls(placement, launcher.watched(placement), now, launcher)
+        return cls(placement, launcher.launch_watched(placement), now, launcher)
 
     def next(self, now: float) -> AppStart:
         if not self.needs_terminal(now):
@@ -72,5 +74,5 @@ class MaybeTerminalStart:
         waited_long_enough = now - self.since >= TERMINAL_AFTER_SECONDS
         return waited_long_enough and self.launch.stopped()
 
-    def on_placed(self, remembering: Remembering) -> None:
+    def on_placed(self, window: Window, confirming: ConfirmingTerminals) -> None:
         return None

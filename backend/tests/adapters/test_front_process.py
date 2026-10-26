@@ -31,6 +31,11 @@ class FindingWhatRunsInAWindow(unittest.TestCase):
     def test_a_window_with_nothing_started_inside_runs_nothing_known(self):
         self.assertEqual(front_of(40, {40: Running("chromium")}), ("", ""))
 
+    def test_a_shell_with_a_background_job_is_what_runs_not_the_job(self):
+        running = {60: Running("foot", children=[61]), 61: Running("bash", "/home/sam/code", children=[62, 63], front=61),
+                   62: Running("helper", "/home/sam/code"), 63: Running("sleep", "/home/sam/code")}
+        self.assertEqual(front_of(60, running), ("bash", "/home/sam/code"))
+
 
 if __name__ == "__main__":
     unittest.main()

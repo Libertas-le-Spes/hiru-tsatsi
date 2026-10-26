@@ -44,7 +44,7 @@ class Start:
         self.launches = create_autospec(Launches, instance=True)
         self.launches.new.return_value = self.launch
         self.terminal = create_autospec(Terminal, instance=True)
-        self.terminal.wrapped.side_effect = in_a_terminal
+        self.terminal.command_for.side_effect = in_a_terminal
         self.store = store_holding(apps)
         self.names = create_autospec(WindowNames, instance=True)
         self.announcer = create_autospec(Announcer, instance=True)
@@ -52,8 +52,8 @@ class Start:
 
     def run(self) -> Outcome:
         launcher = Launcher(self.desktop, self.launches, self.terminal)
-        return StartApps(launcher, self.store, self.names, self.clock, self.clock.wait, self.announcer,
-                         RECOGNISING).run()
+        return StartApps(self.desktop, launcher, self.store, self.names, self.clock, self.clock.wait,
+                         self.announcer, RECOGNISING).run()
 
     def window_appearing_after(self, seconds: float, window: Window) -> None:
         def windows() -> list[Window]:

@@ -17,6 +17,13 @@ def _stat_field(stat: str, field: int) -> int:
     return int(fields[field])
 
 
+def real_user_in(status: str) -> int:
+    for line in status.splitlines():
+        if line.startswith("Uid:"):
+            return int(line.split()[1])
+    return -1
+
+
 def foreground_group_in(stat: str) -> int:
     return _stat_field(stat, FOREGROUND_GROUP_FIELD)
 
@@ -43,9 +50,10 @@ class ProcFiles:
     @staticmethod
     def _owned_by(entry: Path, account: int) -> bool:
         try:
-            return entry.stat().st_uid == account
+            status = (entry / "status").read_text()
         except OSError:
             return False
+        return real_user_in(status) == account
 
     def program(self, pid: int) -> str:
         return self._read(pid, "comm").strip()

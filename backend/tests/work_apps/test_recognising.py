@@ -26,7 +26,7 @@ class RecognisingAnAppsWindow(unittest.TestCase):
         self.assertIsNone(RECOGNISING.known_window(App("Steam", "steam"), [window("s", "steam", "Steam")], set()))
 
     def test_a_terminal_app_finds_only_the_window_with_exactly_its_name(self):
-        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", in_terminal=True)
+        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", opens_in_terminal=True)
         longer_name = window("x", "hiru-tsatsi.helper-1a2b3c4d5e", "foot")
         page_titled_like_it = window("p", "chromium", "hiru-tsatsi.helper-1a2b3c4d")
         exact = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot")

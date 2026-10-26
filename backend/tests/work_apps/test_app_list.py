@@ -65,26 +65,23 @@ class OpeningInATerminal(unittest.TestCase):
     def in_a_terminal(self) -> AppList:
         return self.apps.with_terminal(self.apps.placement(2, 0))
 
-    def test_the_terminal_window_is_named_after_the_app_and_its_place(self):
-        self.assertEqual(self.in_a_terminal().placement(2, 0).app.learned_window, terminal_window_name(self.app))
-
     def test_choosing_a_terminal_remembers_its_window(self):
         app = self.in_a_terminal().placement(2, 0).app
-        self.assertEqual((app.in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
 
     def test_forgetting_the_window_also_forgets_the_terminal_so_it_is_learned_again(self):
         apps = self.in_a_terminal()
         app = apps.with_learned_window(apps.placement(2, 0), "").placement(2, 0).app
-        self.assertEqual((app.in_terminal, app.learned_window), (False, ""))
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (False, ""))
 
     def test_a_new_command_forgets_the_terminal_and_its_window(self):
         app = self.in_a_terminal().with_app_changed(2, 0, "Main Helper!", "omarchy-launch-webapp https://example.org/")
         app = app.placement(2, 0).app
-        self.assertEqual((app.in_terminal, app.learned_window), (False, ""))
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (False, ""))
 
     def test_a_rename_keeps_the_terminal_and_its_window(self):
         app = self.in_a_terminal().with_app_changed(2, 0, "Helper", "cd code && helper").placement(2, 0).app
-        self.assertEqual((app.in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
 
 
 if __name__ == "__main__":

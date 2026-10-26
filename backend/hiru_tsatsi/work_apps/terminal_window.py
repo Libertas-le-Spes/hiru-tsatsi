@@ -22,5 +22,5 @@ def terminal_window_name(app: App) -> str:
     return f"hiru-tsatsi.{_name_part(app.name)}-{_fingerprint(app.command)}"
 
 
-def in_a_terminal(app: App) -> App:
+def as_terminal_app(app: App) -> App:
     return app.opening_in_terminal(terminal_window_name(app))

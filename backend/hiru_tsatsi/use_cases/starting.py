@@ -1,13 +1,14 @@
 from typing import Callable
 
 from hiru_tsatsi.use_cases import app_starts
+from hiru_tsatsi.use_cases.app_start import AppStart
+from hiru_tsatsi.use_cases.confirming_terminals import ConfirmingTerminals
 from hiru_tsatsi.use_cases.failures import ChangedMeanwhile
 from hiru_tsatsi.use_cases.launching import Launcher
 from hiru_tsatsi.use_cases.learned_during_start import applied_to, learned_between
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
-from hiru_tsatsi.use_cases.ports import Announcer, AppListStore, WindowNames
-from hiru_tsatsi.use_cases.start_shape import AppStart
+from hiru_tsatsi.use_cases.ports import Announcer, AppListStore, Desktop, WindowNames
 from hiru_tsatsi.use_cases.watching_starts import WatchingStarts
 from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.placement import Placement
@@ -32,11 +33,11 @@ def _addresses(windows: list[Window]) -> set[str]:
 
 
 class StartApps:
-    def __init__(self, launcher: Launcher, store: AppListStore, names: WindowNames, clock: Callable[[], float],
-                 wait: Callable[[float], None], announcer: Announcer, recognising: Recognising,
-                 watch_seconds: float = WATCH_SECONDS):
+    def __init__(self, desktop: Desktop, launcher: Launcher, store: AppListStore, names: WindowNames,
+                 clock: Callable[[], float], wait: Callable[[float], None], announcer: Announcer,
+                 recognising: Recognising, watch_seconds: float = WATCH_SECONDS):
+        self.desktop = desktop
         self.launcher = launcher
-        self.desktop = launcher.desktop
         self.store = store
         self.names = names
         self.clock = clock
@@ -51,10 +52,11 @@ class StartApps:
         missing = placing.place(apps.placements(), windows)
         already_open = list(placing.found)
         self._announce(missing)
-        unseen = self.watching.until_placed(placing, self._begin_all(missing))
+        confirming = ConfirmingTerminals(self.recognising)
+        unseen = self.watching.until_placed(placing, confirming, self._begin_all(missing))
         self._save_what_was_learned(apps, placing.apps)
         return Outcome(already_open=_names(already_open), started=_names(missing), moved=_names(placing.moved),
-                       unseen=_names(unseen), in_terminal=_names(placing.in_terminal))
+                       unseen=_names(unseen), now_opens_in_terminal=_names(confirming.confirmed))
 
     def _announce(self, missing: list[Placement]) -> None:
         if missing:

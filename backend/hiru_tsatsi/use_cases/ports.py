@@ -24,7 +24,7 @@ class Launches(Protocol):
 
 
 class Terminal(Protocol):
-    def wrapped(self, command: str, window: str) -> str: ...
+    def command_for(self, command: str, window: str) -> str: ...
 
 
 class Announcer(Protocol):
