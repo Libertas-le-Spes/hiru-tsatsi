@@ -1,7 +1,8 @@
 import json
 import unittest
 
-from hiru_tsatsi.adapters.desktops.hyprland import Hyprland, lua_string
+from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
+from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.adapters.tagged_launch import TaggedLaunch
 from hiru_tsatsi.work_apps.windows import Window
 
@@ -14,7 +15,9 @@ class FakeHyprctl:
 
     def __call__(self, arguments: list[str]) -> str:
         self.calls.append(arguments)
-        return json.dumps(CLIENTS) if arguments[:2] == ["clients", "-j"] else "ok"
+        if arguments[:2] == ["clients", "-j"]:
+            return json.dumps(CLIENTS)
+        return "ok"
 
 
 class TalkingToHyprland(unittest.TestCase):
@@ -57,7 +60,10 @@ class TalkingToHyprland(unittest.TestCase):
         self.assertEqual(hyprland.windows(), [Window("0xb", "foot", "t", 2, "helper", "/home/sam/code-77")])
 
     def test_unreadable_output_means_no_windows(self):
-        self.assertEqual(Hyprland(lambda arguments: "not json").windows(), [])
+        def garbled(arguments: list[str]) -> str:
+            return "not json"
+
+        self.assertEqual(Hyprland(garbled).windows(), [])
 
 
 class QuotingForLua(unittest.TestCase):

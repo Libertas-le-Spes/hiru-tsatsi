@@ -15,11 +15,15 @@ class SettingsFile:
             content = json.loads(self.path.read_text())
         except (OSError, json.JSONDecodeError):
             return {}
-        return content if isinstance(content, dict) else {}
+        if not isinstance(content, dict):
+            return {}
+        return content
 
     def window_titles(self) -> bool | None:
         chosen = self._read().get(WINDOW_TITLES)
-        return chosen if isinstance(chosen, bool) else None
+        if not isinstance(chosen, bool):
+            return None
+        return chosen
 
     def set_window_titles(self, on: bool) -> None:
         settings = self._read()

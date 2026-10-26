@@ -47,9 +47,14 @@ def window_titles_text(on: bool, chosen: bool) -> str:
             "Turn them on or off with `hiru-tsatsi window-titles on` or `off`.")
 
 
+def _starts(kept: bool) -> str:
+    if kept:
+        return "still starts"
+    return "now starts"
+
+
 def set_up_text(set_up: SetUp) -> str:
     asked = "At login, a notification asks whether to start your work apps."
     if set_up.keys is None:
         return f"Every shortcut Hiru Tsatsi would pick is taken, so none was added; bind `hiru-tsatsi start` yourself. {asked}"
-    verb = "still starts" if set_up.kept else "now starts"
-    return f"{set_up.keys.text()} {verb} your work apps. {asked}"
+    return f"{set_up.keys.text()} {_starts(set_up.kept)} your work apps. {asked}"

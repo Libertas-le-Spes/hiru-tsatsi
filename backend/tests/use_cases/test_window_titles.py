@@ -6,8 +6,16 @@ from tests.fakes.window_names import FakeNames
 from hiru_tsatsi.use_cases.window_titles import NamesWhenWanted, WindowTitles
 
 
+class Namer:
+    def __init__(self, installed: bool):
+        self.installed = installed
+
+    def __call__(self) -> bool:
+        return self.installed
+
+
 def titles(chosen=None, installed=True):
-    return WindowTitles(FakeSettings(chosen), lambda: installed)
+    return WindowTitles(FakeSettings(chosen), Namer(installed))
 
 
 class ChoosingWhetherToNameWindows(unittest.TestCase):

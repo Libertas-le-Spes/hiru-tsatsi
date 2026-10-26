@@ -43,9 +43,13 @@ class EditingTheList(unittest.TestCase):
         self.assertEqual(apps.workspace(1).apps[0].learned_window, "chat")
 
     def test_something_that_is_not_there_is_refused(self):
-        for change in (lambda a: a.without_workspace(9), lambda a: a.without_app(1, 3), lambda a: a.with_app(9, CHAT)):
-            with self.assertRaises(NothingThere):
-                change(app_list((1, [CHAT])))
+        apps = app_list((1, [CHAT]))
+        with self.assertRaises(NothingThere):
+            apps.without_workspace(9)
+        with self.assertRaises(NothingThere):
+            apps.without_app(1, 3)
+        with self.assertRaises(NothingThere):
+            apps.with_app(9, CHAT)
 
 
 

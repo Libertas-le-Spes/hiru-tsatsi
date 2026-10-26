@@ -1,31 +1,11 @@
-import json
-import re
-import subprocess
 from typing import Callable, Mapping
 
+from hiru_tsatsi.adapters.desktops.hyprctl import Run, inside_hyprland, listed, run_hyprctl
+from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.adapters.front_process import FrontProcess
 from hiru_tsatsi.adapters.tagged_launch import TaggedLaunch
 from hiru_tsatsi.adapters.terminal import in_terminal
 from hiru_tsatsi.work_apps.windows import Window
-
-Run = Callable[[list[str]], str]
-CONTROL_CHARACTER = re.compile(r"[\x00-\x1f\x7f]")
-
-
-def run_hyprctl(arguments: list[str]) -> str:
-    done = subprocess.run(["hyprctl", *arguments], capture_output=True, text=True, check=False)
-    return done.stdout
-
-
-def _as_lua_number_escape(found: re.Match) -> str:
-    code = ord(found.group())
-    return f"\\{code:03d}"
-
-
-def lua_string(text: str) -> str:
-    quoted = text.replace("\\", "\\\\").replace('"', '\\"')
-    escaped = CONTROL_CHARACTER.sub(_as_lua_number_escape, quoted)
-    return f'"{escaped}"'
 
 
 class Hyprland:
@@ -37,17 +17,14 @@ class Hyprland:
 
     @classmethod
     def found(cls, env: Mapping[str, str]) -> "Hyprland | None":
-        return cls() if env.get("HYPRLAND_INSTANCE_SIGNATURE") else None
+        if not inside_hyprland(env):
+            return None
+        return cls()
 
     def windows(self) -> list[Window]:
-        try:
-            clients = json.loads(self.run(["clients", "-j"]) or "[]")
-        except json.JSONDecodeError:
-            return []
         windows = []
-        for client in clients:
-            if isinstance(client, dict):
-                windows.append(self._window(client))
+        for client in listed(self.run, ["clients", "-j"]):
+            windows.append(self._window(client))
         return windows
 
     def _window(self, client: dict) -> Window:

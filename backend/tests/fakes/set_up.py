@@ -3,7 +3,9 @@ from hiru_tsatsi.work_apps.shortcut import Keys
 
 class FakeSetUp:
     def __init__(self, taken: set[Keys] | None = None, installed: Keys | None = None):
-        self.taken = taken or set()
+        if taken is None:
+            taken = set()
+        self.taken = taken
         self.installed = installed
         self.installs: list[tuple[Keys | None, str, str]] = []
 
