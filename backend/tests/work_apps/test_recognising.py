@@ -32,12 +32,17 @@ class RecognisingAnAppsWindow(unittest.TestCase):
         self.assertIsNone(RECOGNISING.known_window(App("Steam", "steam"), [window("s", "steam", "Steam")], set()))
 
     def test_a_terminal_app_finds_only_the_window_with_exactly_its_name(self):
-        terminal = App("Helper", "helper --tui", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
+        terminal = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
         longer_name = window("x", "hiru-tsatsi.helper-1a2b3c4d5e", "foot")
         page_titled_like_it = window("p", "chromium", "hiru-tsatsi.helper-1a2b3c4d")
         exact = window("t", "hiru-tsatsi.helper-1a2b3c4d", "foot")
         found = RECOGNISING.known_window(terminal, [longer_name, page_titled_like_it, exact], set())
         self.assertEqual(found.address, "t")
+
+    def test_a_terminal_mark_on_a_command_that_cannot_run_in_one_is_ignored(self):
+        chat = App("Chat", "chat-app", "chrome-chat", terminal=TerminalUse.OPENS_IN_ONE)
+        found = RECOGNISING.known_window(chat, [window("c", "chrome-chat-Default", "Chat", 1)], set())
+        self.assertEqual(found.address, "c")
 
     def test_a_terminal_apps_window_with_only_a_shell_left_waiting_is_not_it(self):
         helper = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)

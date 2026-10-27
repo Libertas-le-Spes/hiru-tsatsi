@@ -13,6 +13,7 @@ from hiru_tsatsi.work_apps.windows import Window
 class AppView:
     placement: Placement
     window: Window | None
+    opens_in_terminal: bool = False
 
 
 @dataclass(frozen=True)
@@ -42,9 +43,9 @@ class Overview:
         free = unclaimed(apps, self.desktop.windows(), self.recognising, (workspace, index))
         return likeliest_first(app.name, app.command, self.recognising.could_be_its_windows(app, free))
 
-    @staticmethod
-    def _app_views(number: int, apps: tuple[App, ...], found: dict[Spot, Window]) -> list[AppView]:
+    def _app_views(self, number: int, apps: tuple[App, ...], found: dict[Spot, Window]) -> list[AppView]:
         views = []
         for index, app in enumerate(apps):
-            views.append(AppView(Placement(number, index, app), found.get((number, index))))
+            in_terminal = self.recognising.is_terminal_app(app)
+            views.append(AppView(Placement(number, index, app), found.get((number, index)), in_terminal))
         return views
