@@ -19,6 +19,10 @@ class SayingWhereAnAppsWindowIs(unittest.TestCase):
         view = AppView(KNOWN, window("m", "jetbrains-rider", "harbour – x", 4))
         self.assertEqual(status_line(view), "✓ harbour – x, open on workspace 4 (moved to 2 when you start)")
 
+    def test_closed_and_opening_in_a_terminal(self):
+        self.assertEqual(status_line(AppView(KNOWN, None, opens_in_terminal=True)),
+                         "Opens in a terminal, recognised when it opens")
+
     def test_closed_but_known(self):
         self.assertEqual(status_line(AppView(KNOWN, None)), "Recognised when it opens")
 

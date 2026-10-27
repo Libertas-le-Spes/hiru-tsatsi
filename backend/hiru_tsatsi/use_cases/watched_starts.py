@@ -19,7 +19,7 @@ class WatchedStart:
 
     @staticmethod
     def fits(app: App, recognising: Recognising) -> bool:
-        if app.opens_in_terminal or app.terminal_ruled_out:
+        if recognising.is_terminal_app(app) or app.terminal_ruled_out:
             return False
         return recognising.has_program_in_folder(app)
 

@@ -24,7 +24,7 @@ class Recognising:
         running = self._window_running(app, windows, claimed)
         if running is not None:
             return running
-        if app.opens_in_terminal:
+        if self.is_terminal_app(app):
             return window_of_class(app.learned_window, without_waiting_shells(windows), claimed)
         if app.knows_window:
             return window_named(app.learned_window, self.could_be_its_windows(app, windows), claimed)
@@ -42,6 +42,9 @@ class Recognising:
         if inside is None:
             return True
         return not inside.runs_elsewhere_in(window)
+
+    def is_terminal_app(self, app: App) -> bool:
+        return app.opens_in_terminal and self.has_program_in_folder(app)
 
     def has_program_in_folder(self, app: App) -> bool:
         return self._program_in_folder(app) is not None

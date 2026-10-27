@@ -102,8 +102,10 @@ recorded here with what each choice fails to stop.
   - Each app gets one trial. "Opens in a terminal" is saved only when the app's own program is
     seen running in that terminal. A trial that is never confirmed (a typo, which leaves only a
     shell waiting for Enter, or a launcher missing from the list) is saved as a no.
-  - Only a command of that shape starts in a terminal, even if a hand-edited list says another
-    one should.
+  - Only a command of that shape counts as a terminal app, even if the list says another one
+    should: such a mark, whether edited by hand or left by an earlier version, is ignored when
+    starting it, when recognising its window and in the bar, so the app is found by its own
+    learned window name like any other.
   A launch that stopped keeps its place while other apps are still being waited for, so a window
   that arrives late is still placed and learned, and the app is not asked about. The question
   therefore comes once every other app has its window, or after the minute's wait, whichever is
