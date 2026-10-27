@@ -1,6 +1,7 @@
 import unittest
 
 from tests.examples.app_lists import app_list
+from tests.examples.home import RECOGNISING
 from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, store_holding
 from hiru_tsatsi.use_cases.overview import Overview
@@ -14,7 +15,7 @@ GITLAB_WINDOW = window("g", "chrome-gitlab.com__examplecorp_harbour_-_boards_123
 
 def windows_given(open_windows, apps) -> list[str | None]:
     given = []
-    for space in Overview(store_holding(apps), desktop_showing(open_windows)).run():
+    for space in Overview(store_holding(apps), desktop_showing(open_windows), RECOGNISING).run():
         for view in space.apps:
             if view.window is None:
                 given.append(None)
@@ -33,11 +34,25 @@ class TheOverview(unittest.TestCase):
     def test_the_windows_to_choose_from_put_the_likeliest_first_and_leave_out_owned_ones(self):
         terminal = window("t", "foot", "~")
         apps = app_list((1, [App("GitLab", GITLAB_COMMAND)]), (2, [RIDER_MAIN]))
-        overview = Overview(store_holding(apps), desktop_showing([terminal, RIDER_WINDOW, GITLAB_WINDOW]))
+        overview = Overview(store_holding(apps), desktop_showing([terminal, RIDER_WINDOW, GITLAB_WINDOW]), RECOGNISING)
         addresses = []
         for candidate in overview.candidates(1, 0):
             addresses.append(candidate.address)
         self.assertEqual(addresses, ["g", "t"])
+
+    def test_the_windows_to_choose_from_leave_out_its_program_running_in_another_folder(self):
+        here = window("h", "foot", "~", 2, "helper", "/home/sam/code")
+        elsewhere = window("e", "foot", "~", 2, "helper", "/home/sam/other")
+        apps = app_list((2, [App("Helper", "cd code && helper")]))
+        overview = Overview(store_holding(apps), desktop_showing([elsewhere, here]), RECOGNISING)
+        addresses = []
+        for candidate in overview.candidates(2, 0):
+            addresses.append(candidate.address)
+        self.assertEqual(addresses, ["h"])
+
+    def test_a_session_opened_by_hand_is_that_apps_window(self):
+        by_hand = window("h", "foot", "✳ Some talk", 2, "helper", "/home/sam/code")
+        self.assertEqual(windows_given([by_hand], app_list((2, [App("Helper", "cd code && helper")]))), ["h"])
 
 
 if __name__ == "__main__":

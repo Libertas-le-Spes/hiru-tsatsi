@@ -1,60 +1,57 @@
-from typing import Callable
-
-from hiru_tsatsi.use_cases.failures import ChangedMeanwhile
-from hiru_tsatsi.use_cases.learned_during_start import applied_to, learned_between
+from hiru_tsatsi.use_cases import choosing_how_to_start
+from hiru_tsatsi.use_cases.app_start import AppStart, placements_of, still_waiting, stopped_without_window
+from hiru_tsatsi.use_cases.failures import AlreadyStarting
+from hiru_tsatsi.use_cases.handover import Handover
+from hiru_tsatsi.use_cases.launching import Launcher
+from hiru_tsatsi.use_cases.learned_apps import LearnedApps
+from hiru_tsatsi.use_cases.learned_during_start import save_learned
 from hiru_tsatsi.use_cases.outcome import Outcome
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
-from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, WindowNames
+from hiru_tsatsi.use_cases.ports import Announcer, AppListStore, Clock, Desktop, OneStartAtATime, WindowNames
 from hiru_tsatsi.use_cases.watching_starts import WatchingStarts
-from hiru_tsatsi.work_apps.app_list import AppList
-from hiru_tsatsi.work_apps.placement import Placement
-from hiru_tsatsi.work_apps.windows import Window
-
-WATCH_SECONDS = 60.0
-
-
-def _names(placements: list[Placement]) -> list[str]:
-    names = []
-    for placement in placements:
-        names.append(placement.app.name)
-    return names
-
-
-def _addresses(windows: list[Window]) -> set[str]:
-    addresses = set()
-    for window in windows:
-        addresses.add(window.address)
-    return addresses
+from hiru_tsatsi.work_apps.placement import Placement, names_of
+from hiru_tsatsi.work_apps.recognising import Recognising
+from hiru_tsatsi.work_apps.windows import addresses_of
 
 
 class StartApps:
-    def __init__(self, desktop: Desktop, store: AppListStore, names: WindowNames, clock: Callable[[], float],
-                 wait: Callable[[float], None], watch_seconds: float = WATCH_SECONDS):
+    def __init__(self, desktop: Desktop, launcher: Launcher, store: AppListStore, names: WindowNames,
+                 announcer: Announcer, recognising: Recognising, watching: WatchingStarts, clock: Clock,
+                 one_at_a_time: OneStartAtATime):
         self.desktop = desktop
+        self.launcher = launcher
         self.store = store
         self.names = names
-        self.watching = WatchingStarts(desktop, clock, wait, watch_seconds)
+        self.announcer = announcer
+        self.recognising = recognising
+        self.watching = watching
+        self.clock = clock
+        self.one_at_a_time = one_at_a_time
 
     def run(self) -> Outcome:
+        if not self.one_at_a_time.claimed():
+            raise AlreadyStarting()
         apps = self.store.load()
         windows = self.desktop.windows()
-        placing = PlacingWindows(self.desktop, self.names, apps, _addresses(windows))
+        learned = LearnedApps(apps)
+        placing = PlacingWindows(self.desktop, self.names, learned, addresses_of(windows), self.recognising, set())
         missing = placing.place(apps.placements(), windows)
         already_open = list(placing.found)
-        self._launch_all(missing)
-        unseen = self.watching.until_placed(placing, missing)
-        self._save_what_was_learned(apps, placing.apps)
-        return Outcome(already_open=_names(already_open), started=_names(missing), moved=_names(placing.moved),
-                       unseen=_names(unseen))
+        self._announce(missing)
+        left = self.watching.until_placed(placing, self._begin_all(missing))
+        save_learned(self.store, apps, learned.apps)
+        stopped = placements_of(stopped_without_window(left))
+        return Outcome(already_open=names_of(already_open), started=names_of(missing), moved=names_of(placing.moved),
+                       unseen=names_of(placements_of(still_waiting(left))),
+                       stopped_without_window=names_of(stopped),
+                       for_the_offer=Handover(stopped, set(placing.claimed)))
 
-    def _launch_all(self, missing: list[Placement]) -> None:
+    def _announce(self, missing: list[Placement]) -> None:
+        if missing:
+            self.announcer.announce(names_of(missing))
+
+    def _begin_all(self, missing: list[Placement]) -> list[AppStart]:
+        starts = []
         for placement in missing:
-            self.desktop.launch(placement.app.command, placement.workspace)
-
-    def _save_what_was_learned(self, before: AppList, after: AppList) -> None:
-        if after == before:
-            return
-        try:
-            self.store.save(after)
-        except ChangedMeanwhile:
-            self.store.save(applied_to(self.store.load(), learned_between(before, after)))
+            starts.append(choosing_how_to_start.begin(self.launcher, placement, self.clock.now(), self.recognising))
+        return starts

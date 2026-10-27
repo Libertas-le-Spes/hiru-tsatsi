@@ -1,6 +1,7 @@
 # Security review
 
-This review describes the repository at commit `8372a7c` (main, 2026-10-22). Some of what it
+The findings below describe the repository at commit `8372a7c` (main, 2026-10-22); the section
+"Terminal apps and recognition" describes what pull request #4 added after it. Some of what it
 proposes is planned, not done, and it will change as the project grows. Whoever fixes a finding,
 or makes part of this document untrue, updates it in the same pull request.
 
@@ -45,6 +46,91 @@ that exists but can't be read or parsed is refused rather than treated as empty,
 followed by hex digits). The panel's window-choice buttons show web-page titles through Omarchy's
 own `Button`, which sets `Text.PlainText` (`/usr/share/omarchy/shell/Ui/Button.qml`); that safety
 lives outside this repository.
+
+## Terminal apps and recognition (added later, pull request #4)
+
+These features came after the review and widen what Hiru Tsatsi reads and runs, so they are
+recorded here with what each choice fails to stop.
+
+- **Reading processes.** To tell whether a launch has stopped, and what runs inside a window,
+  Hiru Tsatsi reads `/proc/<pid>/environ`, `comm`, `cwd`, `stat` and `task/<pid>/children`.
+  Whether a launch stopped is judged only from the owner's own processes, chosen by the real user
+  in `/proc/<pid>/status` (readable by anyone), so a process of the owner's that Linux hides behind
+  a root-owned `/proc/<pid>` is still counted, and its unreadable environment means "can't tell".
+  A process whose `status` can't be read at all, which happens when it exits while being read,
+  is left out. What runs inside a window is read from that window's own process tree. It
+  reads, never writes, and stores nothing.
+  *Fails to stop:* nothing new; the owner's own processes can already read the same.
+- **The launch tag.** Only a launch that may need a terminal (see below) exports
+  `HIRU_TSATSI_LAUNCH=<32 random hex>`. The tag appears in `hyprctl`'s arguments, which every
+  account can read, but another account can only put it in its own processes, which are never
+  read. Only processes started at or after the launch can carry it, so they are the only ones
+  asked; a process whose start time can't be read is asked too, as if it had started since. If
+  the environment of any process asked can't be read, or processes or the time since boot can't
+  be read, the launch counts as still running: no terminal is offered.
+  *Fails to stop:* a process of the owner's own that copies the tag keeps a launch looking alive,
+  which only stops a terminal from being offered. A launcher that hands its program to another
+  service (over D-Bus, or through `systemd-run` as `omarchy-launch-browser` does) leaves nothing
+  carrying the tag, so it looks stopped; only commands of the shape below are ever watched.
+- **Opening a command in a terminal.** Hiru Tsatsi never runs a command a second time on its own.
+  A watched launch that has stopped with no window ten seconds after it began is reported as
+  "stopped without a window". Once the start is over, saved and reported, a notification asks
+  "Open <app> in a terminal?" for each such app, one at a time; only a click runs it again,
+  inside `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. The
+  question waits a minute and is then taken off the screen with `gdbus`, which comes with the
+  same library `notify-send` needs. Only its "Don't offer again" button is a no, and the no is
+  saved with the app, so it is never asked about again until its command changes. Every other
+  ending decides nothing: closing it, that minute passing, the notification service silencing
+  it (as Omarchy does under Do Not Disturb) or dropping it, or no `notify-send` at all. Nothing
+  runs, nothing is saved, and it is asked again on the next start, because `notify-send` can't
+  tell a person closing a notification from the service closing it. The list is read again after the answers, and an app whose
+  entry changed in the meantime is neither opened nor saved as a no.
+  Only one start runs at a time: each holds an owner-only lock in `XDG_RUNTIME_DIR`, opened
+  without following links and refused if another account owns it, until it has finished. The
+  start and the questions each claim it themselves. A second start while one runs starts
+  nothing, and says so in a notification. If the lock can't be made sure of, nothing starts.
+  Under the question sit three limits:
+  - Only a command of the shape `cd <folder> && <program>` (or `;`) is ever watched or offered,
+    with a plain folder (no `$`, backtick or `~user`; a relative one is taken from the home
+    folder, where Hyprland starts commands), a program written as a plain word (only letters,
+    digits and `_ . / + @ : , -`, so no `NAME=value`, `$EDITOR`, backtick, bracket or wildcard),
+    and a program that is neither a shell nor one of the launchers known to run another
+    (`env`, `exec`, `nohup`, `setsid`, `sudo`, `doas`, `pkexec`, `command`, `builtin`, `nice`,
+    `ionice`, `chrt`, `taskset`, `time`, `timeout`, `stdbuf`, `uwsm`, `uwsm-app`, `systemd-run`,
+    `flatpak`, `npx`, `pnpx`, `bunx`, `xargs`). That list is a blocklist and can never be
+    complete; the question above is what stops a launcher missing from it.
+  - Each app gets one trial. "Opens in a terminal" is saved only when the app's own program is
+    seen running in that terminal. A trial that is never confirmed (a typo, which leaves only a
+    shell waiting for Enter, or a launcher missing from the list) is saved as a no.
+  - Only a command of that shape starts in a terminal, even if a hand-edited list says another
+    one should.
+  A launch that stopped keeps its place while other apps are still being waited for, so a window
+  that arrives late is still placed and learned, and the app is not asked about. The question
+  therefore comes once every other app has its window, or after the minute's wait, whichever is
+  first, and right before each question the open windows are looked at once more: an app whose
+  window has come by then is placed instead of asked about. That last look takes only a window
+  that is provably the app's: one its program runs in, or one with the name it already learned.
+  It never guesses, never takes a window with only a shell left in it, and never takes a window
+  the start already gave another app, so a window opened by hand meanwhile is left alone.
+  *Fails to stop:* a click on yes for a command whose launcher exited while its window was still
+  coming, and whose window it has not learned yet, runs it twice, once. A program whose folder Linux hides from its owner (one given extra
+  privileges, such as `btop`) is never confirmed, so it is saved as a no after its one trial; so
+  is a script run by an interpreter (`#!/usr/bin/env node`), which Linux names after the
+  interpreter rather than the script. A
+  program that keeps running with no terminal instead of stopping (as `nvim` can) is never
+  offered one, and runs unseen, as it did before.
+- **Recognising a session.** A window counts as an app's when the program in front in it and its
+  folder match the command. A window that shares its program with other windows, or whose
+  program has more than one child, reports nothing. A terminal app's own window is matched by its
+  exact name, so a web page titled like it is never taken for it. An app of that shape whose
+  window reports nothing, such as an editor, learns its window name like any other app, but a
+  window running the same program in another folder, another session of it, is never taken for
+  it, by title or by a learned name. The command's folder is compared by where it really leads,
+  links followed, as Linux reports the folder a program runs in. A terminal app's window with
+  only a shell left in it, such as the "Press Enter to close" prompt after the program ended,
+  is not counted as the app being open.
+  *Fails to stop:* two windows running the same program in the same folder; either is taken, and
+  both are that app.
 
 ## Findings
 

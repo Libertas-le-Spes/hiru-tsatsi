@@ -2,7 +2,10 @@ import unittest
 
 from tests.examples.app_lists import app_list
 from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.app_list import AppList
 from hiru_tsatsi.work_apps.refusals import Blank, NothingThere, NumberTaken
+from hiru_tsatsi.work_apps.terminal_window import terminal_window_name
+from hiru_tsatsi.work_apps.workspace import Workspace
 
 CHAT = App("Chat", "chat-app")
 
@@ -52,6 +55,43 @@ class EditingTheList(unittest.TestCase):
             apps.without_app(1, 3)
         with self.assertRaises(NothingThere):
             apps.with_app(9, CHAT)
+
+
+class OpeningInATerminal(unittest.TestCase):
+    def setUp(self):
+        self.app = App("Main Helper!", "cd code && helper")
+        self.apps = AppList((Workspace(2, "Code", (self.app,)),))
+
+    def in_a_terminal(self) -> AppList:
+        return self.apps.with_terminal(self.apps.placement(2, 0))
+
+    def test_choosing_a_terminal_remembers_its_window(self):
+        app = self.in_a_terminal().placement(2, 0).app
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
+
+    def test_forgetting_the_window_also_forgets_the_terminal_so_it_is_learned_again(self):
+        apps = self.in_a_terminal()
+        app = apps.with_learned_window(apps.placement(2, 0), "").placement(2, 0).app
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (False, ""))
+
+    def test_a_new_command_forgets_the_terminal_and_its_window(self):
+        app = self.in_a_terminal().with_app_changed(2, 0, "Main Helper!", "omarchy-launch-webapp https://example.org/")
+        app = app.placement(2, 0).app
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (False, ""))
+
+    def test_a_terminal_ruled_out_stays_ruled_out_when_its_window_is_learned(self):
+        apps = self.apps.with_terminal_ruled_out(self.apps.placement(2, 0))
+        app = apps.with_learned_window(apps.placement(2, 0), "helper").placement(2, 0).app
+        self.assertTrue(app.terminal_ruled_out)
+
+    def test_a_new_command_may_be_offered_a_terminal_again(self):
+        apps = self.apps.with_terminal_ruled_out(self.apps.placement(2, 0))
+        app = apps.with_app_changed(2, 0, "Main Helper!", "cd code && other-helper").placement(2, 0).app
+        self.assertFalse(app.terminal_ruled_out)
+
+    def test_a_rename_keeps_the_terminal_and_its_window(self):
+        app = self.in_a_terminal().with_app_changed(2, 0, "Helper", "cd code && helper").placement(2, 0).app
+        self.assertEqual((app.opens_in_terminal, app.learned_window), (True, terminal_window_name(self.app)))
 
 
 if __name__ == "__main__":

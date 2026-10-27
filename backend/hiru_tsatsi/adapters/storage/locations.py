@@ -17,6 +17,13 @@ def app_list_file() -> Path:
     return config_home() / "hiru-tsatsi" / "apps.json"
 
 
+def start_lock_file() -> Path | None:
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        return None
+    return Path(runtime) / "hiru-tsatsi-start.lock"
+
+
 def installed_command() -> Path:
     return Path.home() / ".local" / "bin" / "hiru-tsatsi"
 
