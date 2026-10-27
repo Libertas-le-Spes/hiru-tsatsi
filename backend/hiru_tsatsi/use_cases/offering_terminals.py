@@ -11,8 +11,9 @@ from hiru_tsatsi.work_apps.placement import Placement, names_of
 
 QUESTION_SECONDS = 60.0
 EXPLANATION = ("It stopped without opening a window. Some apps only run inside a terminal. "
-               "Close this to never be asked again; leave it, and you'll be asked next time.")
+               "Leave or close this, and you'll be asked next time.")
 ACTION = "Open in a terminal"
+DECLINE = "Don't offer again"
 
 
 def _question(placement: Placement) -> str:
@@ -58,7 +59,7 @@ class OfferTerminals:
         taken = set(handover.taken)
         answers = {Answer.YES: [], Answer.NO: [], Answer.NOT_ANSWERED: []}
         for placement in _still_there(self.store.load(), handover.stopped):
-            late_window = self.late.placed(placement, handover.known_before, taken)
+            late_window = self.late.placed(placement, taken)
             if late_window is None:
                 answers[self._asked(placement)].append(placement)
             else:
@@ -67,7 +68,7 @@ class OfferTerminals:
         return self._settled(answers[Answer.YES], answers[Answer.NO], found_late)
 
     def _asked(self, placement: Placement) -> Answer:
-        return self.notifier.ask_within(_question(placement), EXPLANATION, ACTION, QUESTION_SECONDS)
+        return self.notifier.ask_within(_question(placement), EXPLANATION, ACTION, DECLINE, QUESTION_SECONDS)
 
     def _settled(self, said_yes: list[Placement], said_no: list[Placement],
                  found_late: list[Placement]) -> TerminalOffer:

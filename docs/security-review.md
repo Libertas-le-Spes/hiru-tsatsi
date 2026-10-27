@@ -1,6 +1,7 @@
 # Security review
 
-This review describes the repository at commit `8372a7c` (main, 2026-10-22). Some of what it
+The findings below describe the repository at commit `8372a7c` (main, 2026-10-22); the section
+"Terminal apps and recognition" describes what pull request #4 added after it. Some of what it
 proposes is planned, not done, and it will change as the project grows. Whoever fixes a finding,
 or makes part of this document untrue, updates it in the same pull request.
 
@@ -77,11 +78,12 @@ recorded here with what each choice fails to stop.
   "Open <app> in a terminal?" for each such app, one at a time; only a click runs it again,
   inside `xdg-terminal-exec --app-id=<name> -- sh -c '<command>'`, quoted with `shlex.quote`. The
   question waits a minute and is then taken off the screen with `gdbus`, which comes with the
-  same library `notify-send` needs. Closing the question is a no, and the no is saved with the
-  app, so it is never asked about again until its command changes. A question left unanswered
-  for that minute, or that could not be shown at all (no `notify-send`, or no notification
-  service), decides nothing: nothing runs, nothing is saved, and it is asked again on the next
-  start. The list is read again after the answers, and an app whose
+  same library `notify-send` needs. Only its "Don't offer again" button is a no, and the no is
+  saved with the app, so it is never asked about again until its command changes. Every other
+  ending decides nothing: closing it, that minute passing, the notification service silencing
+  it (as Omarchy does under Do Not Disturb) or dropping it, or no `notify-send` at all. Nothing
+  runs, nothing is saved, and it is asked again on the next start, because `notify-send` can't
+  tell a person closing a notification from the service closing it. The list is read again after the answers, and an app whose
   entry changed in the meantime is neither opened nor saved as a no.
   Only one start runs at a time: each holds an owner-only lock in `XDG_RUNTIME_DIR`, opened
   without following links and refused if another account owns it, until it has finished. The
@@ -106,10 +108,12 @@ recorded here with what each choice fails to stop.
   that arrives late is still placed and learned, and the app is not asked about. The question
   therefore comes once every other app has its window, or after the minute's wait, whichever is
   first, and right before each question the open windows are looked at once more: an app whose
-  window has come by then is placed and learned instead of asked about. Windows the start has
-  already given to other apps are never taken in that last look.
+  window has come by then is placed instead of asked about. That last look takes only a window
+  that is provably the app's: one its program runs in, or one with the name it already learned.
+  It never guesses, never takes a window with only a shell left in it, and never takes a window
+  the start already gave another app, so a window opened by hand meanwhile is left alone.
   *Fails to stop:* a click on yes for a command whose launcher exited while its window was still
-  coming runs it twice, once. A program whose folder Linux hides from its owner (one given extra
+  coming, and whose window it has not learned yet, runs it twice, once. A program whose folder Linux hides from its owner (one given extra
   privileges, such as `btop`) is never confirmed, so it is saved as a no after its one trial; so
   is a script run by an interpreter (`#!/usr/bin/env node`), which Linux names after the
   interpreter rather than the script. A

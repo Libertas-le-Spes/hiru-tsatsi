@@ -3,8 +3,8 @@ from hiru_tsatsi.use_cases.learned_during_start import save_learned
 from hiru_tsatsi.use_cases.placing_windows import PlacingWindows
 from hiru_tsatsi.use_cases.ports import AppListStore, Desktop, WindowNames
 from hiru_tsatsi.work_apps.placement import Placement
-from hiru_tsatsi.work_apps.recognising import Recognising
-from hiru_tsatsi.work_apps.windows import Window
+from hiru_tsatsi.work_apps.recognising import Recognising, without_waiting_shells
+from hiru_tsatsi.work_apps.windows import Window, addresses_of
 
 
 class LateWindows:
@@ -14,11 +14,13 @@ class LateWindows:
         self.store = store
         self.recognising = recognising
 
-    def placed(self, placement: Placement, known_before: set[str], taken: set[str]) -> Window | None:
+    def placed(self, placement: Placement, taken: set[str]) -> Window | None:
         apps = self.store.load()
         learned = LearnedApps(apps)
-        placing = PlacingWindows(self.desktop, self.names, learned, known_before, self.recognising, taken)
-        unplaced = placing.place([placement], self.desktop.windows())
+        windows = without_waiting_shells(self.desktop.windows())
+        nothing_guessed = addresses_of(windows)
+        placing = PlacingWindows(self.desktop, self.names, learned, nothing_guessed, self.recognising, taken)
+        unplaced = placing.place([placement], windows)
         if unplaced:
             return None
         save_learned(self.store, apps, learned.apps)

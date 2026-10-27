@@ -6,7 +6,7 @@ from tests.use_cases.mocked_list import desktop_showing, saved_once
 from tests.use_cases.starting_scene import HELPER, HELPERS_TERMINAL, STEAM, Start, appearing_once_launched
 from tests.use_cases.terminal_examples import EDITOR, a_shell_waiting_in, helper_running_in
 from hiru_tsatsi.use_cases.failures import AlreadyStarting
-from hiru_tsatsi.use_cases.offering_terminals import ACTION, EXPLANATION, QUESTION_SECONDS, TerminalOffer
+from hiru_tsatsi.use_cases.offering_terminals import ACTION, DECLINE, EXPLANATION, QUESTION_SECONDS, TerminalOffer
 from hiru_tsatsi.use_cases.ports import Answer
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.windows import Window
@@ -18,7 +18,7 @@ class OfferingATerminal(unittest.TestCase):
         start.window_appearing_in_its_terminal(helper_running_in(HELPERS_TERMINAL, 2))
         outcome, offer = start.run_and_offer()
         start.notifier.ask_within.assert_called_once_with("Open Helper in a terminal?", EXPLANATION, ACTION,
-                                                          QUESTION_SECONDS)
+                                                          DECLINE, QUESTION_SECONDS)
         self.assertTrue(start.opened_in_its_terminal(HELPER, 2))
         self.assertEqual((offer.now_opens_in_terminal, outcome.unseen), (["Helper"], []))
 
@@ -78,14 +78,6 @@ class OfferingATerminal(unittest.TestCase):
         self.assertEqual((remembered.opens_in_terminal, remembered.terminal_ruled_out), (False, True))
         self.assertEqual(offer.not_offered_again, ["Helper"])
 
-    def test_a_question_that_could_not_be_shown_decides_nothing(self):
-        start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
-        start.notifier.ask_within.return_value = Answer.NOT_ANSWERED
-        _, offer = start.run_and_offer()
-        self.assertEqual(start.opened_in_terminal(), [])
-        start.store.save.assert_not_called()
-        self.assertEqual(offer, TerminalOffer())
-
     def test_a_trial_whose_terminal_never_appears_is_never_tried_again(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
         _, offer = start.run_and_offer()
@@ -97,7 +89,7 @@ class OfferingATerminal(unittest.TestCase):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         outcome = start.run()
 
-        def changed_then_clicked(summary: str, body: str, action: str, seconds: float) -> Answer:
+        def changed_then_clicked(summary: str, body: str, action: str, decline: str, seconds: float) -> Answer:
             start.store.load.return_value = app_list((2, [App("Helper", "cd code && other-helper")]))
             return Answer.YES
 
@@ -107,17 +99,46 @@ class OfferingATerminal(unittest.TestCase):
         start.store.save.assert_not_called()
         self.assertEqual(offer, TerminalOffer())
 
-    def test_a_window_that_came_before_its_question_is_placed_and_never_asked_about(self):
-        late_editor = window("e", "code", "harbour - Editor", 2)
-        start = Start(desktop_showing([]), app_list((2, [EDITOR])), stops=True, answers_yes=True)
+    def test_a_window_it_knows_that_came_before_its_question_is_placed_and_never_asked_about(self):
+        late_editor = window("e", "code", "harbour - Editor", 3)
+        known_editor = App("Editor", "cd code && editor .", "code")
+        start = Start(desktop_showing([]), app_list((2, [known_editor])), stops=True, answers_yes=True)
         outcome = start.run()
         start.desktop.windows.side_effect = None
         start.desktop.windows.return_value = [late_editor]
         offer = start.offering().run(outcome.for_the_offer)
         start.notifier.ask_within.assert_not_called()
-        start.names.record.assert_called_once_with(late_editor, "Editor")
-        self.assertEqual(saved_once(start.store).placements()[0].app.learned_window, "code")
+        start.desktop.move.assert_called_once_with(late_editor, 2)
         self.assertEqual((offer.window_found_after_all, start.opened_in_terminal()), (["Editor"], []))
+
+    def test_a_window_with_only_a_shell_left_in_it_is_never_taken_as_a_late_window(self):
+        finished = window("e", "code", "harbour - Editor", 3, "bash", "/home/sam/code")
+        known_editor = App("Editor", "cd code && editor .", "code")
+        start = Start(desktop_showing([]), app_list((2, [known_editor])), stops=True)
+        outcome = start.run()
+        start.desktop.windows.side_effect = None
+        start.desktop.windows.return_value = [finished]
+        offer = start.offering().run(outcome.for_the_offer)
+        start.desktop.move.assert_not_called()
+        self.assertEqual(offer.window_found_after_all, [])
+
+    def test_a_window_opened_by_hand_during_an_earlier_question_is_never_guessed_as_a_late_window(self):
+        claude = App("Claude", "cd code && claude")
+        start = Start(desktop_showing([]), app_list((2, [HELPER]), (3, [claude])), stops=True)
+        outcome = start.run()
+        by_hand = window("h", "foot", "~/code", 1, "", "")
+
+        def opened_a_terminal_meanwhile(summary: str, body: str, action: str, decline: str,
+                                        seconds: float) -> Answer:
+            start.desktop.windows.side_effect = None
+            start.desktop.windows.return_value = [by_hand]
+            return Answer.NOT_ANSWERED
+
+        start.notifier.ask_within.side_effect = opened_a_terminal_meanwhile
+        offer = start.offering().run(outcome.for_the_offer)
+        start.desktop.move.assert_not_called()
+        self.assertEqual(start.notifier.ask_within.call_count, 2)
+        self.assertEqual(offer.window_found_after_all, [])
 
     def test_a_window_the_start_gave_another_app_is_never_taken_as_a_late_window(self):
         editor_window = window("e", "code", "code", 3)
@@ -133,12 +154,15 @@ class OfferingATerminal(unittest.TestCase):
         self.assertEqual(offer.window_found_after_all, [])
         start.notifier.ask_within.assert_called_once()
 
-    def test_a_question_left_unanswered_decides_nothing_and_is_asked_again_next_time(self):
+    def test_a_question_without_an_answer_decides_nothing_and_is_asked_again_next_time(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         start.notifier.ask_within.return_value = Answer.NOT_ANSWERED
         _, offer = start.run_and_offer()
+        self.assertEqual(start.opened_in_terminal(), [])
         start.store.save.assert_not_called()
         self.assertEqual(offer, TerminalOffer())
+        start.run_and_offer()
+        self.assertEqual(start.notifier.ask_within.call_count, 2)
 
     def test_an_app_changed_before_its_question_is_not_asked_about(self):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True, answers_yes=True)
@@ -152,7 +176,7 @@ class OfferingATerminal(unittest.TestCase):
         start = Start(desktop_showing([]), app_list((2, [HELPER])), stops=True)
         outcome = start.run()
 
-        def changed_then_declined(summary: str, body: str, action: str, seconds: float) -> Answer:
+        def changed_then_declined(summary: str, body: str, action: str, decline: str, seconds: float) -> Answer:
             start.store.load.return_value = app_list((2, [App("Helper", "cd code && other-helper")]))
             return Answer.NO
 

@@ -51,11 +51,11 @@ Hiru Tsatsi asks with a notification whether to start your work apps.
   terminal. Click it within a minute, and it opens in a terminal on its
   workspace; once the program is seen running there, it is remembered, and
   from then on it opens in a terminal at once. If it fails, the terminal
-  stays open to show why, and it is not tried again. If you close the
-  question, it is never asked about again; if you leave it for the minute,
-  or it couldn't be shown at all, it is asked again next time. If the
-  app's own window turns up before its question, it is placed instead and
-  not asked about. Giving the app a new command starts this over;
+  stays open to show why, and it is not tried again. Its **Don't offer
+  again** button is the only no; if you close the question, leave it for
+  the minute, or it never showed (Do Not Disturb), it is asked again next
+  time. If a window the app is known by turns up before its question, it
+  is placed instead and not asked about. Giving the app a new command starts this over;
   forgetting its window, or choosing one for it, only undoes a terminal it
   was remembered to need. A session you opened yourself counts as open
   when the same program runs in the same folder, whatever its title says,
