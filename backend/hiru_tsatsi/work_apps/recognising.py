@@ -6,7 +6,7 @@ from hiru_tsatsi.work_apps.shells import SHELLS
 from hiru_tsatsi.work_apps.windows import Window, window_named, window_of_class
 
 
-def _not_only_a_shell_waiting(windows: list[Window]) -> list[Window]:
+def without_waiting_shells(windows: list[Window]) -> list[Window]:
     alive = []
     for window in windows:
         if window.program not in SHELLS:
@@ -25,7 +25,7 @@ class Recognising:
         if running is not None:
             return running
         if app.opens_in_terminal:
-            return window_of_class(app.learned_window, _not_only_a_shell_waiting(windows), claimed)
+            return window_of_class(app.learned_window, without_waiting_shells(windows), claimed)
         if app.knows_window:
             return window_named(app.learned_window, self.could_be_its_windows(app, windows), claimed)
         return None

@@ -6,6 +6,7 @@ from hiru_tsatsi.use_cases.ports import Answer
 
 APP_NAME = "Hiru Tsatsi"
 ANSWERS = {"default", "start"}
+NEVER = "never"
 WAIT_FOR_SERVICE_SECONDS = 60
 RETRY_SECONDS = 2
 
@@ -15,6 +16,10 @@ def _question(summary: str, body: str, action: str, *asking_for: str) -> list[st
             f"--action=start={action}", "--", summary, body]
 
 
+def _question_with_a_no(summary: str, body: str, action: str, decline: str) -> list[str]:
+    return _question(summary, body, action, "--print-id", f"--action={NEVER}={decline}")
+
+
 def _line(printed: str, number: int) -> str:
     lines = printed.splitlines()
     if len(lines) <= number:
@@ -22,16 +27,11 @@ def _line(printed: str, number: int) -> str:
     return lines[number].strip()
 
 
-def _answer(printed: str) -> Answer:
-    if _line(printed, 1) in ANSWERS:
+def _answer(clicked: str) -> Answer:
+    if clicked in ANSWERS:
         return Answer.YES
-    return Answer.NO
-
-
-def _answer_at_the_deadline(printed: str) -> Answer:
-    if _line(printed, 1) in ANSWERS:
-        return Answer.YES
-    _close(_line(printed, 0))
+    if clicked == NEVER:
+        return Answer.NO
     return Answer.NOT_ANSWERED
 
 
@@ -60,16 +60,15 @@ class NotifySend:
             answered = subprocess.run(question, capture_output=True, text=True, check=False)
         return answered.stdout.strip() in ANSWERS
 
-    def ask_within(self, summary: str, body: str, action: str, seconds: float) -> Answer:
+    def ask_within(self, summary: str, body: str, action: str, decline: str, seconds: float) -> Answer:
         if not shutil.which("notify-send"):
             return Answer.NOT_ANSWERED
-        asking = subprocess.Popen(_question(summary, body, action, "--print-id"), stdout=subprocess.PIPE, text=True)
+        question = _question_with_a_no(summary, body, action, decline)
+        asking = subprocess.Popen(question, stdout=subprocess.PIPE, text=True)
         try:
             printed, _ = asking.communicate(timeout=seconds)
         except subprocess.TimeoutExpired:
             asking.kill()
             printed, _ = asking.communicate()
-            return _answer_at_the_deadline(printed)
-        if asking.returncode != 0 and _line(printed, 0) == "":
-            return Answer.NOT_ANSWERED
-        return _answer(printed)
+            _close(_line(printed, 0))
+        return _answer(_line(printed, 1))

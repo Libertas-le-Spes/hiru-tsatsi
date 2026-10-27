@@ -44,7 +44,7 @@ class StartApps:
         return Outcome(already_open=names_of(already_open), started=names_of(missing), moved=names_of(placing.moved),
                        unseen=names_of(placements_of(still_waiting(left))),
                        stopped_without_window=names_of(stopped),
-                       for_the_offer=Handover(stopped, addresses_of(windows), set(placing.claimed)))
+                       for_the_offer=Handover(stopped, set(placing.claimed)))
 
     def _announce(self, missing: list[Placement]) -> None:
         if missing:

@@ -1,5 +1,5 @@
 import argparse
-from typing import Callable
+from typing import Callable, TypeVar
 
 from hiru_tsatsi.presenters import start_report, terminal_offer_report
 from hiru_tsatsi.use_cases.failures import StartRefused
@@ -23,7 +23,10 @@ def _report_and_offer(services: Services, outcome: Outcome) -> int:
     return 0
 
 
-def _outcome_of(services: Services, starting: Callable[[], Outcome | None]) -> Outcome | None:
+Started = TypeVar("Started", Outcome, Outcome | None)
+
+
+def _outcome_of(services: Services, starting: Callable[[], Started]) -> Started:
     try:
         return starting()
     except StartRefused as refused:
