@@ -14,7 +14,7 @@ class TerminalStart:
 
     @staticmethod
     def fits(app: App, recognising: Recognising) -> bool:
-        return app.opens_in_terminal and recognising.has_program_in_folder(app)
+        return recognising.is_terminal_app(app)
 
     @classmethod
     def begin(cls, launcher: Launcher, placement: Placement, now: float) -> "TerminalStart":

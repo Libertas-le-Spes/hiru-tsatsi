@@ -6,6 +6,7 @@ from tests.examples.windows import window
 from tests.use_cases.mocked_list import desktop_showing, store_holding
 from hiru_tsatsi.use_cases.overview import Overview
 from hiru_tsatsi.work_apps.app import App
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 
 GITLAB_COMMAND = 'omarchy-launch-webapp "https://gitlab.com/examplecorp/harbour/-/boards/1234567"'
 RIDER_MAIN = App("Rider Main", "rider ~/code/harbour", "harbour")
@@ -53,6 +54,15 @@ class TheOverview(unittest.TestCase):
     def test_a_session_opened_by_hand_is_that_apps_window(self):
         by_hand = window("h", "foot", "✳ Some talk", 2, "helper", "/home/sam/code")
         self.assertEqual(windows_given([by_hand], app_list((2, [App("Helper", "cd code && helper")]))), ["h"])
+
+    def test_only_a_command_that_can_run_in_a_terminal_is_shown_as_opening_in_one(self):
+        marked_chat = App("Chat", "chat-app", "chrome-chat", terminal=TerminalUse.OPENS_IN_ONE)
+        helper = App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE)
+        overview = Overview(store_holding(app_list((1, [marked_chat, helper]))), desktop_showing([]), RECOGNISING)
+        in_terminal = []
+        for view in overview.run()[0].apps:
+            in_terminal.append(view.opens_in_terminal)
+        self.assertEqual(in_terminal, [False, True])
 
 
 if __name__ == "__main__":
