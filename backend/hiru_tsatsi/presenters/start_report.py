@@ -1,10 +1,5 @@
+from hiru_tsatsi.presenters.report_lines import line
 from hiru_tsatsi.use_cases.outcome import Outcome
-
-
-def _line(label: str, names: list[str]) -> list[str]:
-    if not names:
-        return []
-    return [f"{label}: {', '.join(names)}"]
 
 
 def summary(outcome: Outcome) -> str:
@@ -14,7 +9,8 @@ def summary(outcome: Outcome) -> str:
 
 
 def details(outcome: Outcome) -> str:
-    lines = (_line("Started", outcome.started) + _line("Already open", outcome.already_open)
-             + _line("Moved to their workspace", outcome.moved)
-             + _line("No window seen within a minute", outcome.unseen))
+    lines = (line("Started", outcome.started) + line("Already open", outcome.already_open)
+             + line("Moved to their workspace", outcome.moved)
+             + line("No window seen within a minute", outcome.unseen)
+             + line("Stopped without a window", outcome.stopped_without_window))
     return "\n".join(lines)

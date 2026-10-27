@@ -14,7 +14,7 @@ def _workspace_number(client: dict) -> int:
 
 def _window(client: dict) -> Window:
     return Window(str(client.get("address", "")), str(client.get("class", "")), str(client.get("title", "")),
-                  _workspace_number(client))
+                  _workspace_number(client), pid=int(client.get("pid", 0)))
 
 
 class Hyprland:

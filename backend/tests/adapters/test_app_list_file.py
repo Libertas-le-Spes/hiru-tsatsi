@@ -9,6 +9,7 @@ from hiru_tsatsi.adapters.storage.json_object import json_text
 from hiru_tsatsi.use_cases.failures import NotReadable
 from hiru_tsatsi.work_apps.app import App
 from hiru_tsatsi.work_apps.app_list import AppList
+from hiru_tsatsi.work_apps.terminal_use import TerminalUse
 from hiru_tsatsi.work_apps.workspace import Workspace
 
 LIST = Path("/home/sam/.config/hiru-tsatsi/apps.json")
@@ -71,6 +72,22 @@ class TheSavedFormat(unittest.TestCase):
     def test_an_app_and_its_learned_window_come_back_unchanged(self):
         saved = AppList((Workspace(4, "Comms", (App("Chat", "chat-app", "chrome-chat"),)),))
         self.assertEqual(from_saved(to_saved(saved)), saved)
+
+    def test_an_app_that_opens_in_a_terminal_or_never_does_comes_back_unchanged(self):
+        apps = (App("Helper", "cd code && helper", "hiru-tsatsi.helper-1a2b3c4d", terminal=TerminalUse.OPENS_IN_ONE),
+                App("Editor", "cd code && editor .", terminal=TerminalUse.RULED_OUT))
+        saved = AppList((Workspace(2, "Code", apps),))
+        self.assertEqual(from_saved(to_saved(saved)), saved)
+
+    def test_the_terminal_mark_saved_before_it_had_three_values_is_still_read(self):
+        saved = {"workspaces": [{"number": 2, "label": "Code", "apps": [
+            {"name": "Helper", "command": "cd code && helper", "learned_window": "t", "in_terminal": True}]}]}
+        self.assertTrue(from_saved(saved).placements()[0].app.opens_in_terminal)
+
+    def test_a_terminal_mark_it_does_not_know_is_read_as_not_known(self):
+        saved = {"workspaces": [{"number": 2, "label": "Code", "apps": [
+            {"name": "Helper", "command": "cd code && helper", "terminal": "always"}]}]}
+        self.assertEqual(from_saved(saved).placements()[0].app.terminal, TerminalUse.NOT_KNOWN)
 
 
 class AListThatCannotBeRead(unittest.TestCase):

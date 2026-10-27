@@ -5,7 +5,7 @@ from hiru_tsatsi.adapters.desktops.hyprland import Hyprland
 from hiru_tsatsi.adapters.desktops.lua import lua_string
 from hiru_tsatsi.work_apps.windows import Window
 
-CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}}]
+CLIENTS = [{"address": "0xa", "class": "steam", "title": "Steam", "workspace": {"id": 4}, "pid": 77}]
 
 
 class FakeHyprctl:
@@ -25,7 +25,7 @@ class TalkingToHyprland(unittest.TestCase):
         self.assertIsInstance(Hyprland.found({"HYPRLAND_INSTANCE_SIGNATURE": "x"}), Hyprland)
 
     def test_lists_windows(self):
-        self.assertEqual(Hyprland(FakeHyprctl()).windows(), [Window("0xa", "steam", "Steam", 4)])
+        self.assertEqual(Hyprland(FakeHyprctl()).windows(), [Window("0xa", "steam", "Steam", 4, pid=77)])
 
     def test_launches_and_moves_without_following_the_window(self):
         hyprctl = FakeHyprctl()

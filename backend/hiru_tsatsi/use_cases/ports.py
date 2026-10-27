@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Protocol
 
 from hiru_tsatsi.work_apps.app_list import AppList
@@ -11,6 +12,34 @@ class Desktop(Protocol):
     def launch(self, command: str, workspace: int) -> None: ...
 
     def move(self, window: Window, workspace: int) -> None: ...
+
+
+class Launch(Protocol):
+    def wrapped(self, command: str) -> str: ...
+
+    def stopped(self) -> bool: ...
+
+
+class Launches(Protocol):
+    def new(self) -> Launch: ...
+
+
+class Terminal(Protocol):
+    def command_for(self, command: str, window: str) -> str: ...
+
+
+class Clock(Protocol):
+    def now(self) -> float: ...
+
+    def wait(self, seconds: float) -> None: ...
+
+
+class OneStartAtATime(Protocol):
+    def claimed(self) -> bool: ...
+
+
+class Announcer(Protocol):
+    def announce(self, starting: list[str]) -> None: ...
 
 
 class AppListStore(Protocol):
@@ -29,10 +58,18 @@ class SettingsStore(Protocol):
     def set_window_titles(self, on: bool) -> None: ...
 
 
+class Answer(Enum):
+    YES = "yes"
+    NO = "no"
+    NOT_ANSWERED = "not answered"
+
+
 class Notifier(Protocol):
     def notify(self, summary: str, body: str) -> None: ...
 
     def ask(self, summary: str, body: str, action: str) -> bool: ...
+
+    def ask_within(self, summary: str, body: str, action: str, decline: str, seconds: float) -> Answer: ...
 
 
 class DesktopSetUp(Protocol):

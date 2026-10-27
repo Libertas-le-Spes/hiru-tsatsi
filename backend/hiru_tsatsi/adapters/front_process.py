@@ -1,0 +1,36 @@
+from hiru_tsatsi.adapters.proc_files import ProcFiles
+from hiru_tsatsi.work_apps.shells import SHELLS
+
+MOST_SHELLS_TO_LOOK_PAST = 8
+
+
+class FrontProcess:
+    def __init__(self, processes: ProcFiles):
+        self.processes = processes
+
+    def of_window(self, pid: int) -> tuple[str, str]:
+        children = self.processes.children(pid)
+        if len(children) != 1:
+            return "", ""
+        front = self._past_waiting_shells(self._in_front(children[0]))
+        return self.processes.program(front), self.processes.folder(front)
+
+    def _in_front(self, shell: int) -> int:
+        group = self.processes.foreground_group(shell)
+        if group <= 0:
+            return shell
+        return group
+
+    def _past_waiting_shells(self, pid: int) -> int:
+        for _ in range(MOST_SHELLS_TO_LOOK_PAST):
+            children = self.processes.children(pid)
+            if self.processes.program(pid) not in SHELLS or len(children) != 1:
+                return pid
+            if not self._in_the_foreground(children[0]):
+                return pid
+            pid = children[0]
+        return pid
+
+    def _in_the_foreground(self, pid: int) -> bool:
+        group = self.processes.process_group(pid)
+        return group > 0 and group == self.processes.foreground_group(pid)
